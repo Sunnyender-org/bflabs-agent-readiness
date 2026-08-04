@@ -1,0 +1,27 @@
+schema_version: "0.1.0"
+product:
+  canonical_name: "UNRESOLVED"
+  aliases: []
+  company: "UNRESOLVED"
+  canonical_url: "UNRESOLVED"
+  direct_definition: "UNRESOLVED"
+  audience: []
+  capabilities: []
+  limitations: []
+public_surfaces:
+  pricing: null
+  documentation: null
+  setup: null
+  status: null
+  contact: null
+volatile_facts:
+  canonical_source: null
+  freshness_field: null
+  version_field: null
+  cache_expectation: null
+forbidden_claims: []
+evidence:
+  - fact_path: "product.canonical_name"
+    source: "UNRESOLVED"
+    captured_at: null
+    status: "unknown"

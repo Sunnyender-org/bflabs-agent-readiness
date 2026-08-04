@@ -1,0 +1,7 @@
+interface:
+  display_name: "GEO Optimize"
+  short_description: "Audit and safely repair product-site GEO readiness"
+  default_prompt: "Use $geo-optimize to audit this repository, apply only approved local GEO readiness fixes, and verify every change."
+
+policy:
+  allow_implicit_invocation: true

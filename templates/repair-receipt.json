@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1.0",
+  "mode": "audit",
+  "scope": {
+    "repo_root": "UNRESOLVED",
+    "inspected_paths": []
+  },
+  "confirmed_product_truth": [],
+  "unresolved_business_facts": [],
+  "findings": [],
+  "changed_files": [],
+  "verification": [],
+  "ai_visibility": {
+    "status": "not_measured",
+    "evidence": []
+  },
+  "business_outcome": {
+    "status": "not_measured",
+    "evidence": []
+  },
+  "service_escalations": [],
+  "residual_risks": []
+}

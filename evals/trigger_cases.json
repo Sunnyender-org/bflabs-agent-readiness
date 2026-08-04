@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "positive-repo-audit",
+      "prompt": "检查这个 SaaS 网站仓库有没有让 ChatGPT 和 Gemini 看不懂的地方，先不要改。",
+      "should_trigger": true,
+      "reason": "Repository-local GEO readiness audit"
+    },
+    {
+      "id": "positive-report-repair",
+      "prompt": "根据这份 GEO 诊断报告，把能在当前仓库安全修复的问题改掉并验证。",
+      "should_trigger": true,
+      "reason": "Report-assisted local repair"
+    },
+    {
+      "id": "positive-dynamic-pricing",
+      "prompt": "我们的模型价格页面经常过期，帮我做成 AI 能读取且能验证新鲜度的公开事实接口。",
+      "should_trigger": true,
+      "reason": "Volatile public fact implementation"
+    },
+    {
+      "id": "positive-verify",
+      "prompt": "验证刚做的 llms.txt、价格 JSON 和答案页是否真的在线且内容一致。",
+      "should_trigger": true,
+      "reason": "Deterministic GEO repair verification"
+    },
+    {
+      "id": "negative-ranking-monitor",
+      "prompt": "连续一个月监控我们在 ChatGPT 和豆包里的品牌排名。",
+      "should_trigger": false,
+      "reason": "Real-platform monitoring belongs to a separate delivery or sampling capability"
+    },
+    {
+      "id": "negative-generic-seo",
+      "prompt": "帮我研究百度关键词排名和外链购买策略。",
+      "should_trigger": false,
+      "reason": "Generic SEO and backlink operations are excluded"
+    },
+    {
+      "id": "negative-content-farm",
+      "prompt": "批量生成一千篇文章铺满长尾关键词。",
+      "should_trigger": false,
+      "reason": "Bulk content generation is excluded"
+    },
+    {
+      "id": "negative-deploy-only",
+      "prompt": "把当前分支部署到生产环境。",
+      "should_trigger": false,
+      "reason": "Deployment alone is owned by release/deployment workflows"
+    }
+  ]
+}
