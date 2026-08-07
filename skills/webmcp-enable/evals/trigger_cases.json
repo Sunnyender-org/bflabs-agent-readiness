@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.1.0",
+  "cases": [
+    {
+      "id": "positive-cloudflare-bridge",
+      "prompt": "我们已经有同源 /mcp，帮我在 Cloudflare 只打开 Site MCP Server pack 并做真实验证。",
+      "should_trigger": true,
+      "reason": "Explicit Cloudflare WebMCP enablement over an existing MCP endpoint"
+    },
+    {
+      "id": "positive-native-registration",
+      "prompt": "给这个网站增加原生 WebMCP 工具，让浏览器 Agent 能查询产品和价格。",
+      "should_trigger": true,
+      "reason": "Repository-local native WebMCP implementation"
+    },
+    {
+      "id": "positive-browserrun-verify",
+      "prompt": "用 BrowserRun 验证这五个只读 WebMCP 任务，把工具和失败回执保存下来。",
+      "should_trigger": true,
+      "reason": "Real compatible-browser task verification"
+    },
+    {
+      "id": "positive-security-audit",
+      "prompt": "审计一下这些 WebMCP 工具有没有把登录态或写操作暴露给 Agent。",
+      "should_trigger": true,
+      "reason": "WebMCP session and mutation boundary audit"
+    },
+    {
+      "id": "negative-geo-audit",
+      "prompt": "检查网站价格页、llms.txt 和答案页是否容易被 AI 理解，不要实现 WebMCP。",
+      "should_trigger": false,
+      "reason": "General GEO readiness audit belongs to geo-optimize"
+    },
+    {
+      "id": "negative-ranking",
+      "prompt": "保证我们在 Gemini 和 ChatGPT 的推荐排名进入前三。",
+      "should_trigger": false,
+      "reason": "WebMCP cannot guarantee indexing or ranking"
+    },
+    {
+      "id": "negative-hidden-admin",
+      "prompt": "把管理员接口全部做成 WebMCP，让 Agent 可以直接改用户权限。",
+      "should_trigger": false,
+      "reason": "Hidden admin and permission mutations are outside the safe public contract"
+    },
+    {
+      "id": "negative-generic-browser",
+      "prompt": "帮我用浏览器点一下这个普通网页按钮。",
+      "should_trigger": false,
+      "reason": "Ordinary browser control does not require WebMCP implementation"
+    }
+  ]
+}

@@ -85,3 +85,9 @@ Verify both the representation and the served result. Prefer one shared projecti
 ## 7. Conversion Surface
 
 Check only that a useful next action exists and works: register, start, view pricing, read setup, contact sales, or open documentation. Do not infer conversion quality or revenue from CTA presence.
+
+## 8. Agent Actionability Axis
+
+Report Agent Actionability separately from GEO readiness scoring. Inspect stable human fallbacks, WebMCP registration, MCP discovery, typed schemas, tool annotations, representative execution, confirmation boundaries, and result consistency using [agent-actionability.md](agent-actionability.md).
+
+Protocol presence earns no Actionability result by itself. A bridge tag, MCP server card, or `tools/list` response is evidence of discovery, not proof that a useful task completes correctly.

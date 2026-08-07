@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1.0",
+  "mode": "verify",
+  "target": {
+    "origin": "https://beefapi.com",
+    "account": "not_recorded_in_public_example",
+    "zone": "beefapi.com"
+  },
+  "adapter_pattern": "edge_bridge_to_same_origin_mcp",
+  "canonical_mcp": {
+    "url": "https://beefapi.com/mcp",
+    "direct_fallback_verified": true
+  },
+  "external_setting": {
+    "provider": "cloudflare",
+    "webmcp_enabled": true,
+    "packs": ["site_mcp_server"],
+    "readback": ["WebMCP on after reload", "C2PA off after reload", "Site MCP Server on after reload"]
+  },
+  "tool_inventory": [
+    "search_models",
+    "get_model_pricing",
+    "compare_groups",
+    "estimate_request_cost",
+    "get_integration_guide",
+    "check_public_service_status"
+  ],
+  "contract_checks": [
+    {"check": "server card", "status": "pass"},
+    {"check": "tools/list", "status": "pass"},
+    {"check": "direct MCP five-task pre-enable run for gpt-5.6-sol", "status": "pass"}
+  ],
+  "pricing_version": "sha256:1de62255b4f2a55138328f9d790c490f9ca7e43f146321326b62132fef6195a4",
+  "browser_run": {
+    "status": "blocked",
+    "session_ref": "private receipt only",
+    "tool_discovery": "blocked because the public hostname did not traverse the Cloudflare edge",
+    "tasks": [
+      {"id": "find-model", "status": "blocked"},
+      {"id": "get-price", "status": "blocked"},
+      {"id": "compare-groups", "status": "blocked"},
+      {"id": "estimate-cost", "status": "blocked"},
+      {"id": "integration-guide", "status": "blocked"}
+    ]
+  },
+  "rollback": {
+    "action": "disable only the Site MCP Server pack and verify the bridge is absent",
+    "verified": false
+  },
+  "ai_visibility": "not_measured",
+  "business_outcome": "not_measured",
+  "residual_risks": [
+    "Cloudflare WebMCP is a developer preview.",
+    "The public hostname must traverse the Cloudflare edge before the bridge can be injected.",
+    "Changing DNS proxy mode is a separate production traffic decision."
+  ]
+}

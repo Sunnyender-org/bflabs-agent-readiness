@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="用当前公开证据检查网站是否可发现、可理解、可操作。">
+    <title>BFLabs GEO Readiness</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%232b211b'/%3E%3Cpath d='M8 9h16v3H8zm0 6h11v3H8zm0 6h16v3H8z' fill='%23f7f1e8'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <div class="folio" aria-hidden="true">BFL / READINESS / 0.2</div>
+    <main id="main-content">
+      <section class="intake" aria-labelledby="page-title">
+        <div class="intake-copy">
+          <p class="eyebrow"><span></span> Public fact audit</p>
+          <h1 id="page-title">别先问 AI 会不会推荐你。<br><em>先证明它能读懂，也能办事。</em></h1>
+          <p class="lede">输入公开域名，我们用当前页面、机器协议和工具契约，分别检查网站是否可发现、可理解、可操作。</p>
+          <dl class="boundary-list">
+            <div><dt>扫描</dt><dd>公开页面，最多 6 个固定入口</dd></div>
+            <div><dt>不做</dt><dd>登录绕过、排名承诺、收入推断</dd></div>
+            <div><dt>保存</dt><dd>本地内存报告，重启即清空</dd></div>
+          </dl>
+        </div>
+
+        <form id="scan-form" class="scan-console" novalidate>
+          <label for="site-url">待诊断网站</label>
+          <div class="input-row">
+            <span aria-hidden="true">https://</span>
+            <input id="site-url" name="url" type="text" value="beefapi.com" inputmode="url" autocomplete="url" required aria-describedby="url-help url-error">
+            <button type="submit">开始诊断</button>
+          </div>
+          <p id="url-help" class="field-help">只接受公开域名或 HTTP(S) URL，不发送 Cookie、令牌或来源页。</p>
+          <p id="url-error" class="field-error" role="alert"></p>
+          <ol id="progress" class="progress" hidden>
+            <li data-stage="validate">验证目标与 DNS 边界</li>
+            <li data-stage="fetch">读取公开事实入口</li>
+            <li data-stage="contracts">核对 MCP 与 WebMCP 证据</li>
+            <li data-stage="report">生成三轴报告</li>
+          </ol>
+        </form>
+      </section>
+
+      <section id="empty-state" class="empty-state" aria-label="报告说明">
+        <div class="empty-marker">01</div>
+        <p>报告不会给你一个神秘总分。每个判断都必须落到 URL、响应、schema、工具或明确缺口。</p>
+        <a href="https://github.com/Sunnyender-org/bflabs-agent-readiness/tree/main/skills/geo-optimize">查看第一个开源子 Skill：geo-optimize</a>
+      </section>
+
+      <section id="report" class="report" hidden aria-live="polite">
+        <header class="report-header">
+          <div>
+            <p class="eyebrow"><span></span> Evidence report</p>
+            <h2 id="report-origin"></h2>
+          </div>
+          <div class="report-meta">
+            <span id="report-status"></span>
+            <code id="report-fingerprint"></code>
+          </div>
+        </header>
+
+        <div id="axis-rail" class="axis-rail"></div>
+
+        <div class="report-grid">
+          <section aria-labelledby="findings-title">
+            <div class="section-heading">
+              <p>证据缺口</p>
+              <h3 id="findings-title">先修失败谓词，再谈增长</h3>
+            </div>
+            <div id="findings" class="findings"></div>
+          </section>
+          <aside class="measurement-boundary" aria-labelledby="boundary-title">
+            <p>测量边界</p>
+            <h3 id="boundary-title">两个明确的“未测量”</h3>
+            <dl>
+              <div><dt>AI visibility</dt><dd>未测量，需要真实平台重复抽样</dd></div>
+              <div><dt>Business outcome</dt><dd>未测量，需要客户授权的访问与收入数据</dd></div>
+            </dl>
+            <button id="download-report" type="button">下载 JSON 报告</button>
+          </aside>
+        </div>
+
+        <section class="evidence-ledger" aria-labelledby="evidence-title">
+          <div class="section-heading">
+            <p>Evidence ledger</p>
+            <h3 id="evidence-title">扫描到的公开入口</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>入口</th><th>状态</th><th>类型</th><th>证据</th></tr></thead>
+              <tbody id="evidence-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <p>BFLabs GEO Readiness，本地产品原型。Readiness 不等于排名或订单。</p>
+      <nav aria-label="法律与边界"><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
+    </footer>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

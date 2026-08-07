@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "target": {
+    "origin": "https://example.com"
+  },
+  "axes": {
+    "discoverable": {
+      "status": "not_measured",
+      "evidence": [],
+      "findings": []
+    },
+    "understandable": {
+      "status": "not_measured",
+      "evidence": [],
+      "findings": []
+    },
+    "actionable": {
+      "status": "not_measured",
+      "evidence": [],
+      "findings": []
+    }
+  },
+  "routes": [],
+  "verification": [],
+  "ai_visibility": "not_measured",
+  "business_outcome": "not_measured",
+  "external_gates": []
+}

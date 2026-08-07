@@ -1,0 +1,34 @@
+{
+  "schema_version": "0.1.0",
+  "mode": "verify",
+  "target": {
+    "origin": "UNRESOLVED",
+    "account": "UNRESOLVED",
+    "zone": "UNRESOLVED"
+  },
+  "adapter_pattern": "UNRESOLVED",
+  "canonical_mcp": {
+    "url": "UNRESOLVED",
+    "direct_fallback_verified": false
+  },
+  "external_setting": {
+    "provider": "UNRESOLVED",
+    "webmcp_enabled": false,
+    "packs": [],
+    "readback": []
+  },
+  "tool_inventory": [],
+  "contract_checks": [],
+  "browser_run": {
+    "status": "not_run",
+    "session_ref": null,
+    "tasks": []
+  },
+  "rollback": {
+    "action": "UNRESOLVED",
+    "verified": false
+  },
+  "ai_visibility": "not_measured",
+  "business_outcome": "not_measured",
+  "residual_risks": []
+}

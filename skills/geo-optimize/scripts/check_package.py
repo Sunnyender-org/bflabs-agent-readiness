@@ -14,6 +14,7 @@ REQUIRED = [
     "SKILL.md",
     "agents/openai.yaml",
     "references/readiness-rules.md",
+    "references/agent-actionability.md",
     "references/dynamic-facts.md",
     "references/framework-mapping.md",
     "references/service-boundary.md",
@@ -49,6 +50,7 @@ if "TODO" in skill or "[TODO" in skill:
 
 for ref in [
     "readiness-rules.md",
+    "agent-actionability.md",
     "dynamic-facts.md",
     "framework-mapping.md",
     "service-boundary.md",
@@ -71,6 +73,7 @@ for field in [
     "schema_version",
     "mode",
     "scope",
+    "readiness_axes",
     "findings",
     "verification",
     "ai_visibility",
@@ -83,6 +86,11 @@ if receipt["ai_visibility"].get("status") != "not_measured":
     fail("template must default AI visibility to not_measured")
 if receipt["business_outcome"].get("status") != "not_measured":
     fail("template must default business outcome to not_measured")
+for axis in ["discoverable", "understandable", "actionable"]:
+    if axis not in receipt["readiness_axes"]:
+        fail(f"repair receipt missing readiness axis {axis}")
+if receipt["readiness_axes"]["actionable"].get("webmcp_status") != "not_present":
+    fail("actionable axis must default WebMCP to not_present")
 
 evals = json.loads((ROOT / "evals/trigger_cases.json").read_text("utf-8"))["cases"]
 ids = [case["id"] for case in evals]

@@ -1,0 +1,7 @@
+interface:
+  display_name: "GEO Optimize"
+  short_description: "Audit GEO readiness and Agent Actionability"
+  default_prompt: "Use $geo-optimize to audit this repository across Discoverable, Understandable, and Actionable axes, apply only approved local GEO readiness fixes, and verify every change."
+
+policy:
+  allow_implicit_invocation: true

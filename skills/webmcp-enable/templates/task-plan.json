@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.1.0",
+  "origin": "https://example.com",
+  "mcp_url": "https://example.com/mcp",
+  "tasks": [
+    {
+      "id": "representative-read-only-task",
+      "tool": "UNRESOLVED",
+      "arguments": {},
+      "read_only": true,
+      "expected_contains": []
+    }
+  ]
+}

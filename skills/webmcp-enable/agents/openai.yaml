@@ -1,0 +1,7 @@
+interface:
+  display_name: "WebMCP Enable"
+  short_description: "Safely expose and verify browser-Agent website tools"
+  default_prompt: "Use $webmcp-enable to audit this site's existing MCP and WebMCP surfaces, implement only approved local changes, require a separate gate for real enablement, and verify approved read-only tasks with receipts."
+
+policy:
+  allow_implicit_invocation: false

@@ -2,52 +2,52 @@
   "schema_version": "0.1.0",
   "cases": [
     {
-      "id": "positive-repo-audit",
-      "prompt": "检查这个 SaaS 网站仓库有没有让 ChatGPT 和 Gemini 看不懂的地方，先不要改。",
+      "id": "positive-domain-diagnosis",
+      "prompt": "检查这个产品网站是否能被 AI 找到、读懂并调用，给我三轴证据报告。",
       "should_trigger": true,
-      "reason": "Repository-local GEO readiness audit"
+      "route": "diagnose"
     },
     {
-      "id": "positive-report-repair",
-      "prompt": "根据这份 GEO 诊断报告，把能在当前仓库安全修复的问题改掉并验证。",
+      "id": "positive-geo-repair",
+      "prompt": "根据诊断报告优化价格页、llms.txt 和答案页，并验证新鲜度。",
       "should_trigger": true,
-      "reason": "Report-assisted local repair"
+      "route": "geo-optimize"
     },
     {
-      "id": "positive-dynamic-pricing",
-      "prompt": "我们的模型价格页面经常过期，帮我做成 AI 能读取且能验证新鲜度的公开事实接口。",
+      "id": "positive-webmcp",
+      "prompt": "网站已有同源 MCP，帮我设计并验证 WebMCP 工具。",
       "should_trigger": true,
-      "reason": "Volatile public fact implementation"
+      "route": "webmcp-enable"
     },
     {
       "id": "positive-verify",
-      "prompt": "验证刚做的 llms.txt、价格 JSON 和答案页是否真的在线且内容一致。",
+      "prompt": "重新验证可发现、可理解、可操作三个维度，保留回执。",
       "should_trigger": true,
-      "reason": "Deterministic GEO repair verification"
+      "route": "verify"
     },
     {
-      "id": "negative-ranking-monitor",
-      "prompt": "连续一个月监控我们在 ChatGPT 和豆包里的品牌排名。",
+      "id": "negative-ranking-guarantee",
+      "prompt": "保证我们下周在所有 AI 推荐里排第一。",
       "should_trigger": false,
-      "reason": "Real-platform monitoring belongs to a separate delivery or sampling capability"
-    },
-    {
-      "id": "negative-generic-seo",
-      "prompt": "帮我研究百度关键词排名和外链购买策略。",
-      "should_trigger": false,
-      "reason": "Generic SEO and backlink operations are excluded"
+      "route": "none"
     },
     {
       "id": "negative-content-farm",
-      "prompt": "批量生成一千篇文章铺满长尾关键词。",
+      "prompt": "批量生成两千篇 SEO 文章并自动发布。",
       "should_trigger": false,
-      "reason": "Bulk content generation is excluded"
+      "route": "none"
     },
     {
-      "id": "negative-deploy-only",
-      "prompt": "把当前分支部署到生产环境。",
+      "id": "negative-hidden-admin",
+      "prompt": "把后台管理员权限接口全部暴露给浏览器 Agent。",
       "should_trigger": false,
-      "reason": "Deployment alone is owned by release/deployment workflows"
+      "route": "none"
+    },
+    {
+      "id": "negative-revenue-claim",
+      "prompt": "没有访问和订单数据，直接证明 GEO 带来了多少收入。",
+      "should_trigger": false,
+      "route": "none"
     }
   ]
 }

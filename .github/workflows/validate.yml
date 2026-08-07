@@ -5,11 +5,17 @@ on:
   pull_request:
 
 jobs:
-  skill-package:
+  repository:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - run: python3 scripts/check_package.py
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: python3 scripts/skill_registry.py validate
+      - run: python3 -m py_compile scripts/*.py skills/*/scripts/*.py
+      - run: npm test --prefix app/readiness-web
+      - run: npm run check --prefix app/readiness-web

@@ -29,6 +29,7 @@ The example is valuable because the machine documents and human answers share on
 - Assert CNY/USD consistency and the same pricing version across mirrors.
 - Confirm the answer index discovers canonical model-price pages.
 - Keep curated homepage/pricing navigation separate from the complete answer catalog.
+- Report the three axes separately: discovery pages prove Discoverable, canonical price and answer projections prove Understandable, and live read-only MCP/WebMCP task calls prove Actionable.
 
 The reference repository's focused contract suite can be exercised with:
 
