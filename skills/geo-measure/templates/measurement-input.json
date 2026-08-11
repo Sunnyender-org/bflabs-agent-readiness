@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-measure",
+  "captured_at": "2026-01-01T00:00:00Z",
+  "site_domain": "example.com",
+  "observations": []
+}

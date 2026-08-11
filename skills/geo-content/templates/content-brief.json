@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-content",
+  "captured_at": "2026-01-01T00:00:00Z",
+  "language": "en",
+  "mode": "page-blueprint",
+  "subject": "Replace with the bounded subject",
+  "audience": "Replace with the audience",
+  "intent": "Replace with the content intent",
+  "facts": [
+    {
+      "id": "fact_replace_me",
+      "text": "Replace with one confirmed fact.",
+      "evidence_ids": ["ev_replace_me"],
+      "support_level": "direct",
+      "dynamic_fact": false,
+      "fact_version": null,
+      "evidence_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "evidence_sources": [
+    {
+      "id": "ev_replace_me",
+      "summary": "Replace with the canonical evidence summary.",
+      "source_type": "fixture",
+      "locator": "fixture:replace-me",
+      "captured_at": "2026-01-01T00:00:00Z",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "support_scope": "Replace with the exact support scope.",
+      "limitations": ["Template values are not evidence and must be replaced."],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "Replace with source license or usage basis"
+    }
+  ],
+  "comparison_targets": [],
+  "comparison_dimensions": [],
+  "ranking_method": null,
+  "source_markdown": null,
+  "discovery_context": null
+}

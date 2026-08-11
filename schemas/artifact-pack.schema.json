@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/artifact-pack.schema.json",
+  "type": "object",
+  "required": ["protocol_version", "manifest", "files"],
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": { "const": "1.0.0" },
+    "manifest": { "$ref": "https://bflabs.dev/schemas/run-manifest.schema.json" },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^(input|outputs)/[^/]+\\.(json|md)$|^(evidence-ledger|quality-report)\\.json$"
+      },
+      "additionalProperties": { "type": ["object", "array", "string", "number", "boolean", "null"] }
+    }
+  }
+}

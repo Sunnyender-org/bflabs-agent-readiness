@@ -1,7 +1,12 @@
 __pycache__/
 *.pyc
+*.egg-info/
 .DS_Store
 node_modules/
+.venv/
+dist/
+build/
+runs/
 .receipts/
 coverage/
 *.receipt.json

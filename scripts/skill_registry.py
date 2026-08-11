@@ -5,17 +5,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SKILLS = {
-    "bflabs-agent-readiness": ".",
-    "geo-optimize": "skills/geo-optimize",
-    "webmcp-enable": "skills/webmcp-enable",
-}
+sys.path.insert(0, str(ROOT / "src"))
+
+from bflabs_readiness.registry import CapabilityRegistry  # noqa: E402
+from bflabs_readiness.schemas import validate_all_schemas  # noqa: E402
+
 ALLOWED_NAMES = {"SKILL.md"}
 ALLOWED_PARTS = {"references", "templates", "evals"}
 
@@ -31,18 +32,21 @@ def allowed(path: Path) -> bool:
 
 
 def list_sop(output_format: str) -> None:
+    registry = CapabilityRegistry(ROOT)
     payload = {
-        name: {
-            "path": path,
-            "entrypoint": str(Path(path) / "SKILL.md") if path != "." else "SKILL.md",
+        capability.id: {
+            "path": str(Path(capability.entrypoint).parent) if capability.entrypoint and capability.entrypoint != "SKILL.md" else ".",
+            "entrypoint": capability.entrypoint,
+            "status": capability.status,
         }
-        for name, path in SKILLS.items()
+        for capability in registry.list_capabilities("active")
+        if capability.entrypoint
     }
     if output_format == "json":
         print(json.dumps(payload, indent=2))
         return
     for name, item in payload.items():
-        print(f"- `{name}`: `{item['entrypoint']}`")
+        print(f"- `{name}` ({item['status']}): `{item['entrypoint'] or 'unavailable'}`")
 
 
 def read_sop(relative: str) -> None:
@@ -53,13 +57,24 @@ def read_sop(relative: str) -> None:
 
 
 def validate() -> None:
+    CapabilityRegistry(ROOT).validate()
+    validate_all_schemas()
     commands = [
         [sys.executable, str(ROOT / "scripts/check_repository.py")],
+        [sys.executable, str(ROOT / "skills/geo-discover/scripts/check_package.py")],
+        [sys.executable, str(ROOT / "skills/geo-content/scripts/check_package.py")],
+        [sys.executable, str(ROOT / "skills/geo-measure/scripts/check_package.py")],
+        [sys.executable, str(ROOT / "skills/seo-plan/scripts/check_package.py")],
         [sys.executable, str(ROOT / "skills/geo-optimize/scripts/check_package.py")],
         [sys.executable, str(ROOT / "skills/webmcp-enable/scripts/check_package.py")],
+        [sys.executable, str(ROOT / "scripts/run_evals.py")],
+        [sys.executable, "-m", "unittest", "discover", "-s", "tests"],
     ]
+    child_env = os.environ.copy()
+    existing_pythonpath = child_env.get("PYTHONPATH")
+    child_env["PYTHONPATH"] = str(ROOT / "src") + (os.pathsep + existing_pythonpath if existing_pythonpath else "")
     for command in commands:
-        subprocess.run(command, check=True, cwd=ROOT)
+        subprocess.run(command, check=True, cwd=ROOT, env=child_env)
 
 
 def main() -> None:

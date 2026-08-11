@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "workflows": [
+    {
+      "id": "discover-diagnose",
+      "version": "1.0.0",
+      "status": "active",
+      "steps": ["geo-discover", "geo-optimize"]
+    },
+    {
+      "id": "discover-content",
+      "version": "1.0.0",
+      "status": "active",
+      "steps": ["geo-discover", "geo-content"]
+    }
+  ]
+}

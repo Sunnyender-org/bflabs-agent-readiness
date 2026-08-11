@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "seo-plan",
+  "captured_at": "2026-08-11T07:00:00Z",
+  "language": "zh-CN",
+  "target": "https://example.com migrated from https://old.example.com",
+  "change_type": "migration",
+  "symptoms": ["old URLs stopped resolving", "new pages are not consistently discovered"],
+  "constraints": ["read-only planning", "no Search Console access", "no CMS mutation", "no live ranking query"],
+  "observations": [
+    {"id":"obs_canonical_old","category":"canonical","state":"fail","summary":"Canonical on /old points to /old after migration.","evidence_ids":["ev_canonical_old"]},
+    {"id":"obs_sitemap_old","category":"sitemap","state":"fail","summary":"Sitemap still lists old host URLs.","evidence_ids":["ev_sitemap_old"]},
+    {"id":"obs_ai_crawler_block","category":"ai-crawlers","state":"fail","summary":"GPTBot is blocked while search crawlers are allowed.","evidence_ids":["ev_ai_crawler_block"]},
+    {"id":"obs_redirect_404","category":"redirects","state":"fail","summary":"Old URLs return 404 instead of one-hop redirects.","evidence_ids":["ev_redirect_404"]}
+  ],
+  "evidence_sources": [
+    {"id":"ev_canonical_old","summary":"Canonical on /old points to /old after migration.","source_type":"fixture","locator":"fixture:migration/canonical-old","captured_at":"2026-08-11T07:00:00Z","content_hash":"sha256:802883cf93da9f0faac483da5d65edb13dd7ad09a16a96b17f9ebd907d1aa6a9","support_scope":"representative canonical response only","limitations":["fixture, not a live site observation"],"dynamic_fact":false,"fact_version":null,"license":"MIT"},
+    {"id":"ev_sitemap_old","summary":"Sitemap still lists old host URLs.","source_type":"fixture","locator":"fixture:migration/sitemap-old","captured_at":"2026-08-11T07:00:00Z","content_hash":"sha256:784a6b9ae9004876b3b7cbf0c8fee3d2dbabf6966c543472acae43cee344a599","support_scope":"captured sitemap fixture only","limitations":["fixture, not a live site observation"],"dynamic_fact":false,"fact_version":null,"license":"MIT"},
+    {"id":"ev_ai_crawler_block","summary":"GPTBot is blocked while search crawlers are allowed.","source_type":"fixture","locator":"fixture:migration/robots-ai","captured_at":"2026-08-11T07:00:00Z","content_hash":"sha256:f0da865f15780584375eb853c114855b2a0536669e628c18013b68b627c7464e","support_scope":"captured robots fixture only","limitations":["crawler policy does not establish external AI visibility"],"dynamic_fact":false,"fact_version":null,"license":"MIT"},
+    {"id":"ev_redirect_404","summary":"Old URLs return 404 instead of one-hop redirects.","source_type":"fixture","locator":"fixture:migration/redirect-404","captured_at":"2026-08-11T07:00:00Z","content_hash":"sha256:ca7782859efe43b365bcca020b8d02c364a1aaa349b6af30c4c722e65ffdcb8b","support_scope":"representative old URL response only","limitations":["fixture, not a complete URL migration map"],"dynamic_fact":false,"fact_version":null,"license":"MIT"}
+  ]
+}

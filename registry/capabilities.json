@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.0.0",
+  "capabilities": [
+    {
+      "id": "bflabs-agent-readiness",
+      "version": "1.0.0",
+      "status": "active",
+      "intents": ["diagnose", "route", "verify"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "SKILL.md",
+      "execution": "agent",
+      "input_schema": null,
+      "outputs": ["route-decision", "run-receipt"],
+      "permissions": ["read-local", "read-explicit-public-url"],
+      "external_gates": [],
+      "degrades_to": "bounded-plan"
+    },
+    {
+      "id": "geo-optimize",
+      "version": "0.2.0",
+      "status": "active",
+      "intents": ["audit", "optimize", "verify", "brand-diagnosis", "site-diagnosis", "page-diagnosis"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/geo-optimize/SKILL.md",
+      "execution": "local",
+      "input_schema": "schemas/geo-optimize-run-input.schema.json",
+      "outputs": ["readiness-report", "evidence-ledger", "quality-report"],
+      "permissions": ["read-local", "read-explicit-public-url", "write-approved-local"],
+      "external_gates": ["publish", "deploy", "platform-sampling"],
+      "degrades_to": "audit"
+    },
+    {
+      "id": "webmcp-enable",
+      "version": "0.1.0",
+      "status": "active",
+      "intents": ["webmcp-audit", "webmcp-implement", "webmcp-enable", "browser-verify"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/webmcp-enable/SKILL.md",
+      "execution": "external-gated",
+      "input_schema": null,
+      "outputs": ["task-plan", "verification-receipt"],
+      "permissions": ["read-local", "write-approved-local"],
+      "external_gates": ["cloudflare-enable", "browser-session", "production-mutation"],
+      "degrades_to": "audit"
+    },
+    {
+      "id": "geo-discover",
+      "version": "1.0.0",
+      "status": "active",
+      "intents": ["discover", "compare-opportunities"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/geo-discover/SKILL.md",
+      "execution": "offline",
+      "input_schema": "schemas/discovery-brief.schema.json",
+      "outputs": ["query-map", "opportunity-map"],
+      "permissions": ["read-local"],
+      "external_gates": [],
+      "degrades_to": "geo-optimize"
+    },
+    {
+      "id": "geo-content",
+      "version": "1.0.0",
+      "status": "active",
+      "intents": ["title", "explainer", "comparison", "ranking", "page-blueprint", "refine", "article-friendly"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/geo-content/SKILL.md",
+      "execution": "offline",
+      "input_schema": "schemas/content-brief.schema.json",
+      "outputs": ["content-spec", "content-evidence-units", "markdown"],
+      "permissions": ["read-local", "write-approved-local"],
+      "external_gates": ["publish"],
+      "degrades_to": "geo-optimize"
+    },
+    {
+      "id": "geo-measure",
+      "version": "1.0.0",
+      "status": "active",
+      "intents": ["measure", "aggregate-observations"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/geo-measure/SKILL.md",
+      "execution": "offline",
+      "input_schema": "schemas/measurement-input.schema.json",
+      "outputs": ["measurement-report"],
+      "permissions": ["read-local"],
+      "external_gates": [],
+      "degrades_to": "bounded-plan"
+    },
+    {
+      "id": "seo-plan",
+      "version": "1.0.0",
+      "status": "active",
+      "intents": ["seo-plan", "migration-recovery", "technical-seo"],
+      "languages": ["zh-CN", "en"],
+      "entrypoint": "skills/seo-plan/SKILL.md",
+      "execution": "offline",
+      "input_schema": "schemas/seo-plan-brief.schema.json",
+      "outputs": ["seo-plan"],
+      "permissions": ["read-local", "read-explicit-public-url"],
+      "external_gates": [],
+      "degrades_to": "bounded-plan"
+    }
+  ]
+}

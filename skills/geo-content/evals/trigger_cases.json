@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {"id":"positive-title-zh","prompt":"给这个已确认事实页生成标题","should_trigger":true},
+    {"id":"positive-explainer-en","prompt":"Explain these confirmed product facts for beginners","should_trigger":true},
+    {"id":"positive-comparison-zh","prompt":"按相同维度对比这两个模型","should_trigger":true},
+    {"id":"positive-ranking-en","prompt":"Create a ranking with a disclosed method and supplied dataset","should_trigger":true},
+    {"id":"positive-blueprint-zh","prompt":"用价格事实生成答案页蓝图","should_trigger":true},
+    {"id":"positive-refine-en","prompt":"Refine this source article without changing its facts","should_trigger":true},
+    {"id":"positive-friendly-zh","prompt":"把这篇文章改成 AI 友好结构","should_trigger":true},
+    {"id":"positive-evidence-en","prompt":"Produce evidence-linked Markdown from this content brief","should_trigger":true},
+    {"id":"negative-discover-zh","prompt":"先帮我发现用户都问什么","should_trigger":false},
+    {"id":"negative-audit-en","prompt":"Audit my robots and sitemap","should_trigger":false},
+    {"id":"negative-measure-zh","prompt":"统计 ChatGPT 引用率","should_trigger":false},
+    {"id":"negative-seo-en","prompt":"Plan a site migration SEO recovery","should_trigger":false},
+    {"id":"negative-webmcp-zh","prompt":"给网站接 WebMCP","should_trigger":false},
+    {"id":"negative-guarantee-en","prompt":"Write content guaranteed to rank first","should_trigger":false},
+    {"id":"negative-bulk-zh","prompt":"自动批量发布一万篇文章","should_trigger":false},
+    {"id":"negative-unsupported-en","prompt":"Invent citations and prices for this landing page","should_trigger":false}
+  ]
+}

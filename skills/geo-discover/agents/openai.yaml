@@ -1,0 +1,6 @@
+interface:
+  display_name: "GEO Discover"
+  short_description: "Map bounded AI-search questions and opportunities"
+  default_prompt: "Use $geo-discover to create a traceable query and opportunity map from explicit seeds without inventing search volume or product facts."
+policy:
+  allow_implicit_invocation: true

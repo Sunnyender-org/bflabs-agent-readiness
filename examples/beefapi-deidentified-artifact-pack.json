@@ -1,0 +1,239 @@
+{
+  "protocol_version": "1.0.0",
+  "manifest": {
+    "protocol_version": "1.0.0",
+    "run_id": "run-20260811T071000Z-de1d0001",
+    "capability": "bflabs-agent-readiness",
+    "capability_version": "1.0.0",
+    "workflow_id": null,
+    "created_at": "2026-08-11T07:10:00.000Z",
+    "input_hash": "sha256:3b994d8df20aca42e441d9e1380bd76b6fe3d68671f90f12b298800650adaf07",
+    "status": "pass",
+    "degradation": null,
+    "external_gates": [
+      "compatible-browser-task-verification"
+    ],
+    "artifacts": [
+      {
+        "path": "evidence-ledger.json",
+        "sha256": "66ef5edb59ed9715ee8464aa6649a06f3317f229bca40d0da6dc8fdfd096b3c4",
+        "media_type": "application/json",
+        "schema": "evidence-ledger.schema.json"
+      },
+      {
+        "path": "input/request.json",
+        "sha256": "3b994d8df20aca42e441d9e1380bd76b6fe3d68671f90f12b298800650adaf07",
+        "media_type": "application/json",
+        "schema": null
+      },
+      {
+        "path": "outputs/readiness-report.json",
+        "sha256": "82206d3f4b8960cd3cbd5678b333dd8a2accc76cd4af8e5ab6e7fc7a31ac0b5c",
+        "media_type": "application/json",
+        "schema": "readiness-report.schema.json"
+      },
+      {
+        "path": "quality-report.json",
+        "sha256": "0fc64988db72addb2e87a203fa1443d687a1538494b89e5dd298511a45f28cd1",
+        "media_type": "application/json",
+        "schema": "quality-report.schema.json"
+      }
+    ],
+    "replay_command": "Run the local scanner against an equivalent public fixture."
+  },
+  "files": {
+    "input/request.json": {
+      "schema_version": "1.0.0",
+      "capability": "bflabs-agent-readiness",
+      "captured_at": "2026-08-11T07:10:00Z",
+      "url": "https://gateway.example"
+    },
+    "evidence-ledger.json": {
+      "schema_version": "1.0.0",
+      "items": [
+        {
+          "id": "ev_home",
+          "summary": "Public homepage fixture",
+          "source_type": "fixture",
+          "locator": "fixture:de-identified/home",
+          "captured_at": "2026-08-11T07:10:00Z",
+          "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "support_scope": "De-identified public readiness example",
+          "limitations": [
+            "This fixture does not establish external AI visibility or business outcome."
+          ],
+          "dynamic_fact": false,
+          "fact_version": null,
+          "license": "MIT example fixture"
+        },
+        {
+          "id": "ev_pricing",
+          "summary": "Versioned public pricing fixture",
+          "source_type": "fixture",
+          "locator": "fixture:de-identified/pricing",
+          "captured_at": "2026-08-11T07:10:00Z",
+          "content_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "support_scope": "Pricing freshness and version contract only",
+          "limitations": [
+            "Prices and model names are intentionally omitted."
+          ],
+          "dynamic_fact": true,
+          "fact_version": "fixture-2026-08-11",
+          "license": "MIT example fixture"
+        },
+        {
+          "id": "ev_mcp",
+          "summary": "Read-only typed MCP fixture",
+          "source_type": "fixture",
+          "locator": "fixture:de-identified/mcp",
+          "captured_at": "2026-08-11T07:10:00Z",
+          "content_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "support_scope": "Typed tool discovery contract only",
+          "limitations": [
+            "No compatible-browser task was executed."
+          ],
+          "dynamic_fact": false,
+          "fact_version": null,
+          "license": "MIT example fixture"
+        }
+      ],
+      "claims": [
+        {
+          "id": "claim_home",
+          "text": "The fixture exposes public readable HTML.",
+          "evidence_ids": [
+            "ev_home"
+          ],
+          "support_level": "direct"
+        },
+        {
+          "id": "claim_pricing",
+          "text": "The dynamic pricing fixture includes an explicit version.",
+          "evidence_ids": [
+            "ev_pricing"
+          ],
+          "support_level": "direct"
+        },
+        {
+          "id": "claim_mcp",
+          "text": "The fixture exposes typed read-only MCP tools.",
+          "evidence_ids": [
+            "ev_mcp"
+          ],
+          "support_level": "direct"
+        }
+      ]
+    },
+    "quality-report.json": {
+      "schema_version": "1.0.0",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "evidence-coverage",
+          "status": "pass",
+          "message": "Every public claim is evidence-linked."
+        },
+        {
+          "id": "dynamic-fact-freshness",
+          "status": "pass",
+          "message": "The dynamic fixture has an explicit fact version."
+        },
+        {
+          "id": "measurement-boundary",
+          "status": "pass",
+          "message": "AI visibility and business outcome remain not_measured."
+        }
+      ],
+      "warnings": [],
+      "blockers": []
+    },
+    "outputs/readiness-report.json": {
+      "schema_version": "1.0.0",
+      "target": {
+        "origin": "https://gateway.example"
+      },
+      "mode": "audit",
+      "axes": {
+        "discoverable": {
+          "status": "pass",
+          "evidence_ids": [
+            "ev_home"
+          ],
+          "limitations": []
+        },
+        "understandable": {
+          "status": "pass",
+          "evidence_ids": [
+            "ev_home",
+            "ev_pricing"
+          ],
+          "limitations": []
+        },
+        "actionable": {
+          "status": "partial",
+          "webmcp_status": "not_present",
+          "evidence_ids": [
+            "ev_home",
+            "ev_mcp"
+          ],
+          "limitations": [
+            "Compatible-browser task verification was not run."
+          ]
+        }
+      },
+      "findings": [
+        {
+          "id": "finding_a-webmcp",
+          "axis": "actionable",
+          "rule_id": "A-WEBMCP",
+          "severity": "medium",
+          "title": "WebMCP bridge or native registration is not present",
+          "state": "fail",
+          "evidence_ids": [
+            "ev_home"
+          ],
+          "owner_route": "webmcp-enable"
+        }
+      ],
+      "verification": [
+        {
+          "axis": "discoverable",
+          "rule_id": "D-HTML",
+          "state": "pass",
+          "evidence_ids": [
+            "ev_home"
+          ]
+        },
+        {
+          "axis": "understandable",
+          "rule_id": "U-FRESHNESS",
+          "state": "pass",
+          "evidence_ids": [
+            "ev_pricing"
+          ]
+        },
+        {
+          "axis": "actionable",
+          "rule_id": "A-TOOLS",
+          "state": "pass",
+          "evidence_ids": [
+            "ev_mcp"
+          ]
+        },
+        {
+          "axis": "actionable",
+          "rule_id": "A-WEBMCP",
+          "state": "fail",
+          "evidence_ids": [
+            "ev_home"
+          ]
+        }
+      ],
+      "ai_visibility": "not_measured",
+      "business_outcome": "not_measured",
+      "external_gates": [
+        "compatible-browser-task-verification"
+      ]
+    }
+  }
+}

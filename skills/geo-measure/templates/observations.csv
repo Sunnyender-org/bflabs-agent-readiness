@@ -1,0 +1,2 @@
+site_domain,batch_captured_at,id,captured_at,platform,terminal,prompt_id,prompt_text,session_id,answer_text,answer_hash,source_kind,network_status,network_evidence,cited_urls,content_absorbed,brand_mentioned,recommended,dynamic_fact_correct,evidence_complete,exclusion_reason
+example.com,2026-01-01T00:00:00Z,obs_replace_me,2026-01-01T00:00:00Z,ChatGPT,web,prompt-1,Replace this prompt,session-1,Replace this answer,sha256:0000000000000000000000000000000000000000000000000000000000000000,model-answer,unknown,,[],unknown,unknown,unknown,unknown,true,

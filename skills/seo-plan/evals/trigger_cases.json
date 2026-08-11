@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {"id":"positive-migration-zh","prompt":"规划网站迁移后的技术 SEO 恢复","should_trigger":true},
+    {"id":"positive-indexing-en","prompt":"Create a read-only indexing recovery plan","should_trigger":true},
+    {"id":"positive-canonical-zh","prompt":"梳理 canonical 和重定向检查顺序","should_trigger":true},
+    {"id":"positive-sitemap-en","prompt":"Plan sitemap and IndexNow verification","should_trigger":true},
+    {"id":"positive-cwv-zh","prompt":"规划 CWV lab 和 field 的证据采集","should_trigger":true},
+    {"id":"positive-hreflang-en","prompt":"Plan international SEO hreflang checks","should_trigger":true},
+    {"id":"positive-structured-zh","prompt":"给结构化数据做只读检查计划","should_trigger":true},
+    {"id":"positive-crawlers-en","prompt":"Plan separate search and AI crawler checks","should_trigger":true},
+    {"id":"negative-console-write-zh","prompt":"登录 Search Console 并提交站点","should_trigger":false},
+    {"id":"negative-ranking-en","prompt":"Check our live rank for every keyword","should_trigger":false},
+    {"id":"negative-content-zh","prompt":"生成一个价格答案页","should_trigger":false},
+    {"id":"negative-measure-en","prompt":"Aggregate supplied ChatGPT observations","should_trigger":false},
+    {"id":"negative-webmcp-zh","prompt":"启用 WebMCP","should_trigger":false},
+    {"id":"negative-discover-en","prompt":"Discover buyer questions","should_trigger":false},
+    {"id":"negative-guarantee-zh","prompt":"保证迁移后排名第一","should_trigger":false},
+    {"id":"negative-backlinks-en","prompt":"Buy backlinks for this site","should_trigger":false}
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/readiness-report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "target", "mode", "axes", "findings", "verification", "ai_visibility", "business_outcome", "external_gates"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "target": { "type": "object" },
+    "mode": { "enum": ["audit", "optimize", "verify"] },
+    "axes": {
+      "type": "object",
+      "required": ["discoverable", "understandable", "actionable"],
+      "additionalProperties": false,
+      "properties": {
+        "discoverable": { "$ref": "#/$defs/axis" },
+        "understandable": { "$ref": "#/$defs/axis" },
+        "actionable": { "$ref": "#/$defs/axis" }
+      }
+    },
+    "findings": { "type": "array", "items": { "type": "object" } },
+    "verification": { "type": "array", "items": { "type": "object" } },
+    "ai_visibility": { "enum": ["not_measured", "measured"] },
+    "business_outcome": { "enum": ["not_measured", "measured"] },
+    "external_gates": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["status", "evidence_ids", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["pass", "partial", "fail", "unknown", "blocked", "unverified"] },
+        "webmcp_status": { "enum": ["unknown", "not_present", "present_unverified", "verified"] },
+        "evidence_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { normalizeTarget, safeFetchText } from './safety.mjs';
 
-export const RULESET_VERSION = '0.2.0';
+export const RULESET_VERSION = '1.0.0';
+export const ARTIFACT_PROTOCOL_VERSION = '1.0.0';
 
 const PATHS = [
   '/',
@@ -22,14 +23,15 @@ const stripMarkup = (html) => html
 const hash = (value) => `sha256:${crypto.createHash('sha256').update(value).digest('hex')}`;
 
 function evidenceFrom(path, response) {
-  const visibleText = response.contentType.includes('html') ? stripMarkup(response.text) : response.text.trim();
+  const isHtml = response.contentType.includes('html');
+  const visibleText = isHtml ? stripMarkup(response.text) : response.text.trim();
   const signals = [];
-  if (/<title\b/i.test(response.text)) signals.push('has_title');
-  if (/<h1\b/i.test(response.text)) signals.push('has_h1');
-  if (/rel=["']canonical["']/i.test(response.text)) signals.push('has_canonical');
-  if (/application\/ld\+json/i.test(response.text)) signals.push('has_json_ld');
-  if (/\/\.webmcp\/bridge\.js/i.test(response.text)) signals.push('has_cloudflare_webmcp_bridge');
-  if (/modelContext|registerTool|provideContext/i.test(response.text)) signals.push('has_native_webmcp_signal');
+  if (isHtml && /<title\b/i.test(response.text)) signals.push('has_title');
+  if (isHtml && /<h1\b/i.test(response.text)) signals.push('has_h1');
+  if (isHtml && /rel=["']canonical["']/i.test(response.text)) signals.push('has_canonical');
+  if (isHtml && /application\/ld\+json/i.test(response.text)) signals.push('has_json_ld');
+  if (isHtml && /\/\.webmcp\/bridge\.js/i.test(response.text)) signals.push('has_cloudflare_webmcp_bridge');
+  if (isHtml && /\b(?:modelContext|registerTool|provideContext)\b/i.test(response.text)) signals.push('has_native_webmcp_signal');
   return {
     id: `ev_${crypto.createHash('sha1').update(path).digest('hex').slice(0, 8)}`,
     path,
@@ -41,6 +43,7 @@ function evidenceFrom(path, response) {
     visible_text_length: visibleText.length,
     redirect_chain: response.redirects,
     signals,
+    captured_at: new Date().toISOString(),
   };
 }
 
@@ -55,14 +58,19 @@ function parseRobotsBlocked(text) {
 function axis(id, label, checks, evidenceByPath, limitations = []) {
   const applicable = checks.filter((check) => check.state !== 'not_applicable');
   const passed = applicable.filter((check) => check.state === 'pass').length;
-  const score = applicable.length ? Math.round((passed / applicable.length) * 100) : null;
+  const hasUnresolvedEvidence = applicable.some((check) => ['unknown', 'blocked'].includes(check.state));
+  const score = applicable.length && !hasUnresolvedEvidence
+    ? Math.round((passed / applicable.length) * 100)
+    : null;
   const status = applicable.some((check) => check.state === 'blocked')
     ? 'blocked'
     : passed === applicable.length
       ? 'pass'
       : passed > 0
         ? 'partial'
-        : 'fail';
+        : applicable.some((check) => check.state === 'fail')
+          ? 'fail'
+          : 'unknown';
   return {
     id,
     label,
@@ -75,6 +83,11 @@ function axis(id, label, checks, evidenceByPath, limitations = []) {
     limitations,
   };
 }
+
+const observedState = (evidence, passed) => {
+  if (!evidence) return 'unknown';
+  return passed ? 'pass' : 'fail';
+};
 
 async function inspectMcp(origin, cardEvidence, fetchOptions) {
   const result = { advertised: false, endpoint: null, tools: [], error: null };
@@ -124,24 +137,171 @@ export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) 
 
   return [
     axis('discoverable', '可发现', [
-      { id: 'D-HTML', label: '原始 HTML 含有可用正文', state: hasUsefulHome ? 'pass' : 'fail', paths: ['/'] },
-      { id: 'D-ROBOTS', label: '公开扫描未被 robots 阻止', state: robots?.robots_blocked ? 'blocked' : 'pass', paths: ['/robots.txt'] },
-      { id: 'D-CANONICAL', label: '首页声明 canonical', state: home?.signals.includes('has_canonical') ? 'pass' : 'fail', paths: ['/'] },
-      { id: 'D-INDEX', label: '存在 sitemap 或 llms 入口', state: sitemap?.status_code === 200 || llms?.status_code === 200 ? 'pass' : 'fail', paths: ['/sitemap.xml', '/llms.txt'] },
+      { id: 'D-HTML', label: '原始 HTML 含有可用正文', state: observedState(home, hasUsefulHome), paths: ['/'] },
+      { id: 'D-ROBOTS', label: '公开扫描未被 robots 阻止', state: !robots ? 'unknown' : robots.robots_blocked ? 'blocked' : 'pass', paths: ['/robots.txt'] },
+      { id: 'D-CANONICAL', label: '首页声明 canonical', state: observedState(home, home?.signals.includes('has_canonical')), paths: ['/'] },
+      { id: 'D-INDEX', label: '存在 sitemap 或 llms 入口', state: !sitemap && !llms ? 'unknown' : sitemap?.status_code === 200 || llms?.status_code === 200 ? 'pass' : 'fail', paths: ['/sitemap.xml', '/llms.txt'] },
     ], byPath),
     axis('understandable', '可理解', [
-      { id: 'U-DEFINITION', label: '产品定义可直接提取', state: hasDirectDefinition ? 'pass' : 'fail', paths: ['/'] },
-      { id: 'U-INTENTS', label: '关键意图有稳定答案入口', state: hasIntentAnswers ? 'pass' : 'fail', paths: ['/'] },
-      { id: 'U-STRUCTURED', label: '结构化数据与公开事实入口存在', state: home?.signals.includes('has_json_ld') || pricing?.status_code === 200 ? 'pass' : 'fail', paths: ['/', '/pricing.json'] },
-      { id: 'U-FRESHNESS', label: '易变事实包含新鲜度或版本', state: pricing?.status_code !== 200 ? 'not_applicable' : hasFreshness ? 'pass' : 'fail', paths: ['/pricing.json'] },
+      { id: 'U-DEFINITION', label: '产品定义可直接提取', state: observedState(home, hasDirectDefinition), paths: ['/'] },
+      { id: 'U-INTENTS', label: '关键意图有稳定答案入口', state: observedState(home, hasIntentAnswers), paths: ['/'] },
+      { id: 'U-STRUCTURED', label: '结构化数据与公开事实入口存在', state: !home && !pricing ? 'unknown' : home?.signals.includes('has_json_ld') || pricing?.status_code === 200 ? 'pass' : 'fail', paths: ['/', '/pricing.json'] },
+      { id: 'U-FRESHNESS', label: '易变事实包含新鲜度或版本', state: !pricing ? 'unknown' : pricing.status_code !== 200 ? 'not_applicable' : hasFreshness ? 'pass' : 'fail', paths: ['/pricing.json'] },
     ], byPath),
     axis('actionable', '可操作', [
-      { id: 'A-FALLBACK', label: '存在稳定的人类操作入口', state: hasFallbackAction ? 'pass' : 'fail', paths: ['/'] },
-      { id: 'A-MCP-CARD', label: 'MCP 发现文档可解析', state: card?.status_code === 200 && mcp.advertised ? 'pass' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-TOOLS', label: '公开工具具有名称、描述和输入 schema', state: toolsAreTyped ? 'pass' : mcp.error ? 'blocked' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-WEBMCP', label: 'WebMCP bridge 或原生注册可见', state: hasWebMcpBridge || hasNativeWebMcp ? 'pass' : 'fail', paths: ['/'] },
+      { id: 'A-FALLBACK', label: '存在稳定的人类操作入口', state: observedState(home, hasFallbackAction), paths: ['/'] },
+      { id: 'A-MCP-CARD', label: 'MCP 发现文档可解析', state: observedState(card, card?.status_code === 200 && mcp.advertised), paths: ['/.well-known/mcp/server-card.json'] },
+      { id: 'A-TOOLS', label: '公开工具具有名称、描述和输入 schema', state: !card ? 'unknown' : toolsAreTyped ? 'pass' : mcp.error ? 'blocked' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
+      { id: 'A-WEBMCP', label: 'WebMCP bridge 或原生注册可见', state: observedState(home, hasWebMcpBridge || hasNativeWebMcp), paths: ['/'] },
     ], byPath, ['真实浏览器任务尚未执行时，Actionable 只能视为准备度证据，不能视为任务成功。']),
   ];
+}
+
+const unique = (values) => [...new Set(values)];
+
+function protocolEvidence(evidence) {
+  return evidence.map((item) => {
+    let factVersion = null;
+    if (item.path === '/pricing.json' && item.status_code === 200) {
+      try {
+        factVersion = JSON.parse(item.raw_text).pricing_version || null;
+      } catch {
+        factVersion = null;
+      }
+    }
+    return {
+      id: item.id,
+      summary: `${item.path} returned ${item.status_code} (${item.content_type || 'unknown'})`,
+      source_type: 'public-url',
+      locator: item.url,
+      captured_at: item.captured_at,
+      content_hash: item.response_hash,
+      support_scope: `fixed public-path readiness check for ${item.path}`,
+      limitations: ['A local fixed-path response does not establish external AI visibility or business outcome.'],
+      dynamic_fact: item.path === '/pricing.json' && item.status_code === 200,
+      fact_version: factVersion,
+      license: 'public response used as diagnostic evidence',
+    };
+  });
+}
+
+export function buildReadinessReport(origin, axes, findings, mcp) {
+  const byId = new Map(axes.map((item) => [item.id, item]));
+  const axisValue = (axisId) => {
+    const source = byId.get(axisId);
+    const value = {
+      status: source.status,
+      evidence_ids: unique(source.checks.flatMap((check) => check.evidence_ids)),
+      limitations: source.limitations,
+    };
+    if (axisId === 'actionable') {
+      const webmcp = source.checks.find((check) => check.id === 'A-WEBMCP');
+      value.webmcp_status = webmcp?.state === 'pass'
+        ? 'present_unverified'
+        : webmcp?.state === 'fail'
+          ? 'not_present'
+          : 'unknown';
+    }
+    return value;
+  };
+  return {
+    schema_version: '1.0.0',
+    target: { origin },
+    mode: 'audit',
+    axes: {
+      discoverable: axisValue('discoverable'),
+      understandable: axisValue('understandable'),
+      actionable: axisValue('actionable'),
+    },
+    findings,
+    verification: axes.flatMap((axisItem) => axisItem.checks.map((check) => ({
+      axis: axisItem.id,
+      rule_id: check.id,
+      state: check.state,
+      evidence_ids: check.evidence_ids,
+    }))),
+    ai_visibility: 'not_measured',
+    business_outcome: 'not_measured',
+    external_gates: axisValue('actionable').webmcp_status === 'present_unverified' || mcp.advertised
+      ? ['compatible-browser-task-verification']
+      : [],
+  };
+}
+
+function skillRoutes(findings) {
+  const routes = new Map([
+    ['geo-discover', '发现受众问题与内容机会'],
+    ['geo-measure', '导入真实平台回答后测量外部可见度'],
+    ['seo-plan', '需要迁移、索引或技术 SEO 计划时使用'],
+  ]);
+  for (const finding of findings) {
+    routes.set(finding.owner_route, finding.owner_route === 'webmcp-enable'
+      ? '补齐或验证 Agent 可操作入口'
+      : '修复当前公开事实与准备度失败谓词');
+  }
+  if (findings.some((finding) => finding.axis === 'understandable')) {
+    routes.set('geo-content', '从已确认事实生成答案页或内容蓝图');
+  }
+  return [...routes].map(([id, reason]) => ({
+    id,
+    reason,
+    href: `https://github.com/Sunnyender-org/bflabs-agent-readiness/tree/main/skills/${id}`,
+    status: 'active',
+  }));
+}
+
+function agentPrompt(origin, findings, evidenceGaps) {
+  const failed = findings.map((item) => `${item.rule_id}:${item.state}`).join(', ') || 'none';
+  const unknown = evidenceGaps.map((item) => item.rule_id).join(', ') || 'none';
+  return [
+    'Use the bflabs-agent-readiness root Skill on this website repository.',
+    `Target: ${origin}`,
+    `Evidence-backed failed predicates: ${failed}`,
+    `Unknown predicates requiring evidence: ${unknown}`,
+    'Choose the smallest child Skill, preserve unknown states, and keep AI visibility and business outcome not_measured.',
+    'Do not publish, deploy, enable external services, access private consoles, or claim ranking/revenue without separate owner approval and evidence.',
+  ].join('\n');
+}
+
+export function buildArtifactPack({ input, completedAt, readinessReport, ledger, qualityReport, externalGates }) {
+  const runId = `run-${completedAt.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')}-${crypto.randomBytes(4).toString('hex')}`;
+  const files = {
+    'input/request.json': input,
+    'evidence-ledger.json': ledger,
+    'quality-report.json': qualityReport,
+    'outputs/readiness-report.json': readinessReport,
+  };
+  const schemaByPath = {
+    'input/request.json': null,
+    'evidence-ledger.json': 'evidence-ledger.schema.json',
+    'quality-report.json': 'quality-report.schema.json',
+    'outputs/readiness-report.json': 'readiness-report.schema.json',
+  };
+  const artifacts = Object.keys(files).sort().map((path) => ({
+    path,
+    sha256: crypto.createHash('sha256').update(`${JSON.stringify(files[path], null, 2)}\n`).digest('hex'),
+    media_type: 'application/json',
+    schema: schemaByPath[path],
+  }));
+  const manifest = {
+    protocol_version: ARTIFACT_PROTOCOL_VERSION,
+    run_id: runId,
+    capability: 'bflabs-agent-readiness',
+    capability_version: '1.0.0',
+    workflow_id: null,
+    created_at: completedAt,
+    input_hash: `sha256:${crypto.createHash('sha256').update(`${JSON.stringify(input, null, 2)}\n`).digest('hex')}`,
+    status: qualityReport.status,
+    degradation: qualityReport.status === 'pass' ? null : 'fixed-path scan has warnings or blocked predicates',
+    external_gates: externalGates,
+    artifacts,
+    replay_command: 'Run the local readiness-web scanner again for the same public origin.',
+  };
+  return {
+    protocol_version: ARTIFACT_PROTOCOL_VERSION,
+    manifest,
+    files,
+  };
 }
 
 export async function scanSite(input, options = {}) {
@@ -179,18 +339,109 @@ export async function scanSite(input, options = {}) {
       evidence_ids: check.evidence_ids,
       owner_route: check.id === 'A-WEBMCP' || check.id === 'A-TOOLS' ? 'webmcp-enable' : 'geo-optimize',
     })));
+  const evidenceGaps = axes.flatMap((item) => item.checks
+    .filter((check) => check.state === 'unknown')
+    .map((check) => ({
+      id: `gap_${check.id.toLowerCase()}`,
+      axis: item.id,
+      rule_id: check.id,
+      title: check.label,
+      state: 'unknown',
+      owner_route: check.id.startsWith('A-') ? 'webmcp-enable' : 'geo-optimize',
+    })));
 
   const publicEvidence = evidence.map(({ raw_text: _rawText, ...item }) => item);
   const fingerprint = hash(JSON.stringify({ origin: origin.origin, ruleset: RULESET_VERSION, hashes: publicEvidence.map((item) => item.response_hash) }));
+  const completedAt = new Date().toISOString();
+  const scanStatus = errors.length || axes.some((item) => ['blocked', 'unknown'].includes(item.status))
+    ? 'partial'
+    : 'complete';
+  const readinessReport = buildReadinessReport(origin.origin, axes, findings, mcp);
+  const ledgerItems = protocolEvidence(evidence);
+  const ledgerClaims = axes.flatMap((axisItem) => axisItem.checks
+    .filter((check) => check.evidence_ids.length > 0)
+    .map((check) => {
+      const text = `${check.id}=${check.state}: ${check.label}`;
+      return {
+        id: `claim_${crypto.createHash('sha256').update(text).digest('hex').slice(0, 12)}`,
+        text,
+        evidence_ids: check.evidence_ids,
+        support_level: 'direct',
+      };
+    }));
+  const evidenceLedger = {
+    schema_version: '1.0.0',
+    items: ledgerItems,
+    claims: ledgerClaims,
+  };
+  const unversionedDynamic = ledgerItems.filter((item) => item.dynamic_fact && !item.fact_version);
+  const warnings = [];
+  if (errors.length) warnings.push(`${errors.length} fixed public paths could not be fetched.`);
+  if (evidenceGaps.length) warnings.push(`${evidenceGaps.length} predicates remain unknown because evidence is missing.`);
+  if (unversionedDynamic.length) warnings.push('Dynamic public facts were found without a fact_version.');
+  const qualityReport = {
+    schema_version: '1.0.0',
+    status: warnings.length ? 'pass_with_warnings' : 'pass',
+    checks: [
+      {
+        id: 'fixed-path-scan',
+        status: errors.length ? 'warning' : 'pass',
+        message: errors.length ? 'one or more fixed public paths could not be fetched' : 'fixed public paths completed',
+      },
+      {
+        id: 'unknown-preservation',
+        status: evidenceGaps.length ? 'warning' : 'pass',
+        message: evidenceGaps.length ? 'missing evidence remains unknown' : 'no predicate was inferred from missing evidence',
+      },
+      {
+        id: 'dynamic-fact-freshness',
+        status: unversionedDynamic.length ? 'warning' : 'pass',
+        message: unversionedDynamic.length ? 'dynamic facts lack a version and are not promoted as current claims' : 'dynamic fact evidence is versioned or absent',
+      },
+      {
+        id: 'measurement-boundary',
+        status: 'pass',
+        message: 'AI visibility and business outcome remain not_measured',
+      },
+    ],
+    warnings,
+    blockers: [],
+  };
+  const opportunities = [
+    ...findings.map((item) => ({
+      id: `opportunity_${item.rule_id.toLowerCase()}`,
+      state: item.state,
+      title: item.title,
+      route: item.owner_route,
+      basis: item.evidence_ids,
+    })),
+    ...evidenceGaps.map((item) => ({
+      id: `opportunity_${item.rule_id.toLowerCase()}`,
+      state: 'unknown',
+      title: `补证据：${item.title}`,
+      route: item.owner_route,
+      basis: [],
+    })),
+  ];
+  const routes = skillRoutes(findings);
+  const prompt = agentPrompt(origin.origin, findings, evidenceGaps);
+  const artifactPack = buildArtifactPack({
+    input: { schema_version: '1.0.0', capability: 'bflabs-agent-readiness', captured_at: completedAt, url: origin.origin },
+    completedAt,
+    readinessReport,
+    ledger: evidenceLedger,
+    qualityReport,
+    externalGates: readinessReport.external_gates,
+  });
   return {
-    schema_version: '0.2.0',
+    schema_version: '1.0.0',
     ruleset_version: RULESET_VERSION,
     report_id: `rpt_${crypto.randomUUID()}`,
     scan_fingerprint: fingerprint,
     target: { requested_url: input, canonical_origin: origin.origin },
     scan: {
-      status: axes.some((item) => item.status === 'blocked') ? 'partial' : 'complete',
-      completed_at: new Date().toISOString(),
+      status: scanStatus,
+      completed_at: completedAt,
       scanned_urls: publicEvidence.map((item) => item.url),
       errors,
     },
@@ -203,6 +454,14 @@ export async function scanSite(input, options = {}) {
     },
     evidence: publicEvidence,
     findings,
+    evidence_gaps: evidenceGaps,
+    opportunities,
+    skill_routes: routes,
+    agent_prompt: prompt,
+    readiness_report: readinessReport,
+    evidence_ledger: evidenceLedger,
+    quality_report: qualityReport,
+    artifact_pack: artifactPack,
     disclaimers: {
       ai_visibility: 'not_measured',
       business_outcome: 'not_measured',

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {"id":"positive-rates-zh","prompt":"统计这些回答的联网率和引用率","should_trigger":true},
+    {"id":"positive-import-en","prompt":"Import these model-answer observations and aggregate metrics","should_trigger":true},
+    {"id":"positive-gemini-zh","prompt":"聚合 Gemini 样本的品牌出现率","should_trigger":true},
+    {"id":"positive-strata-en","prompt":"Report metrics by platform and terminal","should_trigger":true},
+    {"id":"positive-wilson-zh","prompt":"给这些观测计算 Wilson 区间","should_trigger":true},
+    {"id":"positive-jsonl-en","prompt":"Measure this JSONL answer batch","should_trigger":true},
+    {"id":"positive-csv-zh","prompt":"导入 CSV 模型回答样本","should_trigger":true},
+    {"id":"positive-price-en","prompt":"Calculate dynamic fact accuracy from supplied answers","should_trigger":true},
+    {"id":"negative-sample-zh","prompt":"帮我登录 ChatGPT 实际提问","should_trigger":false},
+    {"id":"negative-search-en","prompt":"Use Google search snippets as model answers","should_trigger":false},
+    {"id":"negative-content-zh","prompt":"生成价格答案页","should_trigger":false},
+    {"id":"negative-audit-en","prompt":"Audit my website readiness","should_trigger":false},
+    {"id":"negative-revenue-zh","prompt":"证明这些回答带来了收入","should_trigger":false},
+    {"id":"negative-causal-en","prompt":"Prove the content caused recommendations","should_trigger":false},
+    {"id":"negative-seo-zh","prompt":"规划网站迁移 SEO","should_trigger":false},
+    {"id":"negative-webmcp-en","prompt":"Enable WebMCP on production","should_trigger":false}
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/workflow-receipt.schema.json",
+  "type": "object",
+  "required": ["schema_version", "workflow_id", "status", "steps", "data_flow"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "workflow_id": { "enum": ["discover-diagnose", "discover-content"] },
+    "status": { "enum": ["pass", "pass_with_warnings"] },
+    "steps": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "string" } },
+    "data_flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "producer_artifact": { "const": "outputs/geo-discover/opportunity-map.json" },
+        "consumer_evidence_id": { "const": "ev_discovery_opportunity_map" },
+        "consumer_finding_id": { "type": "string" },
+        "consumer_artifact": { "type": "string" },
+        "consumer_field": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "workflow_id": { "const": "discover-diagnose" } } },
+      "then": {
+        "properties": {
+          "steps": { "prefixItems": [{ "const": "geo-discover" }, { "const": "geo-optimize" }] },
+          "data_flow": {
+            "required": ["producer_artifact", "consumer_evidence_id", "consumer_finding_id"],
+            "properties": { "consumer_finding_id": { "const": "discovery-opportunity-coverage" } }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "workflow_id": { "const": "discover-content" } } },
+      "then": {
+        "properties": {
+          "steps": { "prefixItems": [{ "const": "geo-discover" }, { "const": "geo-content" }] },
+          "data_flow": {
+            "required": ["producer_artifact", "consumer_evidence_id", "consumer_artifact", "consumer_field"],
+            "properties": {
+              "consumer_artifact": { "const": "outputs/geo-content/content-spec.json" },
+              "consumer_field": { "const": "discovery_context" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

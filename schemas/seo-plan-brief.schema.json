@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/seo-plan-brief.schema.json",
+  "type": "object",
+  "required": ["schema_version", "capability", "captured_at", "language", "target", "change_type", "symptoms", "constraints", "observations", "evidence_sources"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "capability": { "const": "seo-plan" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "language": { "enum": ["zh-CN", "en"] },
+    "target": { "type": "string", "minLength": 1 },
+    "change_type": { "enum": ["migration", "indexing", "technical-seo", "international-seo"] },
+    "symptoms": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "state", "summary", "evidence_ids"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "$ref": "#/$defs/category" },
+          "state": { "enum": ["pass", "fail", "unknown"] },
+          "summary": { "type": "string" },
+          "evidence_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+        }
+      }
+    },
+    "evidence_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary", "source_type", "locator", "captured_at", "content_hash", "support_scope", "limitations", "dynamic_fact", "fact_version", "license"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "summary": { "type": "string" },
+          "source_type": { "enum": ["repository", "public-url", "user-supplied-observation", "fixture", "research"] },
+          "locator": { "type": "string" },
+          "captured_at": { "type": "string", "format": "date-time" },
+          "content_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "support_scope": { "type": "string" },
+          "limitations": { "type": "array", "items": { "type": "string" } },
+          "dynamic_fact": { "type": "boolean" },
+          "fact_version": { "type": ["string", "null"] },
+          "license": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "category": { "enum": ["robots", "meta-robots", "canonical", "redirects", "sitemap", "indexnow", "structured-data", "cwv-lab", "cwv-field", "ai-crawlers", "hreflang"] }
+  }
+}

@@ -15,7 +15,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
+      - run: python3 -m pip install -e .
       - run: python3 scripts/skill_registry.py validate
-      - run: python3 -m py_compile scripts/*.py skills/*/scripts/*.py
+      - run: bflabs-readiness eval
+      - run: python3 -m py_compile scripts/*.py skills/*/scripts/*.py src/bflabs_readiness/*.py src/bflabs_readiness/providers/*.py
       - run: npm test --prefix app/readiness-web
       - run: npm run check --prefix app/readiness-web
+      - run: python3 scripts/verify_packages.py

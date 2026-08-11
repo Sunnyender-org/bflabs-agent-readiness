@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/observation.schema.json",
+  "type": "object",
+  "required": ["id", "captured_at", "platform", "terminal", "prompt_id", "prompt_text", "session_id", "answer_text", "answer_hash", "source_kind", "network_status", "network_evidence", "cited_urls", "content_absorbed", "brand_mentioned", "recommended", "dynamic_fact_correct", "evidence_complete", "exclusion_reason"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^obs_[a-z0-9_-]+$" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "platform": { "enum": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek"] },
+    "terminal": { "enum": ["web", "app", "api"] },
+    "prompt_id": { "type": "string", "minLength": 1 },
+    "prompt_text": { "type": "string", "minLength": 1 },
+    "session_id": { "type": "string", "minLength": 1 },
+    "answer_text": { "type": "string" },
+    "answer_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "source_kind": { "enum": ["model-answer", "ordinary-web-search-result"] },
+    "network_status": { "enum": ["verified", "not-used", "unknown"] },
+    "network_evidence": { "type": ["string", "null"] },
+    "cited_urls": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "content_absorbed": { "$ref": "#/$defs/triState" },
+    "brand_mentioned": { "$ref": "#/$defs/triState" },
+    "recommended": { "$ref": "#/$defs/triState" },
+    "dynamic_fact_correct": { "$ref": "#/$defs/triState" },
+    "evidence_complete": { "type": "boolean" },
+    "exclusion_reason": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "triState": { "enum": [true, false, "unknown"] }
+  }
+}

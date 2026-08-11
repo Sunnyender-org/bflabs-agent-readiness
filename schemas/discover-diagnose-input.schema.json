@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/discover-diagnose-input.schema.json",
+  "type": "object",
+  "required": ["schema_version", "workflow", "discovery", "diagnosis"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "workflow": { "const": "discover-diagnose" },
+    "discovery": { "$ref": "discovery-brief.schema.json" },
+    "diagnosis": { "$ref": "geo-optimize-run-input.schema.json" }
+  }
+}

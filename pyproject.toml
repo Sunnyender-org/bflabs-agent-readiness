@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bflabs-agent-readiness"
+version = "0.3.0"
+description = "Evidence-bounded GEO, SEO, and AI-agent website readiness skills"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "BFLabs" }]
+dependencies = ["jsonschema>=4.18,<5"]
+
+[project.scripts]
+bflabs-readiness = "bflabs_readiness.cli:main"
+
+[project.optional-dependencies]
+dev = ["build>=1.2,<2"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+bflabs_readiness = ["py.typed"]
+
+[tool.setuptools.data-files]
+"share/bflabs-agent-readiness" = ["SKILL.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"]
+"share/bflabs-agent-readiness/agents" = ["agents/*.yaml"]
+"share/bflabs-agent-readiness/docs" = ["docs/architecture.md", "docs/artifact-protocol.md", "docs/install-codex-claude.md", "docs/release-checklist.md"]
+"share/bflabs-agent-readiness/evals" = ["evals/*.json"]
+"share/bflabs-agent-readiness/examples" = ["examples/*"]
+"share/bflabs-agent-readiness/references" = ["references/*.md"]
+"share/bflabs-agent-readiness/registry" = ["registry/*.json"]
+"share/bflabs-agent-readiness/schemas" = ["schemas/*.json"]
+"share/bflabs-agent-readiness/templates" = ["templates/*"]
+"share/bflabs-agent-readiness/workflows" = ["workflows/*.md"]
+"share/bflabs-agent-readiness/app/readiness-web" = ["app/readiness-web/README.md", "app/readiness-web/package.json"]
+"share/bflabs-agent-readiness/app/readiness-web/public" = ["app/readiness-web/public/*"]
+"share/bflabs-agent-readiness/app/readiness-web/src" = ["app/readiness-web/src/*.mjs"]
+"share/bflabs-agent-readiness/app/readiness-web/tests" = ["app/readiness-web/tests/*.mjs"]
+"share/bflabs-agent-readiness/skills/geo-optimize" = ["skills/geo-optimize/SKILL.md"]
+"share/bflabs-agent-readiness/skills/geo-optimize/agents" = ["skills/geo-optimize/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/geo-optimize/evals" = ["skills/geo-optimize/evals/*.json"]
+"share/bflabs-agent-readiness/skills/geo-optimize/examples" = ["skills/geo-optimize/examples/*"]
+"share/bflabs-agent-readiness/skills/geo-optimize/references" = ["skills/geo-optimize/references/*.md"]
+"share/bflabs-agent-readiness/skills/geo-optimize/templates" = ["skills/geo-optimize/templates/*"]
+"share/bflabs-agent-readiness/skills/geo-discover" = ["skills/geo-discover/SKILL.md"]
+"share/bflabs-agent-readiness/skills/geo-discover/agents" = ["skills/geo-discover/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/geo-discover/evals" = ["skills/geo-discover/evals/*.json"]
+"share/bflabs-agent-readiness/skills/geo-discover/examples" = ["skills/geo-discover/examples/*.json"]
+"share/bflabs-agent-readiness/skills/geo-discover/references" = ["skills/geo-discover/references/*.md"]
+"share/bflabs-agent-readiness/skills/geo-discover/templates" = ["skills/geo-discover/templates/*.json"]
+"share/bflabs-agent-readiness/skills/geo-content" = ["skills/geo-content/SKILL.md"]
+"share/bflabs-agent-readiness/skills/geo-content/agents" = ["skills/geo-content/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/geo-content/evals" = ["skills/geo-content/evals/*.json"]
+"share/bflabs-agent-readiness/skills/geo-content/examples" = ["skills/geo-content/examples/*.json"]
+"share/bflabs-agent-readiness/skills/geo-content/references" = ["skills/geo-content/references/*.md"]
+"share/bflabs-agent-readiness/skills/geo-content/templates" = ["skills/geo-content/templates/*.json"]
+"share/bflabs-agent-readiness/skills/geo-measure" = ["skills/geo-measure/SKILL.md"]
+"share/bflabs-agent-readiness/skills/geo-measure/agents" = ["skills/geo-measure/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/geo-measure/evals" = ["skills/geo-measure/evals/*.json"]
+"share/bflabs-agent-readiness/skills/geo-measure/examples" = ["skills/geo-measure/examples/*.json"]
+"share/bflabs-agent-readiness/skills/geo-measure/references" = ["skills/geo-measure/references/*.md"]
+"share/bflabs-agent-readiness/skills/geo-measure/templates" = ["skills/geo-measure/templates/*"]
+"share/bflabs-agent-readiness/skills/seo-plan" = ["skills/seo-plan/SKILL.md"]
+"share/bflabs-agent-readiness/skills/seo-plan/agents" = ["skills/seo-plan/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/seo-plan/evals" = ["skills/seo-plan/evals/*.json"]
+"share/bflabs-agent-readiness/skills/seo-plan/examples" = ["skills/seo-plan/examples/*.json"]
+"share/bflabs-agent-readiness/skills/seo-plan/references" = ["skills/seo-plan/references/*.md"]
+"share/bflabs-agent-readiness/skills/seo-plan/templates" = ["skills/seo-plan/templates/*.json"]
+"share/bflabs-agent-readiness/skills/webmcp-enable" = ["skills/webmcp-enable/SKILL.md"]
+"share/bflabs-agent-readiness/skills/webmcp-enable/agents" = ["skills/webmcp-enable/agents/*.yaml"]
+"share/bflabs-agent-readiness/skills/webmcp-enable/evals" = ["skills/webmcp-enable/evals/*.json"]
+"share/bflabs-agent-readiness/skills/webmcp-enable/examples" = ["skills/webmcp-enable/examples/*.json"]
+"share/bflabs-agent-readiness/skills/webmcp-enable/references" = ["skills/webmcp-enable/references/*.md"]
+"share/bflabs-agent-readiness/skills/webmcp-enable/templates" = ["skills/webmcp-enable/templates/*.json"]

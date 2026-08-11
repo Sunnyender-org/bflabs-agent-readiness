@@ -15,10 +15,11 @@ const types = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
 };
 
-function sendJson(response, status, value) {
-  response.writeHead(status, { 'Content-Type': types['.json'], 'Cache-Control': 'no-store' });
+function sendJson(response, status, value, headers = {}) {
+  response.writeHead(status, { 'Content-Type': types['.json'], 'Cache-Control': 'no-store', ...headers });
   response.end(JSON.stringify(value));
 }
 
@@ -69,6 +70,14 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 202, { report_id: reportId, status_url: `/api/scans/${reportId}` });
     }
     if (request.method === 'GET' && url.pathname.startsWith('/api/scans/')) {
+      const artifactMatch = url.pathname.match(/^\/api\/scans\/([^/]+)\/artifact-pack$/);
+      if (artifactMatch) {
+        const report = reports.get(artifactMatch[1]);
+        if (!report?.artifact_pack) return sendJson(response, 404, { error: 'Artifact Pack 不存在或尚未完成' });
+        return sendJson(response, 200, report.artifact_pack, {
+          'Content-Disposition': `attachment; filename="${artifactMatch[1]}-artifact-pack.json"`,
+        });
+      }
       const report = reports.get(url.pathname.split('/').pop());
       return sendJson(response, report ? 200 : 404, report || { error: '报告不存在或已过期' });
     }
@@ -86,7 +95,7 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });
-      return response.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>BFLabs GEO Readiness</title><body><main><a href="/">返回诊断</a><h1>${url.pathname === '/privacy' ? '隐私边界' : '使用边界'}</h1><p>本地原型只扫描公开页面，不绕过登录。公开部署、数据保留和正式条款尚未批准。</p></main></body></html>`);
+      return response.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>BFLabs Agent Readiness</title><body><main><a href="/">返回诊断</a><h1>${url.pathname === '/privacy' ? '隐私边界' : '使用边界'}</h1><p>本地原型只扫描公开页面，不绕过登录。公开部署、数据保留和正式条款尚未批准。</p></main></body></html>`);
     }
     if (request.method === 'GET' && await serveStatic(request, response, url.pathname)) return;
     response.writeHead(404, { 'Content-Type': types['.html'] });
@@ -97,5 +106,5 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`BFLabs GEO Readiness listening on http://127.0.0.1:${PORT}`);
+  console.log(`BFLabs Agent Readiness listening on http://127.0.0.1:${PORT}`);
 });

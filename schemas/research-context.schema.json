@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/research-context.schema.json",
+  "type": "object",
+  "required": ["schema_version", "principles"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "principles": { "type": "array", "items": { "$ref": "research-evidence-registry.schema.json#/properties/principles/items" } }
+  }
+}
