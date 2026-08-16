@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-discover",
+  "captured_at": "2026-08-11T05:00:00Z",
+  "language": "zh-CN",
+  "subject": "BeefAPI 的 GPT-5.6 模型服务",
+  "seed_queries": ["GPT-5.6 在 BeefAPI 现在多少钱？"],
+  "audiences": ["需要接入 GPT-5.6 的开发者"],
+  "scenarios": ["比较模型价格并估算 API 成本"],
+  "comparison_targets": ["其他模型 API 平台"],
+  "covered_dimensions": ["price-cost", "integration"],
+  "priority_dimensions": ["price-cost", "comparison", "decision"],
+  "evidence_sources": [
+    {
+      "id": "ev_beefapi_seed",
+      "summary": "GPT-5.6 price and integration questions are the bounded discovery seed.",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/gpt-5-6-discovery-seed",
+      "captured_at": "2026-08-11T05:00:00Z",
+      "content_hash": "sha256:b96192a1e2bb11d00adce9dd7db2f53bea2c3cdcc5d9f92348a0f10dfaa3a06c",
+      "support_scope": "question discovery inputs only",
+      "limitations": ["does not establish a current model price"],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "MIT"
+    }
+  ]
+}

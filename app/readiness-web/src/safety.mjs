@@ -142,3 +142,19 @@ export async function safeFetchText(input, options = {}) {
   }
   throw new Error('无法完成安全请求');
 }
+
+export async function assertTargetAllowsScan(origin, options = {}) {
+  try {
+    const response = await safeFetchText(new URL('/.well-known/bflabs-agent-readiness-opt-out', origin), {
+      ...options,
+      maxRedirects: 1,
+      maxBytes: 4 * 1024,
+      timeoutMs: Math.min(options.timeoutMs ?? 5_000, 5_000),
+    });
+    if (response.status === 200 && /(?:^|\W)(?:true|deny|blocked|opt[\s_-]?out|do[\s_-]?not[\s_-]?scan)(?:\W|$)/i.test(response.text)) {
+      throw new Error('目标站点已通过公开 opt-out 文件拒绝诊断');
+    }
+  } catch (error) {
+    if (/已通过公开 opt-out/.test(error.message)) throw error;
+  }
+}

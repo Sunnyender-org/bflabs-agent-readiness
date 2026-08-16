@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/measurement-report.schema.json",
+  "type": "object",
+  "required": ["schema_version", "site_domain", "captured_at", "counts", "metrics", "strata", "research_rule_ids", "limitations"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "site_domain": { "type": "string" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "counts": {
+      "type": "object",
+      "required": ["input", "valid", "excluded", "ordinary_web_search_results", "incomplete_evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "valid": { "type": "integer", "minimum": 0 },
+        "excluded": { "type": "integer", "minimum": 0 },
+        "ordinary_web_search_results": { "type": "integer", "minimum": 0 },
+        "incomplete_evidence": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "metrics": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "$ref": "#/$defs/metric" } },
+    "strata": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["platform", "terminal", "counts", "metrics"],
+        "additionalProperties": false,
+        "properties": {
+          "platform": { "type": "string" },
+          "terminal": { "type": "string" },
+          "counts": { "type": "object", "required": ["input", "valid", "excluded"], "additionalProperties": false, "properties": {"input":{"type":"integer"},"valid":{"type":"integer"},"excluded":{"type":"integer"}} },
+          "metrics": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "$ref": "#/$defs/metric" } }
+        }
+      }
+    },
+    "research_rule_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "required": ["id", "numerator", "denominator", "excluded", "missing", "rate", "wilson_95", "denominator_rule"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "enum": ["network_rate", "site_citation_rate", "content_absorption_rate", "brand_mention_rate", "recommendation_rate", "dynamic_fact_accuracy"] },
+        "numerator": { "type": "integer", "minimum": 0 },
+        "denominator": { "type": "integer", "minimum": 0 },
+        "excluded": { "type": "integer", "minimum": 0 },
+        "missing": { "type": "integer", "minimum": 0 },
+        "rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "wilson_95": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "object", "required": ["lower", "upper"], "additionalProperties": false, "properties": { "lower": {"type":"number","minimum":0,"maximum":1}, "upper": {"type":"number","minimum":0,"maximum":1} } }
+          ]
+        },
+        "denominator_rule": { "type": "string" }
+      }
+    }
+  }
+}

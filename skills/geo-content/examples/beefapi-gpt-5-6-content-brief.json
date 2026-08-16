@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-content",
+  "captured_at": "2026-08-11T06:00:50Z",
+  "language": "zh-CN",
+  "mode": "page-blueprint",
+  "subject": "GPT-5.6 在 BeefAPI 的公开价格",
+  "audience": "准备比较模型价格并估算 API 成本的开发者",
+  "intent": "直接回答三个 GPT-5.6 型号在公开分组下的人民币和美元输入输出价格与计费单位",
+  "facts": [
+    {
+      "id": "fact_gpt_5_6_luna_price",
+      "text": "gpt-5.6-luna 按每 100 万 token 计费：gpt-plus 输入 ¥0.12（$0.017695）、输出 ¥0.96（$0.141564）；gpt-pro 输入 ¥0.14（$0.020645）、输出 ¥1.12（$0.165157）。",
+      "evidence_ids": ["ev_beefapi_pricing_snapshot"],
+      "support_level": "direct",
+      "dynamic_fact": true,
+      "fact_version": "sha256:d1c11d73061764b875c1241dd8262cb7754fd2e41af0c3b23647cee2f9e9fbc4",
+      "evidence_hash": "sha256:4c15787632aacefab8b809fe1f18f70652acb4c08210632b30f9e4752306735b"
+    },
+    {
+      "id": "fact_gpt_5_6_terra_price",
+      "text": "gpt-5.6-terra 按每 100 万 token 计费：gpt-plus 输入 ¥0.72（$0.106173）、输出 ¥5.76（$0.849381）；gpt-pro 输入 ¥0.84（$0.123868）、输出 ¥6.72（$0.990945）。",
+      "evidence_ids": ["ev_beefapi_pricing_snapshot"],
+      "support_level": "direct",
+      "dynamic_fact": true,
+      "fact_version": "sha256:d1c11d73061764b875c1241dd8262cb7754fd2e41af0c3b23647cee2f9e9fbc4",
+      "evidence_hash": "sha256:4c15787632aacefab8b809fe1f18f70652acb4c08210632b30f9e4752306735b"
+    },
+    {
+      "id": "fact_gpt_5_6_sol_price",
+      "text": "gpt-5.6-sol 按每 100 万 token 计费：gpt-plus 输入 ¥1.80（$0.265432）、输出 ¥14.40（$2.123453）；gpt-pro 输入 ¥2.10（$0.309670）、输出 ¥16.80（$2.477362）。",
+      "evidence_ids": ["ev_beefapi_pricing_snapshot"],
+      "support_level": "direct",
+      "dynamic_fact": true,
+      "fact_version": "sha256:d1c11d73061764b875c1241dd8262cb7754fd2e41af0c3b23647cee2f9e9fbc4",
+      "evidence_hash": "sha256:4c15787632aacefab8b809fe1f18f70652acb4c08210632b30f9e4752306735b"
+    },
+    {
+      "id": "fact_pricing_snapshot_scope",
+      "text": "人民币是公开主计价单位，美元为同一快照按 USD/CNY 6.7814 换算的等值参考；账户私有分组、折扣、权限和最终扣费不在公开快照内。",
+      "evidence_ids": ["ev_beefapi_pricing_snapshot"],
+      "support_level": "direct",
+      "dynamic_fact": true,
+      "fact_version": "sha256:d1c11d73061764b875c1241dd8262cb7754fd2e41af0c3b23647cee2f9e9fbc4",
+      "evidence_hash": "sha256:4c15787632aacefab8b809fe1f18f70652acb4c08210632b30f9e4752306735b"
+    }
+  ],
+  "evidence_sources": [
+    {
+      "id": "ev_beefapi_pricing_snapshot",
+      "summary": "Captured BeefAPI public pricing snapshot for GPT-5.6 models.",
+      "source_type": "fixture",
+      "locator": "fixture:tests/fixtures/beefapi-gpt-5-6-pricing-snapshot.json",
+      "captured_at": "2026-08-11T06:00:50Z",
+      "content_hash": "sha256:4c15787632aacefab8b809fe1f18f70652acb4c08210632b30f9e4752306735b",
+      "support_scope": "GPT-5.6 public groups, CNY and USD input/output prices, billing unit, exchange rate, and public-snapshot limitations",
+      "limitations": ["Captured fixture is not a live price source; refresh from canonical pricing.json before publication."],
+      "dynamic_fact": true,
+      "fact_version": "sha256:d1c11d73061764b875c1241dd8262cb7754fd2e41af0c3b23647cee2f9e9fbc4",
+      "license": "MIT fixture derived from BeefAPI public facts"
+    }
+  ],
+  "comparison_targets": [],
+  "comparison_dimensions": [],
+  "ranking_method": null,
+  "source_markdown": null,
+  "discovery_context": null
+}

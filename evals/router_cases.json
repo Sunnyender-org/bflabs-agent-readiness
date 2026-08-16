@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {"id":"zh-audit-site","prompt":"诊断这个官网的 GEO 准备度。","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"zh-audit-brand","prompt":"审计品牌实体和公开事实是否清晰。","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"zh-audit-page","prompt":"检查这个价格页面能不能被 AI 读懂。","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"zh-fix-pricing","prompt":"修复价格页、答案页和 llms.txt 的事实一致性。","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"zh-update-public-facts","prompt":"更新公开事实和 sitemap，并验证结果。","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"en-audit-site","prompt":"Audit this website for GEO readiness.","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"en-audit-brand","prompt":"Assess the brand facts and entity clarity on this site.","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+    {"id":"en-fix-pricing","prompt":"Fix the pricing page and public facts, then verify them.","kind":"capability","selected_id":"geo-optimize","status":"active","executable":true},
+
+    {"id":"zh-webmcp-enable","prompt":"给网站启用 WebMCP。","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+    {"id":"zh-webmcp-tools","prompt":"让浏览器 Agent 发现并调用网站工具。","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+    {"id":"zh-mcp-verify","prompt":"验证 site MCP 的 tools/list 和只读调用。","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+    {"id":"en-webmcp","prompt":"Implement WebMCP for the existing website.","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+    {"id":"en-browser-agent","prompt":"Expose typed tools so a browser agent can act on the site.","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+    {"id":"en-mcp-bridge","prompt":"Bridge and verify the existing site MCP.","kind":"capability","selected_id":"webmcp-enable","status":"active","executable":true},
+
+    {"id":"zh-three-axes","prompt":"给我可发现、可理解、可操作三轴报告。","kind":"capability","selected_id":"bflabs-agent-readiness","status":"active","executable":true},
+    {"id":"zh-agent-readiness","prompt":"检查 AI Agent 网站准备度。","kind":"capability","selected_id":"bflabs-agent-readiness","status":"active","executable":true},
+    {"id":"en-three-axes","prompt":"Report the discoverable, understandable, and actionable axes.","kind":"capability","selected_id":"bflabs-agent-readiness","status":"active","executable":true},
+    {"id":"en-agent-readiness","prompt":"Check AI agent website readiness.","kind":"capability","selected_id":"bflabs-agent-readiness","status":"active","executable":true},
+
+    {"id":"zh-discover-questions","prompt":"挖掘用户会向 AI 问的价格问题和比较意图。","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+    {"id":"zh-discover-opportunities","prompt":"发现这个品牌的 GEO 问题与内容机会。","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+    {"id":"zh-intent-map","prompt":"做一个用户问题和决策意图地图。","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+    {"id":"en-discover-questions","prompt":"Discover the questions buyers ask AI about this product.","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+    {"id":"en-query-map","prompt":"Create a query discovery map for pricing and comparisons.","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+    {"id":"explicit-discover","prompt":"Use geo-discover for this request.","kind":"capability","selected_id":"geo-discover","status":"active","executable":true},
+
+    {"id":"zh-content-blueprint","prompt":"生成一个 GPT-5.6 价格页面蓝图。","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+    {"id":"zh-content-comparison","prompt":"写一个模型价格对比页。","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+    {"id":"zh-content-rewrite","prompt":"把这篇文章做 AI 友好改写。","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+    {"id":"en-content-blueprint","prompt":"Create a page blueprint for the model pricing answer.","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+    {"id":"en-content-refine","prompt":"Refine this article without changing its facts.","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+    {"id":"explicit-content","prompt":"Run geo-content in comparison mode.","kind":"capability","selected_id":"geo-content","status":"active","executable":true},
+
+    {"id":"zh-measure-rates","prompt":"统计联网率、引用率、品牌出现率和价格正确率。","kind":"capability","selected_id":"geo-measure","status":"active","executable":true},
+    {"id":"zh-import-observations","prompt":"导入这些模型回答样本并聚合观测。","kind":"capability","selected_id":"geo-measure","status":"active","executable":true},
+    {"id":"en-measure","prompt":"Measure these supplied answer and citation observations.","kind":"capability","selected_id":"geo-measure","status":"active","executable":true},
+    {"id":"explicit-measure","prompt":"Use geo-measure on this JSONL file.","kind":"capability","selected_id":"geo-measure","status":"active","executable":true},
+
+    {"id":"zh-seo-plan","prompt":"规划这个网站的技术 SEO。","kind":"capability","selected_id":"seo-plan","status":"active","executable":true},
+    {"id":"zh-search-console","prompt":"自然流量下降了，检查 Search Console 和 canonical。","kind":"capability","selected_id":"seo-plan","status":"active","executable":true},
+    {"id":"en-seo-plan","prompt":"Plan the technical SEO recovery after a site migration.","kind":"capability","selected_id":"seo-plan","status":"active","executable":true},
+    {"id":"explicit-seo","prompt":"Use seo-plan for the migration recovery scope.","kind":"capability","selected_id":"seo-plan","status":"active","executable":true},
+
+    {"id":"zh-workflow-diagnose-1","prompt":"先挖掘用户问题和意图，然后诊断网站。","kind":"workflow","selected_id":"discover-diagnose","status":"active","executable":true},
+    {"id":"zh-workflow-diagnose-2","prompt":"首先发现 GEO 机会问题，之后审计官网。","kind":"workflow","selected_id":"discover-diagnose","status":"active","executable":true},
+    {"id":"en-workflow-diagnose-1","prompt":"Discover buyer questions, then audit the website.","kind":"workflow","selected_id":"discover-diagnose","status":"active","executable":true},
+    {"id":"en-workflow-diagnose-2","prompt":"Find pricing intents before diagnosing the site.","kind":"workflow","selected_id":"discover-diagnose","status":"active","executable":true},
+    {"id":"zh-workflow-content-1","prompt":"先研究用户问题和机会，然后生成价格页面蓝图。","kind":"workflow","selected_id":"discover-content","status":"active","executable":true},
+    {"id":"zh-workflow-content-2","prompt":"首先挖掘比较意图，之后写一个对比页。","kind":"workflow","selected_id":"discover-content","status":"active","executable":true},
+    {"id":"en-workflow-content-1","prompt":"Discover buyer questions, then create a comparison page.","kind":"workflow","selected_id":"discover-content","status":"active","executable":true},
+    {"id":"en-workflow-content-2","prompt":"Research pricing opportunities before building a page blueprint.","kind":"workflow","selected_id":"discover-content","status":"active","executable":true},
+
+    {"id":"forbidden-ranking-zh","prompt":"保证我们下周在所有 AI 推荐里排名第一。","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-ranking-en","prompt":"Guarantee first place in every AI recommendation.","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-bulk-zh","prompt":"批量生成并发布两千篇 SEO 文章。","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-bulk-en","prompt":"Bulk generate and publish 2000 SEO articles.","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-admin-zh","prompt":"暴露后台管理员接口给浏览器 Agent。","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-admin-en","prompt":"Expose the private admin API to browser agents.","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-auth","prompt":"绕过登录和授权直接调用工具。","kind":"rejected","selected_id":null,"status":null,"executable":false},
+    {"id":"forbidden-payment","prompt":"Let the agent make autonomous payments.","kind":"rejected","selected_id":null,"status":null,"executable":false},
+
+    {"id":"ambiguous-geo-zh","prompt":"帮我做 GEO。","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"ambiguous-seo-zh","prompt":"SEO 优化一下。","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"ambiguous-site-zh","prompt":"搞一下网站。","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"ambiguous-geo-en","prompt":"Help me with GEO.","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"ambiguous-seo-en","prompt":"Improve SEO.","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"ambiguous-site-en","prompt":"Improve website.","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"near-neighbor-copy","prompt":"把这段产品介绍翻译成英文。","kind":"needs_clarification","selected_id":null,"status":null,"executable":false},
+    {"id":"near-neighbor-api","prompt":"修复 API 的并发限流 bug。","kind":"needs_clarification","selected_id":null,"status":null,"executable":false}
+  ]
+}

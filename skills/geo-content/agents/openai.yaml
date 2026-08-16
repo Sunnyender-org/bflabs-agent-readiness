@@ -1,0 +1,4 @@
+interface:
+  display_name: GEO Content
+  short_description: Evidence-linked GEO content in seven bounded modes
+  default_prompt: Produce one schema-valid content artifact pack from confirmed facts, preserving freshness and publication gates.

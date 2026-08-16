@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-discover",
+  "captured_at": "2026-01-01T00:00:00Z",
+  "language": "en",
+  "subject": "Example Product",
+  "seed_queries": ["Example Product pricing"],
+  "audiences": ["technical buyers"],
+  "scenarios": ["API integration"],
+  "comparison_targets": ["other alternatives"],
+  "covered_dimensions": [],
+  "priority_dimensions": ["price-cost", "comparison"],
+  "evidence_sources": [
+    {
+      "id": "ev_example_seed",
+      "summary": "Example Product pricing is the bounded discovery seed.",
+      "source_type": "fixture",
+      "locator": "fixture:example/discovery-seed",
+      "captured_at": "2026-01-01T00:00:00Z",
+      "content_hash": "sha256:f991c260284c52bfabb85de8242ac2c33ff0b99e9dbdb8b645bdebba884bc296",
+      "support_scope": "discovery brief only",
+      "limitations": ["example input, not a product claim"],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "MIT"
+    }
+  ]
+}

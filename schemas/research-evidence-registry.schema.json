@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/research-evidence-registry.schema.json",
+  "type": "object",
+  "required": ["schema_version", "status", "principles"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "status": { "enum": ["active", "planned"] },
+    "principles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "source_locator", "license", "platform_scope", "sample_scope", "causal_status", "proxy", "limitations", "runtime_rule_ids"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "statement": { "type": "string" },
+          "source_locator": { "type": "string" },
+          "license": { "type": "string" },
+          "platform_scope": { "type": "array", "items": { "type": "string" } },
+          "sample_scope": { "type": "string" },
+          "causal_status": { "enum": ["descriptive", "associational", "causal", "not-applicable"] },
+          "proxy": { "type": ["string", "null"] },
+          "limitations": { "type": "array", "items": { "type": "string" } },
+          "runtime_rule_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

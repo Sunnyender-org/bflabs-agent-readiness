@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/route-decision.schema.json",
+  "type": "object",
+  "required": ["schema_version", "request_text", "normalized_text", "kind", "selected", "executable", "reason_code", "fallback", "required_gates"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "request_text": { "type": "string", "minLength": 1 },
+    "normalized_text": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["capability", "workflow", "needs_clarification", "rejected"] },
+    "selected": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["type", "id", "status", "entrypoint", "steps"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "enum": ["capability", "workflow"] },
+            "id": { "type": "string" },
+            "status": { "enum": ["active", "planned", "disabled", "deprecated"] },
+            "entrypoint": { "type": ["string", "null"] },
+            "steps": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "executable": { "type": "boolean" },
+    "reason_code": {
+      "enum": [
+        "explicit-capability",
+        "explicit-workflow",
+        "minimum-active-capability",
+        "planned-capability",
+        "planned-workflow",
+        "ambiguous-request",
+        "forbidden-request"
+      ]
+    },
+    "fallback": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["capability_id", "reason"],
+          "additionalProperties": false,
+          "properties": {
+            "capability_id": { "type": "string" },
+            "reason": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "required_gates": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  }
+}

@@ -21,6 +21,10 @@ Never fold Actionable into a GEO indexing score. Never present readiness as proo
 1. Identify whether the input is a public URL, an existing repository, or a prior report.
 2. Record evidence for all three axes before recommending changes.
 3. Route only the smallest necessary repair:
+   - For evidence-backed question and opportunity discovery, read and follow [skills/geo-discover/SKILL.md](skills/geo-discover/SKILL.md).
+   - For evidence-linked titles, explainers, comparisons, rankings, page blueprints, refinements, or article restructuring, read and follow [skills/geo-content/SKILL.md](skills/geo-content/SKILL.md).
+   - For offline aggregation of supplied AI answer observations, read and follow [skills/geo-measure/SKILL.md](skills/geo-measure/SKILL.md).
+   - For evidence-bounded technical SEO planning, read and follow [skills/seo-plan/SKILL.md](skills/seo-plan/SKILL.md).
    - For repository-local GEO and public-fact work, read and follow [skills/geo-optimize/SKILL.md](skills/geo-optimize/SKILL.md).
    - For WebMCP implementation, external enablement, or compatible-browser task verification, read and follow [skills/webmcp-enable/SKILL.md](skills/webmcp-enable/SKILL.md).
    - For a local read-only domain scan, use [app/readiness-web/README.md](app/readiness-web/README.md).
@@ -50,9 +54,32 @@ Use [templates/readiness-report.json](templates/readiness-report.json) when a po
 ## Agent-readable Package Interface
 
 ```bash
+bflabs-readiness list --format markdown
+bflabs-readiness read geo-optimize
+bflabs-readiness route --text "Audit this website for GEO readiness"
+bflabs-readiness run --text "先挖掘用户问题，然后诊断网站" --input workflow-request.json --output runs
+bflabs-readiness run --capability geo-discover --input discovery-brief.json --output runs
+bflabs-readiness run --workflow discover-diagnose --input workflow-request.json --output runs
+bflabs-readiness run --capability geo-content --input content-brief.json --output runs
+bflabs-readiness run --workflow discover-content --input workflow-request.json --output runs
+bflabs-readiness run --capability geo-measure --input observations.json --output runs
+bflabs-readiness run --capability seo-plan --input seo-plan-brief.json --output runs
+bflabs-readiness run --capability geo-optimize --input request.json --output runs
+bflabs-readiness validate --run runs/run-id
+bflabs-readiness eval
+bflabs-readiness package --target source
+bflabs-readiness package --target unified
+bflabs-readiness package --target geo-optimize
+```
+
+The legacy interface remains available during the v1 compatibility window:
+
+```bash
 python3 scripts/skill_registry.py list --format markdown
 python3 scripts/skill_registry.py read skills/geo-optimize/SKILL.md
 python3 scripts/skill_registry.py validate
 ```
 
-The registry exposes only Skill SOP files. It refuses scripts, private receipts, arbitrary paths, and generated artifacts.
+The legacy registry read wrapper exposes only Skill SOP files. It refuses scripts, private receipts, arbitrary paths, and generated artifacts. Release packages use a separate explicit allowlist and include only declared portable assets. Successful runtime executions publish an atomic Artifact Protocol run with a manifest, evidence ledger, quality report, and schema-validated capability outputs.
+
+The deterministic router returns one minimum capability for a single intent. It returns a workflow DAG only for an explicit discovery-then-diagnosis or discovery-then-content request. Both approved workflows are executable and publish one atomic run; other planned routes remain non-executable and expose an active fallback without silently running hidden stages.

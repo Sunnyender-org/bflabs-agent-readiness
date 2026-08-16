@@ -1,0 +1,4 @@
+interface:
+  display_name: SEO Plan
+  short_description: Evidence-bounded technical SEO planning
+  default_prompt: Produce a read-only technical SEO plan with explicit evidence gaps, official sources, owner gates, and rollback requirements.

@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0.0",
+  "status": "active",
+  "principles": [
+    {
+      "id": "research-separate-citation-absorption",
+      "statement": "Citation selection and content absorption are separate observations and must be reported as separate metrics.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#101-目的",
+      "license": "MIT",
+      "platform_scope": ["all supplied observations"],
+      "sample_scope": "descriptive measurement only",
+      "causal_status": "not-applicable",
+      "proxy": null,
+      "limitations": ["Does not establish why a platform cited or absorbed content."],
+      "runtime_rule_ids": ["metric-site-citation", "metric-content-absorption"]
+    },
+    {
+      "id": "research-stratify-platform-terminal",
+      "statement": "Web, app, API, and platform observations must remain stratified before any aggregate is interpreted.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#101-目的",
+      "license": "MIT",
+      "platform_scope": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek"],
+      "sample_scope": "user-supplied observation batches",
+      "causal_status": "descriptive",
+      "proxy": null,
+      "limitations": ["Small strata may have wide uncertainty intervals."],
+      "runtime_rule_ids": ["platform-terminal-strata", "wilson-interval"]
+    },
+    {
+      "id": "research-no-causal-upgrade",
+      "statement": "Descriptive or associational observations must not be upgraded to causal claims.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#101-目的",
+      "license": "MIT",
+      "platform_scope": ["all supplied observations"],
+      "sample_scope": "non-random operational samples",
+      "causal_status": "descriptive",
+      "proxy": null,
+      "limitations": ["No intervention or causal identification is performed."],
+      "runtime_rule_ids": ["descriptive-only"]
+    },
+    {
+      "id": "research-qna-not-independent-bonus",
+      "statement": "Q-and-A formatting is not treated as an independent ranking or citation bonus.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#102-首批原则",
+      "license": "MIT",
+      "platform_scope": ["content diagnostics"],
+      "sample_scope": "content structure guidance",
+      "causal_status": "not-applicable",
+      "proxy": null,
+      "limitations": ["Formatting may still improve clarity without proving external visibility effects."],
+      "runtime_rule_ids": ["no-qna-bonus"]
+    },
+    {
+      "id": "research-diagnostic-signals-bounded",
+      "statement": "Content match, structural clarity, and evidence density are diagnostic signals only within the supplied sample scope.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#102-首批原则",
+      "license": "MIT",
+      "platform_scope": ["content diagnostics"],
+      "sample_scope": "bounded supplied evidence",
+      "causal_status": "associational",
+      "proxy": "content_absorbed",
+      "limitations": ["The proxy is not a ranking, citation, recommendation, or conversion outcome."],
+      "runtime_rule_ids": ["metric-content-absorption"]
+    },
+    {
+      "id": "research-dynamic-fact-freshness",
+      "statement": "Dynamic facts require a canonical source, captured time, and version before correctness can be scored.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#102-首批原则",
+      "license": "MIT",
+      "platform_scope": ["all supplied observations"],
+      "sample_scope": "observations with dynamic fact assertions",
+      "causal_status": "not-applicable",
+      "proxy": "dynamic_fact_correct",
+      "limitations": ["Correctness is only relative to the supplied canonical snapshot."],
+      "runtime_rule_ids": ["metric-dynamic-fact-accuracy"]
+    },
+    {
+      "id": "research-outcomes-independent-data",
+      "statement": "Ranking, traffic, conversion, and revenue require independent authorized data and cannot be inferred from readiness or answer observations.",
+      "source_locator": "docs/agent-readiness-v1-complete-refactor-plan.md#102-首批原则",
+      "license": "MIT",
+      "platform_scope": ["all"],
+      "sample_scope": "readiness and external answer observations",
+      "causal_status": "not-applicable",
+      "proxy": null,
+      "limitations": ["This kernel does not access analytics, conversion, or revenue data."],
+      "runtime_rule_ids": ["outcome-boundary"]
+    }
+  ]
+}

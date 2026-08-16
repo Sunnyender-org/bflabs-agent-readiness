@@ -1,0 +1,4 @@
+interface:
+  display_name: GEO Measure
+  short_description: Aggregate supplied AI answer observations with explicit denominators
+  default_prompt: Validate and aggregate this supplied observation batch without performing external sampling or inferring business outcomes.

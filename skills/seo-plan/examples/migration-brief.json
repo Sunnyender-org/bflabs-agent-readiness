@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "seo-plan",
+  "captured_at": "2026-08-11T07:00:00Z",
+  "language": "zh-CN",
+  "target": "https://example.com migrated from https://old.example.com",
+  "change_type": "migration",
+  "symptoms": ["old URLs stopped resolving"],
+  "constraints": ["read-only planning", "no Search Console access", "no CMS mutation"],
+  "observations": [],
+  "evidence_sources": []
+}

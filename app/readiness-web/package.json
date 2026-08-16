@@ -1,12 +1,13 @@
 {
   "name": "@bflabs/readiness-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "build:worker": "node scripts/build-worker.mjs",
     "dev": "node --watch src/server.mjs",
     "start": "node src/server.mjs",
     "test": "node --test",
-    "check": "node --check src/server.mjs && node --check src/scanner.mjs && node --check src/safety.mjs && node --check public/app.js"
+    "check": "node --check src/server.mjs && node --check src/scanner.mjs && node --check src/safety.mjs && node --check src/safety-worker.mjs && node --check src/worker-entry.mjs && node --check scripts/build-worker.mjs && node --check public/app.js && npm run build:worker"
   }
 }

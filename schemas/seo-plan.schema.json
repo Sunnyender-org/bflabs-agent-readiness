@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/seo-plan.schema.json",
+  "type": "object",
+  "required": ["schema_version", "scope", "findings", "evidence_gaps", "checks", "implementation_actions", "official_sources", "live_actions_not_performed", "outcome_boundaries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "scope": {
+      "type": "object",
+      "required": ["target", "change_type", "symptoms", "constraints"],
+      "additionalProperties": false,
+      "properties": {
+        "target": { "type": "string" },
+        "change_type": { "type": "string" },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "constraints": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "state", "summary", "evidence_ids"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "$ref": "seo-plan-brief.schema.json#/$defs/category" },
+          "state": { "const": "failed" },
+          "summary": { "type": "string" },
+          "evidence_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    },
+    "evidence_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "reason", "acquisition"],
+        "additionalProperties": false,
+        "properties": {
+          "category": { "$ref": "seo-plan-brief.schema.json#/$defs/category" },
+          "reason": { "type": "string" },
+          "acquisition": { "type": "string" }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "priority", "action", "expected_evidence", "official_source_ids", "authorization"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "$ref": "seo-plan-brief.schema.json#/$defs/category" },
+          "priority": { "enum": ["P0", "P1", "P2"] },
+          "action": { "type": "string" },
+          "expected_evidence": { "type": "string" },
+          "official_source_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "authorization": { "const": "read-only" }
+        }
+      }
+    },
+    "implementation_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "priority", "action", "preconditions", "authorization", "rollback"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "$ref": "seo-plan-brief.schema.json#/$defs/category" },
+          "priority": { "enum": ["P0", "P1", "P2"] },
+          "action": { "type": "string" },
+          "preconditions": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "authorization": { "const": "owner-approval-required" },
+          "rollback": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    },
+    "official_sources": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "live_actions_not_performed": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "outcome_boundaries": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+  }
+}

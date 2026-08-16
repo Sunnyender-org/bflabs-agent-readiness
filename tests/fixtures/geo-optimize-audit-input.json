@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "geo-optimize",
+  "captured_at": "2026-08-07T12:00:00Z",
+  "receipt": {
+    "schema_version": "0.2.0",
+    "mode": "verify",
+    "scope": {
+      "repo_root": "example/beefapi",
+      "inspected_paths": [
+        "public pricing projection",
+        "public answer routes",
+        "llms and sitemap discovery"
+      ]
+    },
+    "confirmed_product_truth": [
+      "Model prices are volatile public facts derived from runtime pricing configuration.",
+      "Public answers expose human-readable and machine-readable representations."
+    ],
+    "unresolved_business_facts": [],
+    "readiness_axes": {
+      "discoverable": {
+        "status": "pass",
+        "evidence": ["canonical HTML and machine discovery routes are reachable"],
+        "limitations": []
+      },
+      "understandable": {
+        "status": "pass",
+        "evidence": ["pricing and answers reuse one versioned public snapshot"],
+        "limitations": []
+      },
+      "actionable": {
+        "status": "partial",
+        "webmcp_status": "not_present",
+        "evidence": ["same-origin MCP discovery, tools/list, and five representative read-only calls succeeded before WebMCP enablement"],
+        "limitations": ["WebMCP registration and BrowserRun verification remain pending"]
+      }
+    },
+    "findings": [
+      {
+        "id": "dynamic-price-single-source",
+        "priority": "P0",
+        "state": "pass",
+        "evidence": ["pricing snapshot version is reused across public representations"],
+        "repair": null,
+        "recheck": "assert the same pricing_version across JSON and answer responses"
+      }
+    ],
+    "changed_files": [],
+    "verification": [
+      {
+        "check": "bounded fixture replay",
+        "status": "pass"
+      }
+    ],
+    "ai_visibility": {
+      "status": "not_measured",
+      "evidence": []
+    },
+    "business_outcome": {
+      "status": "not_measured",
+      "evidence": []
+    },
+    "service_escalations": [],
+    "residual_risks": [
+      "Real AI platform retrieval and citation behavior requires separate repeated sampling."
+    ]
+  },
+  "evidence_sources": [
+    {
+      "id": "ev_runtime_pricing",
+      "summary": "Model prices are volatile public facts derived from runtime pricing configuration.",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/runtime-pricing",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:b203fc99af368f418e2cd82f52a04d49fef9f49557832dd010cc9fffb1697418",
+      "support_scope": "pricing source behavior",
+      "limitations": ["fixture compatibility evidence, not current production readback"],
+      "dynamic_fact": true,
+      "fact_version": "fixture:pricing-v1",
+      "license": "MIT"
+    },
+    {
+      "id": "ev_answer_formats",
+      "summary": "Public answers expose human-readable and machine-readable representations.",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/answer-formats",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:5381a60ffb1ede48429efb171ef558adf5b1e6a6a20235050faff87c5997cd35",
+      "support_scope": "answer representation behavior",
+      "limitations": ["fixture compatibility evidence"],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "MIT"
+    },
+    {
+      "id": "ev_discovery_routes",
+      "summary": "canonical HTML and machine discovery routes are reachable",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/discovery-routes",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:bd1f099a950e7fb33ec8a5f6f96b538c714965a70fc8f20c0a57ac3cbc01d8c9",
+      "support_scope": "discoverable axis",
+      "limitations": ["fixture compatibility evidence"],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "MIT"
+    },
+    {
+      "id": "ev_pricing_snapshot",
+      "summary": "pricing and answers reuse one versioned public snapshot",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/pricing-snapshot",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:c5073520f8157c6490c1d1a284279f98175a7f1e79f03ede5df3a6263de86917",
+      "support_scope": "understandable axis",
+      "limitations": ["fixture compatibility evidence"],
+      "dynamic_fact": true,
+      "fact_version": "fixture:pricing-v1",
+      "license": "MIT"
+    },
+    {
+      "id": "ev_mcp_tasks",
+      "summary": "same-origin MCP discovery, tools/list, and five representative read-only calls succeeded before WebMCP enablement",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/mcp-tasks",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:843447645e08a4d565d6074c74427b23bd56eab599ac5f9d28961c55118cdd92",
+      "support_scope": "actionable axis",
+      "limitations": ["does not prove WebMCP browser support"],
+      "dynamic_fact": false,
+      "fact_version": null,
+      "license": "MIT"
+    },
+    {
+      "id": "ev_single_source",
+      "summary": "pricing snapshot version is reused across public representations",
+      "source_type": "fixture",
+      "locator": "fixture:beefapi/single-source",
+      "captured_at": "2026-08-07T12:00:00Z",
+      "content_hash": "sha256:451474f2a8659a023cd9e113f1a728c2f43f7554cc713a47dbe35a986d17bf43",
+      "support_scope": "dynamic price finding",
+      "limitations": ["fixture compatibility evidence"],
+      "dynamic_fact": true,
+      "fact_version": "fixture:pricing-v1",
+      "license": "MIT"
+    }
+  ]
+}

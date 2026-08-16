@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/repair-receipt.schema.json",
+  "type": "object",
+  "required": ["schema_version", "mode", "scope", "confirmed_product_truth", "unresolved_business_facts", "readiness_axes", "findings", "changed_files", "verification", "ai_visibility", "business_outcome", "service_escalations", "residual_risks"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "mode": { "enum": ["audit", "optimize", "verify"] },
+    "scope": { "type": "object" },
+    "confirmed_product_truth": { "type": "array", "items": { "type": "string" } },
+    "unresolved_business_facts": { "type": "array", "items": { "type": "string" } },
+    "readiness_axes": {
+      "type": "object",
+      "required": ["discoverable", "understandable", "actionable"],
+      "properties": {
+        "discoverable": { "$ref": "#/$defs/axis" },
+        "understandable": { "$ref": "#/$defs/axis" },
+        "actionable": { "$ref": "#/$defs/axis" }
+      }
+    },
+    "findings": { "type": "array", "items": { "type": "object" } },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "verification": { "type": "array", "items": { "type": "object" } },
+    "ai_visibility": { "$ref": "#/$defs/measurementState" },
+    "business_outcome": { "$ref": "#/$defs/measurementState" },
+    "service_escalations": { "type": "array" },
+    "residual_risks": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "required": ["status", "evidence", "limitations"],
+      "properties": {
+        "status": { "enum": ["pass", "partial", "fail", "unknown", "blocked", "unverified"] },
+        "webmcp_status": { "enum": ["not_present", "present_unverified", "verified"] },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "measurementState": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "properties": {
+        "status": { "enum": ["not_measured", "measured"] },
+        "evidence": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

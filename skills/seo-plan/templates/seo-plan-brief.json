@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "seo-plan",
+  "captured_at": "2026-01-01T00:00:00Z",
+  "language": "en",
+  "target": "https://example.com",
+  "change_type": "technical-seo",
+  "symptoms": [],
+  "constraints": ["read-only planning"],
+  "observations": [],
+  "evidence_sources": []
+}

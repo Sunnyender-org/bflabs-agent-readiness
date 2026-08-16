@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    {"id":"positive-zh-questions","prompt":"挖掘用户会向 AI 问的价格问题。","should_trigger":true},
+    {"id":"positive-zh-intents","prompt":"做一个比较和决策意图地图。","should_trigger":true},
+    {"id":"positive-zh-opportunities","prompt":"发现品牌 GEO 问题与机会。","should_trigger":true},
+    {"id":"positive-zh-seed","prompt":"从这个种子问题拓展受众和场景问题。","should_trigger":true},
+    {"id":"positive-en-questions","prompt":"Discover buyer questions for this product.","should_trigger":true},
+    {"id":"positive-en-intents","prompt":"Build a comparison intent map.","should_trigger":true},
+    {"id":"positive-en-opportunities","prompt":"Find GEO query opportunities from this seed.","should_trigger":true},
+    {"id":"positive-explicit","prompt":"Use geo-discover for these seeds.","should_trigger":true},
+    {"id":"negative-site-audit","prompt":"诊断这个网站的三轴准备度。","should_trigger":false},
+    {"id":"negative-content","prompt":"生成一个价格页面蓝图。","should_trigger":false},
+    {"id":"negative-measure","prompt":"聚合这些模型回答样本。","should_trigger":false},
+    {"id":"negative-seo","prompt":"规划技术 SEO 迁移恢复。","should_trigger":false},
+    {"id":"negative-webmcp","prompt":"实现网站 WebMCP。","should_trigger":false},
+    {"id":"negative-bulk","prompt":"批量生成两千篇文章。","should_trigger":false},
+    {"id":"negative-ranking","prompt":"保证 AI 推荐排名第一。","should_trigger":false},
+    {"id":"negative-translation","prompt":"把这段介绍翻译成英文。","should_trigger":false}
+  ]
+}

@@ -5,6 +5,10 @@ BFLabs Agent Readiness is an evidence-backed diagnosis and delivery system.
 ## Open-source surface
 
 - local public-site diagnosis;
+- traceable question and opportunity discovery without invented search volume;
+- evidence-linked content specifications and Markdown with freshness gates;
+- offline aggregation of customer-supplied answer observations with explicit denominators;
+- evidence-bounded technical SEO plans with official-source freshness and rollback gates;
 - repository-local GEO audit and repair;
 - WebMCP implementation guidance and verification contracts;
 - deterministic examples, templates, checks, and receipts.
