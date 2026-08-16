@@ -8,6 +8,6 @@
     "dev": "node --watch src/server.mjs",
     "start": "node src/server.mjs",
     "test": "node --test",
-    "check": "node --check src/server.mjs && node --check src/scanner.mjs && node --check src/safety.mjs && node --check src/safety-worker.mjs && node --check src/worker-entry.mjs && node --check scripts/build-worker.mjs && node --check public/app.js && npm run build:worker"
+    "check": "node --check src/server.mjs && node --check src/scanner.mjs && node --check src/safety.mjs && node --check src/safety-worker.mjs && node --check src/email-forwarder.mjs && node --check src/worker-entry.mjs && node --check scripts/build-worker.mjs && node --check public/app.js && npm run build:worker"
   }
 }

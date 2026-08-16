@@ -17,6 +17,7 @@ if (workerScanner === scanner) throw new Error('scanner safety import transform 
 await Promise.all([
   fs.writeFile(path.join(OUTPUT, 'scanner.worker.mjs'), workerScanner),
   fs.copyFile(path.join(ROOT, 'src', 'safety-worker.mjs'), path.join(OUTPUT, 'safety-worker.mjs')),
+  fs.copyFile(path.join(ROOT, 'src', 'email-forwarder.mjs'), path.join(OUTPUT, 'email-forwarder.mjs')),
   fs.copyFile(path.join(ROOT, 'src', 'worker-entry.mjs'), path.join(OUTPUT, 'worker-entry.mjs')),
 ]);
 

@@ -1,6 +1,7 @@
 import { RULESET_VERSION, scanSite } from './scanner.worker.mjs';
 import { normalizeTarget } from './safety-worker.mjs';
 import { SKILL_TEXT } from './skills.generated.mjs';
+import { forwardHelloEmail } from './email-forwarder.mjs';
 
 const json = (value, status = 200, headers = {}) => new Response(JSON.stringify(value), {
   status,
@@ -73,5 +74,8 @@ export default {
       console.error('readiness_request_failed', { path: url.pathname, name: error.name, message: error.message });
       return json({ error: error.name === 'AbortError' ? '目标响应超时' : error.message }, error.status || 400);
     }
+  },
+  async email(message, env) {
+    await forwardHelloEmail(message, env);
   },
 };
