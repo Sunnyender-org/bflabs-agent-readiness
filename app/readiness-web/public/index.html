@@ -68,7 +68,10 @@
               <span id="report-status" class="status status-success">完成</span>
               <h2 id="report-origin" class="result-host"></h2>
             </div>
-            <button id="rescan" class="button button-quiet" type="button">检查其他站</button>
+            <div class="result-actions">
+              <button id="save-baseline" class="button button-secondary" type="button">保存基线并复测</button>
+              <button id="rescan" class="button button-quiet" type="button">检查其他站</button>
+            </div>
           </header>
 
           <div id="axis-rail" class="score-grid"></div>
@@ -99,7 +102,12 @@
             <article class="offer-card offer-card-free">
               <span>Free</span>
               <h3>开源 Skill</h3>
-              <p>把报告交给自己的 Agent，本地优化并保留验证证据。</p>
+              <p>自己诊断、自己改站、自己复测，产物留在本地。</p>
+              <ul class="boundary-list">
+                <li>公开站三轴诊断与 Artifact Pack</li>
+                <li>开源 Skill 指导 Agent 本地改站</li>
+                <li>同一浏览会话内 Before / After 复测</li>
+              </ul>
               <div id="skill-routes" class="route-list"></div>
               <a class="button button-secondary" href="https://github.com/Sunnyender-org/bflabs-agent-readiness">查看 GitHub <span aria-hidden="true">→</span></a>
             </article>
@@ -107,20 +115,25 @@
             <article class="offer-card offer-card-paid">
               <span>Paid</span>
               <h3>BFLabs 交付</h3>
-              <p>诊断、优化、验证与趋势复测，用 Before / After 证明变化。</p>
+              <p>由 BFLabs 跨系统实施，并把准备度变化连接到外部可见度与业务结果证据。</p>
+              <ul class="boundary-list">
+                <li>客户仓库、CMS 与基础设施实施</li>
+                <li>多平台重复抽样、持续监测与趋势回执</li>
+                <li>客户授权的转化与收入归因</li>
+              </ul>
               <div class="compact-columns">
                 <div><h4>证据缺口</h4><div id="evidence-gaps" class="compact-list"></div></div>
                 <div><h4>机会入口</h4><div id="opportunities" class="compact-list"></div></div>
               </div>
               <div class="offer-actions">
                 <button id="show-delivery" class="button button-accent" type="button">看交付示例 <span aria-hidden="true">→</span></button>
-                <a class="text-link" href="https://github.com/Sunnyender-org/bflabs-agent-readiness">联系 BFLabs</a>
+                <a id="contact-bflabs" class="text-link" href="mailto:hello@bflabs.cn?subject=BFLabs%20Agent%20Readiness%20%E8%AF%A2%E8%AF%A2">联系 BFLabs</a>
               </div>
             </article>
 
             <div class="artifact-actions">
               <button id="download-report" class="button button-secondary" type="button">下载 Artifact Pack</button>
-              <button id="copy-agent-prompt" class="button button-secondary" type="button">复制 Agent 优化指令</button>
+              <button id="copy-agent-prompt" class="button button-secondary" type="button">交给 Agent：下载 + 复制指令</button>
               <span id="copy-status" role="status" aria-live="polite"></span>
             </div>
           </section>
@@ -131,7 +144,7 @@
             <div>
               <span class="status status-progress">验收中</span>
               <h2 id="delivery-origin" class="result-host"></h2>
-              <p class="result-fine">付费示例：阶段清楚，变化可见</p>
+              <p id="delivery-context" class="result-fine">付费示例：阶段清楚，变化可见</p>
             </div>
           </header>
 
@@ -144,16 +157,16 @@
 
           <div class="delivery-grid">
             <article class="delta-card">
-              <span>本周 Δ</span>
-              <strong>33<i>→</i>78</strong>
-              <p>示例：可理解 +45 · 关闭 4/7 缺口</p>
-              <div class="progress-bar"><i style="width:78%"></i></div>
+              <span id="delta-label">示例 Δ</span>
+              <strong id="delta-value">33<i>→</i>78</strong>
+              <p id="delta-summary">示例：可理解 +45 · 关闭 4/7 缺口</p>
+              <div class="progress-bar"><i id="delta-progress" style="width:78%"></i></div>
             </article>
-            <article class="before-card"><span>Before</span><strong>几乎<br>读不到</strong><p>HTML 正文薄 · 无稳定答案页</p></article>
-            <article class="after-card"><span>After</span><strong>事实<br>可核对</strong><p>SSR 正文 · 答案页 · 接入路径</p></article>
+            <article class="before-card"><span>Before</span><strong id="before-value">几乎<br>读不到</strong><p id="before-summary">HTML 正文薄 · 无稳定答案页</p></article>
+            <article class="after-card"><span>After</span><strong id="after-value">事实<br>可核对</strong><p id="after-summary">SSR 正文 · 答案页 · 接入路径</p></article>
           </div>
 
-          <aside class="delivery-notice"><i aria-hidden="true">✓</i><div><strong>没有 Before / After，就不算完成本阶段</strong><p>下一阶段只修仍开放的项。</p></div></aside>
+          <aside class="delivery-notice"><i aria-hidden="true">✓</i><div><strong id="delivery-notice-title">没有 Before / After，就不算完成本阶段</strong><p id="delivery-notice-copy">下一阶段只修仍开放的项。</p></div></aside>
         </section>
       </section>
     </main>

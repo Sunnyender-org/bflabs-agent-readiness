@@ -1,12 +1,12 @@
 import crypto from 'node:crypto';
-import { normalizeTarget, safeFetchText } from './safety.mjs';
+import { assertTargetAllowsScan, normalizeTarget, safeFetchText } from './safety.mjs';
 
 export const RULESET_VERSION = '1.0.0';
 export const ARTIFACT_PROTOCOL_VERSION = '1.0.0';
 
 const PATHS = [
-  '/',
   '/robots.txt',
+  '/',
   '/sitemap.xml',
   '/llms.txt',
   '/pricing.json',
@@ -228,7 +228,7 @@ export function buildReadinessReport(origin, axes, findings, mcp) {
   };
 }
 
-function skillRoutes(findings) {
+export function buildSkillRoutes(findings) {
   const routes = new Map([
     ['geo-discover', '发现受众问题与内容机会'],
     ['geo-measure', '导入真实平台回答后测量外部可见度'],
@@ -245,20 +245,27 @@ function skillRoutes(findings) {
   return [...routes].map(([id, reason]) => ({
     id,
     reason,
-    href: `https://github.com/Sunnyender-org/bflabs-agent-readiness/tree/main/skills/${id}`,
+    href: `/skills/${id}`,
     status: 'active',
   }));
 }
 
-function agentPrompt(origin, findings, evidenceGaps) {
-  const failed = findings.map((item) => `${item.rule_id}:${item.state}`).join(', ') || 'none';
-  const unknown = evidenceGaps.map((item) => item.rule_id).join(', ') || 'none';
+export function buildAgentPrompt({ origin, fingerprint, axes, findings, evidenceGaps, routes }) {
+  const failed = findings.map((item) => `${item.rule_id}:${item.state} (${item.title})`).join('; ') || 'none';
+  const unknown = evidenceGaps.map((item) => `${item.rule_id} (${item.title})`).join('; ') || 'none';
+  const readiness = axes.map((axisItem) => `${axisItem.label}=${axisItem.score == null ? 'N/A' : axisItem.score} (${axisItem.status})`).join('; ');
+  const routeIds = routes.map((route) => route.id).join(', ') || 'none';
   return [
-    'Use the bflabs-agent-readiness root Skill on this website repository.',
+    'Use the bflabs-agent-readiness root Skill and the attached Artifact Pack as the evidence baseline.',
     `Target: ${origin}`,
+    `Scan fingerprint: ${fingerprint}`,
+    `Readiness axes: ${readiness}`,
     `Evidence-backed failed predicates: ${failed}`,
     `Unknown predicates requiring evidence: ${unknown}`,
-    'Choose the smallest child Skill, preserve unknown states, and keep AI visibility and business outcome not_measured.',
+    `Available minimum child-Skill routes: ${routeIds}`,
+    'Validate the Artifact Pack hashes, inspect the website repository, choose the smallest child Skill, and change only evidence-backed items.',
+    'After local verification, rerun the same diagnostic and return an explicit Before / After comparison tied to both scan fingerprints.',
+    'Preserve unknown states, and keep AI visibility and business outcome not_measured unless separate evidence is supplied.',
     'Do not publish, deploy, enable external services, access private consoles, or claim ranking/revenue without separate owner approval and evidence.',
   ].join('\n');
 }
@@ -306,6 +313,7 @@ export function buildArtifactPack({ input, completedAt, readinessReport, ledger,
 
 export async function scanSite(input, options = {}) {
   const origin = normalizeTarget(input);
+  await assertTargetAllowsScan(origin, options.fetchOptions);
   const evidence = [];
   const errors = [];
   const delayMs = options.delayMs ?? 350;
@@ -423,8 +431,15 @@ export async function scanSite(input, options = {}) {
       basis: [],
     })),
   ];
-  const routes = skillRoutes(findings);
-  const prompt = agentPrompt(origin.origin, findings, evidenceGaps);
+  const routes = buildSkillRoutes(findings);
+  const prompt = buildAgentPrompt({
+    origin: origin.origin,
+    fingerprint,
+    axes,
+    findings,
+    evidenceGaps,
+    routes,
+  });
   const artifactPack = buildArtifactPack({
     input: { schema_version: '1.0.0', capability: 'bflabs-agent-readiness', captured_at: completedAt, url: origin.origin },
     completedAt,

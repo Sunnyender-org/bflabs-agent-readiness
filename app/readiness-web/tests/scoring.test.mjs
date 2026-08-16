@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import { buildArtifactPack, buildReadinessReport, scoreEvidence } from '../src/scanner.mjs';
+import { buildAgentPrompt, buildArtifactPack, buildReadinessReport, buildSkillRoutes, scoreEvidence } from '../src/scanner.mjs';
 
 const evidence = [
   {
@@ -87,4 +87,31 @@ test('downloadable artifact pack hashes every shared protocol file', () => {
     assert.equal(artifact.sha256, expected);
   }
   assert.equal(pack.manifest.input_hash, `sha256:${pack.manifest.artifacts.find((item) => item.path === 'input/request.json').sha256}`);
+});
+
+test('Agent handoff binds the evidence baseline and requires a Before / After rerun', () => {
+  const prompt = buildAgentPrompt({
+    origin: 'https://example.com',
+    fingerprint: `sha256:${'a'.repeat(64)}`,
+    axes: [
+      { label: '可发现', score: 100, status: 'pass' },
+      { label: '可理解', score: 75, status: 'partial' },
+      { label: '可操作', score: null, status: 'unknown' },
+    ],
+    findings: [{ rule_id: 'U-INTENTS', state: 'fail', title: '关键意图有稳定答案入口' }],
+    evidenceGaps: [{ rule_id: 'A-WEBMCP', title: 'WebMCP bridge 或原生注册可见' }],
+    routes: [{ id: 'geo-optimize' }, { id: 'webmcp-enable' }],
+  });
+  assert.match(prompt, /attached Artifact Pack/);
+  assert.match(prompt, /Scan fingerprint: sha256:/);
+  assert.match(prompt, /可操作=N\/A \(unknown\)/);
+  assert.match(prompt, /geo-optimize, webmcp-enable/);
+  assert.match(prompt, /Before \/ After comparison tied to both scan fingerprints/);
+  assert.match(prompt, /AI visibility and business outcome not_measured/);
+});
+
+test('child Skill routes stay inside the checked-out trial build', () => {
+  const routes = buildSkillRoutes([{ axis: 'actionable', owner_route: 'webmcp-enable' }]);
+  assert.equal(routes.every((route) => route.href === `/skills/${route.id}`), true);
+  assert.equal(routes.some((route) => route.id === 'webmcp-enable'), true);
 });

@@ -1,6 +1,6 @@
 # BFLabs Agent Readiness Web
 
-Local promotion-candidate app inside the `bflabs-agent-readiness` monorepo. It is a UI over the same Artifact Protocol and `readiness-report.schema.json` used by the Python CLI, not a second scoring system.
+Diagnostic app inside the `bflabs-agent-readiness` monorepo. It is a UI over the same Artifact Protocol and `readiness-report.schema.json` used by the Python CLI, not a second scoring system. It can run as the local Node prototype or as the bounded Cloudflare Worker build.
 
 It reports three independent axes:
 
@@ -32,8 +32,13 @@ The scan response keeps the legacy `axes` array, evidence rows, scan metadata, f
 The page displays failed predicates, evidence gaps, bounded opportunities, and the smallest relevant child Skills. It also provides:
 
 - **Download Artifact Pack**: downloads the protocol manifest, input, evidence ledger, quality report, and canonical readiness report with SHA-256 hashes;
-- **Copy Agent optimization prompt**: copies an evidence-bounded handoff that preserves unknown states and owner gates;
-- **Contact BFLabs / view repository**: uses the public GitHub organization repository as the confirmed contact path.
+- **Hand off to Agent**: downloads the Artifact Pack and copies an evidence-bounded prompt tied to the scan fingerprint, unknown states, minimum child-Skill routes, owner gates, and required Before / After rerun;
+- **Save baseline and retest**: keeps one baseline in page memory, reruns the same public target, and displays a three-axis Before / After comparison without mixing in AI visibility or business outcome;
+- **Contact BFLabs**: opens the public `hello@bflabs.cn` inquiry route with the target, scan fingerprint, readiness results, and requested paid-delivery lane prefilled.
+
+Child-Skill links are served from the current checked-out repository through a fixed allowlist. A controlled preview therefore does not depend on the Draft PR already being merged into GitHub `main`.
+
+The free surface covers public diagnosis, the open-source Skill, local changes, and in-session retesting. The paid surface covers customer repository/CMS/infrastructure implementation, repeated real-platform sampling, monitoring, and customer-authorized business attribution. The email route starts a service conversation; it is not an automated checkout or proof that paid delivery operations are complete.
 
 The scanner remains a bounded six-path audit. It does not crawl the full site or run a compatible-browser task, so WebMCP can be `present_unverified` but cannot become `verified` here.
 
@@ -47,4 +52,9 @@ Manual local regression is performed at desktop width and 360px. Controls are se
 
 This build rejects credentials, unsupported schemes and ports, IP literals, unsafe DNS results, and unsafe redirects. It caps redirects and response bodies and does not forward cookies, authorization, or referrers.
 
-It is not approved for public deployment. A production scanner still needs DNS pinning/rebinding protection, per-client and per-target rate limits, durable abuse controls, opt-out policy, bounded retention, and an independent security review. Passing this local smoke does not authorize deployment.
+The Worker build uses Cloudflare `global_fetch_strictly_public`, rejects literal/private-style targets and unsafe ports, applies separate client and target rate-limit bindings, caps request/response bodies and redirects, uses per-fetch timeouts, keeps reports in the browser instead of an application database, and honors `/.well-known/bflabs-agent-readiness-opt-out`. Cloudflare observability is enabled for operational errors. Passing local smoke or a dry run does not prove a live deployment; use the canonical release checklist for live state.
+
+```bash
+npm run build:worker
+npx wrangler deploy --config wrangler.jsonc
+```

@@ -1,7 +1,9 @@
-import dns from 'node:dns/promises';
-import net from 'node:net';
-
 const BLOCKED_HOST_SUFFIXES = ['.local', '.internal', '.localhost', '.home.arpa'];
+
+function isIpLiteral(hostname) {
+  const value = hostname.replace(/^\[|\]$/g, '');
+  return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(value) || value.includes(':');
+}
 
 export function normalizeTarget(input) {
   const value = String(input || '').trim();
@@ -10,10 +12,9 @@ export function normalizeTarget(input) {
   const url = new URL(withScheme);
   if (!['http:', 'https:'].includes(url.protocol)) throw new Error('只支持 HTTP 和 HTTPS');
   if (url.username || url.password) throw new Error('URL 不能包含账号或凭据');
-  if (url.port && !['80', '443'].includes(url.port)) throw new Error('P0 只允许 80 和 443 端口');
-  const literalHostname = url.hostname.replace(/^\[|\]$/g, '');
-  if (net.isIP(literalHostname)) throw new Error('P0 不接受 IP 地址，请使用公开域名');
-  const hostname = literalHostname.toLowerCase();
+  if (url.port && !['80', '443'].includes(url.port)) throw new Error('只允许 80 和 443 端口');
+  const hostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (isIpLiteral(hostname)) throw new Error('不接受 IP 地址，请使用公开域名');
   if (hostname === 'localhost' || BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
     throw new Error('目标不是公开互联网域名');
   }
@@ -25,80 +26,29 @@ export function normalizeTarget(input) {
   return url;
 }
 
-export function isUnsafeAddress(address) {
-  const normalized = String(address).toLowerCase().split('%')[0];
-  const version = net.isIP(normalized);
-  if (version === 4) {
-    const parts = normalized.split('.').map(Number);
-    const [a, b, c] = parts;
-    return (
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 100 && b >= 64 && b <= 127) ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 0 && c === 0) ||
-      (a === 192 && b === 0 && c === 2) ||
-      (a === 192 && b === 168) ||
-      (a === 198 && (b === 18 || b === 19)) ||
-      (a === 198 && b === 51 && c === 100) ||
-      (a === 203 && b === 0 && c === 113) ||
-      a >= 224
-    );
-  }
-  if (version === 6) {
-    if (normalized === '::' || normalized === '::1') return true;
-    if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
-    if (/^fe[89ab]/.test(normalized)) return true;
-    if (normalized.startsWith('2001:db8:')) return true;
-    if (normalized.startsWith('::ffff:')) {
-      const mapped = normalized.slice('::ffff:'.length);
-      return net.isIP(mapped) === 4 ? isUnsafeAddress(mapped) : true;
-    }
-    return false;
-  }
-  return true;
-}
-
-export async function assertPublicHostname(hostname, lookup = dns.lookup) {
-  const records = await lookup(hostname, { all: true, verbatim: true });
-  if (!records.length) throw new Error('域名没有可用的公开地址');
-  const unsafe = records.find((record) => isUnsafeAddress(record.address));
-  if (unsafe) throw new Error(`域名解析到了不安全地址类型 IPv${unsafe.family}`);
-  return records;
-}
-
 export async function safeFetchText(input, options = {}) {
   const maxRedirects = options.maxRedirects ?? 3;
-  const maxBytes = options.maxBytes ?? 2 * 1024 * 1024;
-  const timeoutMs = options.timeoutMs ?? 10_000;
+  const maxBytes = options.maxBytes ?? 1024 * 1024;
+  const timeoutMs = options.timeoutMs ?? 8_000;
   let current = new URL(input);
   const redirects = [];
 
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
-    if (!['http:', 'https:'].includes(current.protocol)) throw new Error('重定向到了不支持的协议');
-    if (current.username || current.password) throw new Error('重定向 URL 包含凭据');
-    if (current.port && !['80', '443'].includes(current.port)) throw new Error('重定向到了不允许的端口');
-    if (net.isIP(current.hostname)) throw new Error('重定向到了 IP 地址');
-    await assertPublicHostname(current.hostname, options.lookup || dns.lookup);
-
+    normalizeTarget(current);
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort('timeout'), timeoutMs);
     let response;
     try {
       const headers = {
         Accept: options.accept || 'text/html, application/json, text/plain, application/xml;q=0.9',
-        'User-Agent': 'BFLabs-GEO-Audit/0.1 local-prototype',
+        'User-Agent': 'BFLabs-Agent-Readiness/1.0 public-beta; +https://readiness.bflabs.cn/privacy',
       };
       if (options.contentType) headers['Content-Type'] = options.contentType;
-      response = await (options.fetchImpl || fetch)(current, {
+      response = await fetch(current, {
         method: options.method || 'GET',
         body: options.body,
         headers,
         redirect: 'manual',
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
         signal: controller.signal,
       });
     } finally {
@@ -110,6 +60,7 @@ export async function safeFetchText(input, options = {}) {
       if (!location) throw new Error('重定向响应缺少 Location');
       if (redirectCount === maxRedirects) throw new Error('重定向次数超过限制');
       const next = new URL(location, current);
+      normalizeTarget(next);
       redirects.push({ from: current.toString(), to: next.toString(), status: response.status });
       current = next;
       continue;
@@ -125,18 +76,23 @@ export async function safeFetchText(input, options = {}) {
         size += value.byteLength;
         if (size > maxBytes) {
           await reader.cancel();
-          throw new Error('响应正文超过 2 MiB 上限');
+          throw new Error('响应正文超过 1 MiB 上限');
         }
         chunks.push(value);
       }
     }
-    const bytes = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
     return {
       url: current.toString(),
       status: response.status,
       ok: response.ok,
       contentType: response.headers.get('content-type') || '',
-      text: bytes.toString('utf8'),
+      text: new TextDecoder().decode(bytes),
       redirects,
     };
   }

@@ -193,7 +193,7 @@ summary:focus-visible {
 .scan-field input::placeholder { color: var(--silver); }
 
 .button {
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -268,7 +268,7 @@ summary:focus-visible {
 }
 
 .tab {
-  min-height: 2.6rem;
+  min-height: 2.75rem;
   padding: 0 1rem;
   border: 0;
   border-radius: var(--radius-control);
@@ -287,6 +287,13 @@ summary:focus-visible {
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .status {
@@ -501,6 +508,31 @@ td code { overflow-wrap: anywhere; }
 .offer-card-paid { background: var(--charcoal); color: var(--warm-white); }
 .offer-card-paid > p { color: rgba(250, 248, 245, 0.7); }
 
+.boundary-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  color: var(--steel);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  list-style: none;
+}
+
+.boundary-list li {
+  position: relative;
+  padding-left: 0.9rem;
+}
+
+.boundary-list li::before {
+  position: absolute;
+  left: 0;
+  color: var(--orange);
+  content: "•";
+}
+
+.offer-card-paid .boundary-list { color: rgba(250, 248, 245, 0.72); }
+
 .route-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
 .route-list a { color: var(--steel); font-family: var(--font-display); font-size: 0.72rem; }
 
@@ -642,6 +674,7 @@ td code { overflow-wrap: anywhere; }
   .scan-progress { grid-template-columns: repeat(2, 1fr); }
   .workspace { padding-top: 0; }
   .result-header { align-items: center; }
+  .result-actions { flex-direction: column; align-items: stretch; }
   .finding-list li { grid-template-columns: 4.6rem 1fr; }
   .finding-list small { grid-column: 2; }
   .result-footer { align-items: flex-start; }

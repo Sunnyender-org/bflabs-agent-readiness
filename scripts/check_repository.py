@@ -143,8 +143,8 @@ if "神秘总分" not in app_html or "Business outcome" not in app_html or "AI v
     fail("diagnostic app does not state the scoring and measurement boundary")
 
 app_js = (ROOT / "app/readiness-web/public/app.js").read_text("utf-8")
-if "/artifact-pack" not in app_js or "agent_prompt" not in app_js:
-    fail("diagnostic app does not consume Artifact Pack and Agent prompt endpoints")
+if "artifact_pack" not in app_js or "agent_prompt" not in app_js:
+    fail("diagnostic app does not consume Artifact Pack and Agent prompt data")
 
 if "MIT License" not in (ROOT / "LICENSE").read_text("utf-8"):
     fail("root LICENSE is not MIT")

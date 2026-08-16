@@ -7,8 +7,10 @@ import { RULESET_VERSION, scanSite } from './scanner.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
+const REPOSITORY_ROOT = path.resolve(ROOT, '..', '..');
 const PORT = Number(process.env.PORT || 4177);
 const reports = new Map();
+const SKILL_IDS = new Set(['geo-content', 'geo-discover', 'geo-measure', 'geo-optimize', 'seo-plan', 'webmcp-enable']);
 
 const types = {
   '.html': 'text/html; charset=utf-8',
@@ -89,9 +91,16 @@ const server = http.createServer(async (request, response) => {
         business_outcome: 'not_measured',
       });
     }
-    if (request.method === 'GET' && url.pathname === '/skills/geo-optimize') {
-      response.writeHead(302, { Location: 'https://github.com/Sunnyender-org/bflabs-agent-readiness/tree/main/skills/geo-optimize' });
-      return response.end();
+    if (request.method === 'GET' && url.pathname.startsWith('/skills/')) {
+      const skillId = decodeURIComponent(url.pathname.slice('/skills/'.length));
+      if (!SKILL_IDS.has(skillId)) return sendJson(response, 404, { error: '未知子 Skill' });
+      const body = await fs.readFile(path.join(REPOSITORY_ROOT, 'skills', skillId, 'SKILL.md'), 'utf8');
+      response.writeHead(200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      return response.end(body);
     }
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });

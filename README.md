@@ -35,6 +35,9 @@
 └── scripts/                 # 仓库、eval 与发行包验证
 ```
 
+维护者和 Agent 可先查看[文档索引](docs/INDEX.md)，按任务选择最小阅读集，
+避免把历史计划、本地验证、发布状态和真实平台结果混为一谈。
+
 ## 能力注册表
 
 当前注册表包含根入口和六个已运行子 Skill：
@@ -120,7 +123,9 @@ npm start
 
 网页保留旧 API response 作为兼容层，canonical `readiness_report`、evidence ledger、quality report 与 manifest 使用 CLI 相同的 JSON Schema 和 hash 规则。缺证据不会被换算成失败或分数；AI visibility 与 business outcome 始终独立显示为未测量。
 
-当前网站是 promotion-candidate 原型，不应直接公开部署。正式公网扫描器仍需 DNS rebinding 防护、限流、滥用控制、保留策略与独立安全审查。
+诊断网站同时保留本地 Node 原型与 Cloudflare Worker 发布入口。Worker 使用 strictly-public fetch、客户端/目标双限流、固定超时与正文上限、无应用数据库报告留存和公开 opt-out；是否已经公网部署以 [release checklist](docs/release-checklist.md) 的 live readback 为准。
+
+当前本地页面支持把一次报告保存为页面内存基线，优化后对同站复测并显示三轴 Before / After；也能一次下载 Artifact Pack 并复制绑定扫描指纹的 Agent 指令。免费层到此为止。多平台真实抽样、跨系统实施、持续监测和客户授权的业务归因属于 BFLabs 付费交付，可通过 `hello@bflabs.cn` 发起咨询。
 
 ## 验证整个仓库
 
@@ -148,7 +153,7 @@ python3 scripts/verify_packages.py
 
 隔离验证会在全新虚拟环境安装 unified wheel，回读七个 active capability，执行 62 条路由 eval，并真正跑完 `discover-diagnose` 与 `discover-content`。安装方法见 [Codex / Claude Code 安装说明](docs/install-codex-claude.md)，协议与架构见 [Artifact Protocol](docs/artifact-protocol.md) 和 [Architecture](docs/architecture.md)。
 
-当前只形成本地 public release candidate。commit、push、GitHub Release、包上传和公网诊断站部署都需要 Ender 分别批准，见 [release checklist](docs/release-checklist.md)。
+发布、包上传和公网诊断站的真实状态以 [release checklist](docs/release-checklist.md) 为准；本地测试或配置文件不单独构成发布证明。
 
 ## BeefAPI 案例
 

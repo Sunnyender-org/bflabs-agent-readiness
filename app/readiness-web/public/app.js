@@ -12,6 +12,9 @@ const deliveryTab = document.querySelector('#delivery-tab');
 const improvementPanel = document.querySelector('#improvement-panel');
 const showMoreButton = document.querySelector('#show-more');
 let currentReport = null;
+let baselineReport = null;
+
+const defaultHelp = '30 秒出报告 · 公开页面 ONLY · 零登录';
 
 const axisDescriptions = {
   discoverable: '公开页面与机器入口是否能被找到。',
@@ -95,6 +98,67 @@ function renderCompactList(selector, items, renderItem, emptyText) {
     : `<p>${escapeHtml(emptyText)}</p>`;
 }
 
+function scoreText(report) {
+  return report.axes.map((axis) => `${axis.label} ${axis.score == null ? 'N/A' : axis.score}`).join(' · ');
+}
+
+function renderComparison(report) {
+  const sameTarget = baselineReport?.target.canonical_origin === report.target.canonical_origin;
+  const isNewScan = baselineReport?.scan_fingerprint !== report.scan_fingerprint
+    || baselineReport?.scan.completed_at !== report.scan.completed_at;
+  if (!sameTarget || !isNewScan) return;
+
+  const beforeById = new Map(baselineReport.axes.map((axis) => [axis.id, axis]));
+  const deltas = report.axes.map((axis) => {
+    const before = beforeById.get(axis.id)?.score;
+    const delta = before == null || axis.score == null ? null : axis.score - before;
+    return `${axis.label} ${delta == null ? 'N/A' : `${delta >= 0 ? '+' : ''}${delta}`}`;
+  });
+  const comparableScores = report.axes.map((axis) => axis.score).filter((score) => score != null);
+  const progressValue = comparableScores.length
+    ? Math.round(comparableScores.reduce((sum, score) => sum + score, 0) / comparableScores.length)
+    : 0;
+
+  document.querySelector('#delivery-context').textContent = `本地实测：${report.target.canonical_origin} 的同站复测对比`;
+  document.querySelector('#delta-label').textContent = '真实三轴 Δ';
+  document.querySelector('#delta-value').textContent = 'Before → After';
+  document.querySelector('#delta-summary').textContent = deltas.join(' · ');
+  document.querySelector('#delta-progress').style.width = `${progressValue}%`;
+  document.querySelector('#before-value').textContent = '基线';
+  document.querySelector('#before-summary').textContent = scoreText(baselineReport);
+  document.querySelector('#after-value').textContent = '复测';
+  document.querySelector('#after-summary').textContent = scoreText(report);
+  document.querySelector('#delivery-notice-title').textContent = 'Before / After 已由两次独立扫描生成';
+  document.querySelector('#delivery-notice-copy').textContent = '这只证明准备度变化，AI visibility 与 Business outcome 仍需独立测量。';
+  document.querySelector('#report-status').textContent = '已复测';
+}
+
+function resetComparisonExample() {
+  document.querySelector('#delivery-context').textContent = '付费示例：阶段清楚，变化可见';
+  document.querySelector('#delta-label').textContent = '示例 Δ';
+  document.querySelector('#delta-value').innerHTML = '33<i>→</i>78';
+  document.querySelector('#delta-summary').textContent = '示例：可理解 +45 · 关闭 4/7 缺口';
+  document.querySelector('#delta-progress').style.width = '78%';
+  document.querySelector('#before-value').innerHTML = '几乎<br>读不到';
+  document.querySelector('#before-summary').textContent = 'HTML 正文薄 · 无稳定答案页';
+  document.querySelector('#after-value').innerHTML = '事实<br>可核对';
+  document.querySelector('#after-summary').textContent = 'SSR 正文 · 答案页 · 接入路径';
+  document.querySelector('#delivery-notice-title').textContent = '没有 Before / After，就不算完成本阶段';
+  document.querySelector('#delivery-notice-copy').textContent = '下一阶段只修仍开放的项。';
+}
+
+function updateContactLink(report) {
+  const subject = `BFLabs Agent Readiness 咨询：${displayHost(report.target.canonical_origin)}`;
+  const body = [
+    `诊断目标：${report.target.canonical_origin}`,
+    `扫描指纹：${report.scan_fingerprint}`,
+    `准备度：${scoreText(report)}`,
+    '',
+    '我希望了解：跨系统改站 / 多平台 GEO 抽样 / 持续监测 / 业务结果归因（请保留适用项）',
+  ].join('\n');
+  document.querySelector('#contact-bflabs').href = `mailto:hello@bflabs.cn?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function renderReport(report) {
   currentReport = report;
   const host = displayHost(report.target.canonical_origin);
@@ -112,6 +176,7 @@ function renderReport(report) {
   document.querySelector('#report-status').textContent = report.scan.status === 'complete' ? '完成' : '报告不完整';
   document.querySelector('#report-fingerprint').textContent = report.scan_fingerprint;
   renderAxes(report.axes);
+  updateContactLink(report);
 
   const findings = document.querySelector('#findings');
   findings.innerHTML = report.findings.length
@@ -146,6 +211,9 @@ function renderReport(report) {
   document.querySelector('#skill-routes').innerHTML = (report.skill_routes || []).length
     ? report.skill_routes.map((item) => `<a href="${escapeHtml(item.href)}">${escapeHtml(item.id)}</a>`).join('')
     : '<span>当前无需额外子 Skill</span>';
+
+  resetComparisonExample();
+  renderComparison(report);
 
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
@@ -182,7 +250,7 @@ form.addEventListener('submit', async (event) => {
     });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || '无法创建诊断');
-    const report = await pollReport(body.status_url);
+    const report = body.status_url ? await pollReport(body.status_url) : (body.report || body);
     setStage('report');
     renderReport(report);
   } catch (error) {
@@ -202,10 +270,25 @@ document.querySelector('#show-delivery').addEventListener('click', () => {
 });
 
 document.querySelector('#rescan').addEventListener('click', () => {
+  baselineReport = null;
   workspace.hidden = true;
   landing.hidden = false;
   errorNode.textContent = '';
   progress.hidden = true;
+  submitButton.textContent = '检查';
+  document.querySelector('#url-help').textContent = defaultHelp;
+  input.focus();
+  window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
+
+document.querySelector('#save-baseline').addEventListener('click', () => {
+  if (!currentReport) return;
+  baselineReport = structuredClone(currentReport);
+  workspace.hidden = true;
+  landing.hidden = false;
+  input.value = displayHost(currentReport.target.canonical_origin);
+  submitButton.textContent = '复测并对比';
+  document.querySelector('#url-help').textContent = '基线仅保存在当前页面内存 · 优化完成后点击复测';
   input.focus();
   window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 });
@@ -217,27 +300,28 @@ showMoreButton.addEventListener('click', () => {
   showMoreButton.setAttribute('aria-expanded', String(opening));
 });
 
-document.querySelector('#download-report').addEventListener('click', async () => {
+async function downloadArtifactPack() {
   if (!currentReport) return;
-  const response = await fetch(`/api/scans/${encodeURIComponent(currentReport.report_id)}/artifact-pack`, {
-    headers: { Accept: 'application/json' },
-  });
-  if (!response.ok) return;
-  const blob = await response.blob();
+  const blob = new Blob([`${JSON.stringify(currentReport.artifact_pack, null, 2)}\n`], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `${displayHost(currentReport.target.canonical_origin)}-agent-readiness-artifact-pack.json`;
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+document.querySelector('#download-report').addEventListener('click', async () => {
+  await downloadArtifactPack();
 });
 
 document.querySelector('#copy-agent-prompt').addEventListener('click', async () => {
   if (!currentReport?.agent_prompt) return;
   const status = document.querySelector('#copy-status');
   try {
+    await downloadArtifactPack();
     await navigator.clipboard.writeText(currentReport.agent_prompt);
-    status.textContent = '已复制，可直接交给你的 Agent。';
+    status.textContent = 'Artifact Pack 已下载，指令已复制。把两者一起交给 Agent。';
   } catch {
-    status.textContent = '复制失败，请从 Artifact Pack 读取优化指令。';
+    status.textContent = 'Artifact Pack 已尝试下载；复制失败，请手动附上报告。';
   }
 });

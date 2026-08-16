@@ -1,13 +1,13 @@
 # BFLabs Agent Readiness v1 Progress
 
-更新时间：2026-08-11
+更新时间：2026-08-17
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：Phase 8 / Packaging, Docs And Public Release Candidate / 本地验收完成
-状态：Done 9 / Doing 0 / Todo 0 / Blocked 0
-本轮：Phase 8 已生成 source、unified 与六个独立子 Skill package，并通过 allowlist、隔离安装、两条 workflow、文档和隐私扫描验收
-下一关口：等待 Ender 分别决定 commit、push、GitHub release；公网诊断站继续保持独立安全关口
+位置：v1 Draft PR 后续 / 产品试用闭环与 Cloudflare Worker 发布候选完成
+状态：本地产品闭环可演示；公网 Worker 安全边界与 dry-run 已验证；尚未 commit、push、merge、release 或 deploy
+本轮：补齐 Artifact Pack + Agent 指令交接、同站 Before / After、真实询盘入口、免费/付费边界，以及 strictly-public fetch、双限流、opt-out、无应用数据库留存的 Worker 入口
+下一关口：按 Ender 2026-08-17 的明确批准 commit/push，等待 CI 后 merge、release，并部署到不覆盖官网的 `readiness.bflabs.cn`
 ```
 
 ## Verified State
@@ -21,7 +21,7 @@ verified_state:
   authoritative_state_artifact: docs/agent-readiness-v1-progress.md
 ```
 
-这不是独立 Verifier 结论，也不是 release 证明。当前工作树未 commit、未 push、未 deploy。
+这不是独立 Verifier 结论，也不是 release 证明。v1 commit `8bd65d4` 已 push 并形成 Draft PR #1；2026-08-17 的产品化与 Worker 改动仍在本地工作树，未 commit、未 push、未 deploy。
 
 ## Phase 0 — Contract And License Baseline
 
@@ -284,8 +284,80 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 - 62-case router suite p95 `127.146 ms`；20 个确定性 workflow run p95 `27.115 ms`、max `28.435 ms`，低于 2 秒目标；
 - 本地发行候选位于 `dist/release-candidate/`，目录被 gitignore，不构成公开发布。
 
+## 2026-08-17 Productization Readback
+
+### GitHub 与工作树
+
+- GitHub 仓库仍为 public，默认分支 `main`；
+- Draft PR [#1](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/1) 为 `OPEN`、`MERGEABLE`、`CLEAN`，head 为 `8bd65d428d4e67b3fdc1334ba32efce72695baaf`；
+- PR 上两条 `validate / repository` check 均于 2026-08-11 `SUCCESS`；
+- PR 未 merge，GitHub Releases 为空，未发现 package upload 或公网诊断部署证明；
+- 本地 `README.md`、`AGENTS.md`、`docs/INDEX.md` 是先前未提交的文档治理改动，本轮保留；诊断 UI、测试与本进度文档的新变化同样尚未 commit/push。
+
+### 四级 readiness 判断
+
+| 层级 | 当前判断 | 证据与边界 |
+|---|---|---|
+| 本地可用 | `yes` | Node 14 tests、syntax check、Python 50 tests、62/62 router eval 均通过；本地服务可扫描真实公开站并下载 Artifact Pack |
+| 可给人试用 | `controlled preview` | 技术用户可从当前分支本地运行，报告可交给 Agent，并可同站复测对比；尚无 merge/release/package upload，普通用户不是零安装自助 |
+| 可公网开放 | `no` | 尚缺 DNS rebinding/pinning、防滥用、按客户端和目标限流、opt-out、保留/隐私策略及独立安全审查 |
+| 商业闭环成立 | `partial` | 免费与付费边界、官方邮箱询盘、交付示例已连通；真实多平台采样、持续监测、跨系统实施回执和业务归因仍属于未交付的服务运营面 |
+
+### 产品与数据闭环
+
+```text
+公开站诊断
+  -> 三轴 readiness report + evidence ledger + Artifact Pack
+  -> 免费开源 Skill + 绑定扫描指纹的 Agent 优化指令
+  -> 客户/Agent 在本地仓库实施并验证
+  -> 同站复测，生成三轴 Before / After
+  -> 用户提供观测由 geo-measure 离线聚合
+  -> BFLabs 付费层执行真实多平台重复抽样、趋势监测和跨系统交付
+  -> 经客户授权连接 analytics / 转化 / 收入证据
+  -> 分别报告 Readiness、AI visibility、Business outcome，不互相替代
+```
+
+### 本轮最小打磨
+
+- “交给 Agent”现在一次下载 Artifact Pack 并复制包含目标、扫描指纹、三轴状态、失败项、unknown、最小子 Skill 路由、Owner gate 与复测要求的指令；
+- 报告中的子 Skill 链接由当前 checkout 通过固定 allowlist 提供，不再错误依赖尚未 merge 的 GitHub `main` 路径；
+- “保存基线并复测”把当前报告保存在页面内存，复测同站后展示真实三轴 Before / After；不上传或持久化基线；
+- “联系 BFLabs”改为公开 `hello@bflabs.cn` 邮件入口，并预填目标、指纹、三轴结果和意向服务；
+- Free 明确为公开诊断、开源 Skill 自助改站和本地复测；Paid 明确为跨系统实施、多平台抽样、持续监测和客户授权归因；
+- 375px 视口无横向溢出，按钮和 tab 的最小操作高度统一为 44px。
+
+### 当前真实扫描
+
+2026-08-17 本地重新扫描 `https://beefapi.com`：Discoverable `100/pass`、Understandable `100/pass`、Actionable `100/pass`，六个固定公开路径均抓取成功，Artifact Pack HTTP 200 且 manifest/hash 文件齐全。与 2026-08-11 的 `100/100/75` 不同，是当前公开站证据变化，不应回写旧历史回执。
+
+`A-WEBMCP` 当前只证明 bridge/native registration 可见，canonical report 仍标记 `present_unverified` 并保留 `compatible-browser-task-verification` external gate。没有运行真实兼容浏览器任务，AI visibility 和 business outcome 仍为 `not_measured`。
+
+### 本轮验证回执
+
+- `npm test --prefix app/readiness-web`：14/14 pass；
+- `npm run check --prefix app/readiness-web`：pass；
+- `uv run --isolated --with-editable . python scripts/skill_registry.py validate`：repository 与六个子 Skill pass，Python 50/50，router 62/62；
+- `uv run --isolated --with-editable . python scripts/run_evals.py`：accuracy `1.0`，forbidden misroutes `0`，workflow precision `1.0`；
+- `uv run --isolated --with pip --with-editable '.[dev]' python scripts/verify_packages.py`：source、unified、六个子 Skill 全部 pass，两个隔离 Python 安装、六个子 Skill 安装和两条 workflow run pass；
+- source 与 unified 在系统临时目录完成构建和隔离验证；临时构建不构成 package upload，发布时必须从选定 commit 重建并生成最终 hash receipt；
+- `git diff --check`：pass；
+- 浏览器 1280px 与 375px 实测：375px `scrollWidth === innerWidth`，所有可见 `.button` 与 tab 均为 44px 高；基线复测、真实邮件 href 与 Before / After 页面均完成 readback。
+
 ## Remaining Goal
 
-总控 Goal 授权范围内无剩余实现项。human provenance review、commit、push、GitHub release、包上传和公网部署仍是独立 Owner gate，不得由本地验收代替。
+### P0
 
-后续不得把本地 fixture、诊断结果或 package install 表述为真实外部 AI 可见度、业务结果、公网安全或已经发布。
+- 公网开放前完成 DNS rebinding/pinning、双维限流、防滥用、opt-out、保留/隐私策略和独立安全审查；
+- Ender 分别决定本轮 commit/push、PR merge、GitHub Release/package upload 和公网部署；任一项都不能由本地验收替代。
+
+### P1
+
+- 把两次 Artifact Pack 的差异提升为可下载、schema/hash-valid 的 comparison artifact，而不只是在页面内展示；
+- 为付费交付建立真实多平台重复采样、持续监测、跨系统实施和客户授权归因的可审计运行手册与 receipts；
+- 完成 human provenance review，确认未复制 GEOHub AGPL 实现。
+
+### P2
+
+- 在获得真实试用反馈后，评估是否需要持久化项目历史、团队协作、报价/预约或 CRM 集成；当前不提前引入账号、数据库或 SaaS 依赖。
+
+后续不得把本地 fixture、准备度分数、诊断结果或 package install 表述为真实外部 AI 可见度、业务结果、公网安全或已经发布。
