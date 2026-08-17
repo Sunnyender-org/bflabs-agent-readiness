@@ -35,13 +35,20 @@ Last live readback: 2026-08-17
 ## GitHub live state
 
 - [x] v1 implementation commit `8bd65d428d4e67b3fdc1334ba32efce72695baaf` exists on `agent/complete-agent-readiness-v1`.
-- [x] The branch is pushed and Draft PR [#1](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/1) is open.
-- [x] PR #1 is `MERGEABLE` / `CLEAN`; both recorded `validate / repository` checks are `SUCCESS`.
-- [ ] PR #1 is merged.
-- [ ] A GitHub Release exists.
-- [ ] A source, unified, or child-Skill package is uploaded to a public distribution surface.
+- [x] Follow-up commit `12458a1cffed6d037e6b6f35425cea343462a737` was pushed to the PR branch and both PR checks passed.
+- [x] PR [#1](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/1) merged as `7aa7b9e1e366b795c4d0e0d523f60bdc24c85185`.
+- [x] GitHub Release [`v0.3.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.3.0) is published from the merge commit.
+- [x] The release contains source, unified wheel, and all six child-Skill packages with GitHub SHA-256 digests.
+- [x] Email follow-up commit `dd87282c4b453bbf76904d68c0e4ee870bf5f6f9` is on `main`; Actions run `31961670907` passed.
 
-The current 2026-08-17 follow-up changes are still local and are not part of PR head `8bd65d4`.
+## Production live state
+
+- [x] [readiness.bflabs.cn](https://readiness.bflabs.cn) is a separate Cloudflare Worker custom domain and does not replace the apex website.
+- [x] Homepage, privacy page, and ruleset API return HTTPS 200.
+- [x] A production loopback-literal scan is rejected with 400.
+- [x] A production `https://beefapi.com` scan returned `100 / 100 / 75`, Artifact Pack `pass`, AI visibility `not_measured`, and business outcome `not_measured`.
+- [x] `hello@bflabs.cn` routes to the email Worker; the owner destination is verified and a real smoke message was received.
+- [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed.
 
 ## Owner gates
 
@@ -59,10 +66,10 @@ The current 2026-08-17 follow-up changes are still local and are not part of PR 
 - [x] The app has no report/input database; privacy and terms pages describe the runtime boundary.
 - [ ] An independent security review has signed off the public scanner design and implementation.
 
-Completing local checks produces a release candidate only. It never implies that the current worktree was committed or pushed, that the Draft PR was merged, or that a release, package upload, paid service operation, or deployment occurred.
+The checked GitHub and production items above are live readbacks, not inferences from local tests. The remaining unchecked items stay open.
 
-Latest local verification on 2026-08-17: 50 Python tests, 16 Node/Worker tests, Node syntax checks, Worker build and Cloudflare dry-run, 62/62 router cases, zero forbidden misroutes, and 100% workflow precision passed. Local Worker smoke returned 200 for the UI, privacy page, ruleset and a real `https://beefapi.com` scan, while rejecting a literal loopback target with 400. Package verification also passed for source, unified, and all six child Skills, including two isolated Python installs and both workflow runs. Those builds were temporary verification artifacts, not uploaded packages; final publication hashes must be generated from the exact approved commit.
+Latest local verification on 2026-08-17: 50 Python tests, 18 Node/Worker tests, Node syntax checks, Worker build and Cloudflare dry-run, 62/62 router cases, zero forbidden misroutes, and 100% workflow precision passed. Package verification passed for source, unified, and all six child Skills, including two isolated Python installs and both workflow runs. Release `v0.3.0` was rebuilt from the merge commit and its eight artifacts were uploaded with GitHub digests.
 
-A real local scan of `https://beefapi.com` returned three readiness axes at 100/pass and an HTTP 200 Artifact Pack; the report still marks WebMCP `present_unverified`, requires compatible-browser task verification, and keeps AI visibility/business outcome `not_measured`.
+A real production scan of `https://beefapi.com` returned `100 / 100 / 75` and Artifact Pack `pass`; the report still marks WebMCP `present_unverified`, requires compatible-browser task verification, and keeps AI visibility/business outcome `not_measured`.
 
 The 2026-08-11 release-candidate receipt remains historical evidence for router p95 `127.146 ms` and deterministic workflow p95 `27.115 ms` / max `28.435 ms`. Re-run package verification after any further source change and again from the exact commit selected for publication.

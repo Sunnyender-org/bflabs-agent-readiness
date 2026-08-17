@@ -4,10 +4,10 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：v1 Draft PR 后续 / 产品试用闭环与 Cloudflare Worker 发布候选完成
-状态：本地产品闭环可演示；公网 Worker 安全边界与 dry-run 已验证；尚未 commit、push、merge、release 或 deploy
-本轮：补齐 Artifact Pack + Agent 指令交接、同站 Before / After、真实询盘入口、免费/付费边界，以及 strictly-public fetch、双限流、opt-out、无应用数据库留存的 Worker 入口
-下一关口：按 Ender 2026-08-17 的明确批准 commit/push，等待 CI 后 merge、release，并部署到不覆盖官网的 `readiness.bflabs.cn`
+位置：v1 已发布 / 公网诊断与主邮箱询盘已完成真实验收
+状态：PR merged、v0.3.0 released、readiness.bflabs.cn public beta live；Lucas 邮箱与独立安全审查仍待完成
+本轮：完成 Artifact Pack + Agent handoff、Before / After、免费/付费边界、Cloudflare Worker 安全边界、公开发布与真实主邮箱收件
+下一关口：Lucas 完成 destination verification；随后复测双邮箱 fanout，并安排独立安全审查与付费交付 receipts
 ```
 
 ## Verified State
@@ -21,7 +21,7 @@ verified_state:
   authoritative_state_artifact: docs/agent-readiness-v1-progress.md
 ```
 
-这不是独立 Verifier 结论，也不是 release 证明。v1 commit `8bd65d4` 已 push 并形成 Draft PR #1；2026-08-17 的产品化与 Worker 改动仍在本地工作树，未 commit、未 push、未 deploy。
+本文件记录当前 live readback，但不是独立安全 Verifier 签字。发布与部署证明分别来自 GitHub Release、Cloudflare production readback 和真实邮件收件；它们不证明 AI visibility 或 business outcome。
 
 ## Phase 0 — Contract And License Baseline
 
@@ -284,80 +284,64 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 - 62-case router suite p95 `127.146 ms`；20 个确定性 workflow run p95 `27.115 ms`、max `28.435 ms`，低于 2 秒目标；
 - 本地发行候选位于 `dist/release-candidate/`，目录被 gitignore，不构成公开发布。
 
-## 2026-08-17 Productization Readback
+## 2026-08-17 Productization And Launch Readback
 
-### GitHub 与工作树
+### GitHub、Release 与生产
 
-- GitHub 仓库仍为 public，默认分支 `main`；
-- Draft PR [#1](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/1) 为 `OPEN`、`MERGEABLE`、`CLEAN`，head 为 `8bd65d428d4e67b3fdc1334ba32efce72695baaf`；
-- PR 上两条 `validate / repository` check 均于 2026-08-11 `SUCCESS`；
-- PR 未 merge，GitHub Releases 为空，未发现 package upload 或公网诊断部署证明；
-- 本地 `README.md`、`AGENTS.md`、`docs/INDEX.md` 是先前未提交的文档治理改动，本轮保留；诊断 UI、测试与本进度文档的新变化同样尚未 commit/push。
+- PR [#1](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/1) 已于 2026-08-16 17:18:51 UTC merge，merge commit 为 `7aa7b9e1e366b795c4d0e0d523f60bdc24c85185`；
+- GitHub Release [`v0.3.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.3.0) 已发布，包含 source tarball、unified wheel 与六个 child Skill ZIP，共八个带 GitHub SHA-256 digest 的资产；
+- 邮件 fanout follow-up commit `dd87282c4b453bbf76904d68c0e4ee870bf5f6f9` 已 push 到 `main`，对应 GitHub Actions run `31961670907` 全绿；
+- Cloudflare Worker `bflabs-agent-readiness` 已部署到 [readiness.bflabs.cn](https://readiness.bflabs.cn)，不覆盖现有 `bflabs.cn` 官网；
+- 生产首页、隐私页、ruleset API 均 HTTPS 200；生产拒绝 loopback literal target 为 400；真实生产扫描 `https://beefapi.com` 为 Discoverable `100`、Understandable `100`、Actionable `75/partial`，Artifact Pack `pass`；
+- Cloudflare Email Routing 为 `enabled / ready`，`hello@bflabs.cn` 进入同一 Worker。主收件箱已验证并由 Ender 确认收到真实 smoke 邮件；Lucas 目标仍为 `pending`，不得称双邮箱已完成。
 
 ### 四级 readiness 判断
 
 | 层级 | 当前判断 | 证据与边界 |
 |---|---|---|
-| 本地可用 | `yes` | Node 14 tests、syntax check、Python 50 tests、62/62 router eval 均通过；本地服务可扫描真实公开站并下载 Artifact Pack |
-| 可给人试用 | `controlled preview` | 技术用户可从当前分支本地运行，报告可交给 Agent，并可同站复测对比；尚无 merge/release/package upload，普通用户不是零安装自助 |
-| 可公网开放 | `no` | 尚缺 DNS rebinding/pinning、防滥用、按客户端和目标限流、opt-out、保留/隐私策略及独立安全审查 |
-| 商业闭环成立 | `partial` | 免费与付费边界、官方邮箱询盘、交付示例已连通；真实多平台采样、持续监测、跨系统实施回执和业务归因仍属于未交付的服务运营面 |
+| 本地可用 | `yes` | Python 50 tests、Node/Worker 18 tests、62/62 router eval、完整 package verification 均通过 |
+| 可给人试用 | `yes, public beta` | 零安装公网诊断、Artifact Pack、Agent handoff、同站 Before/After 与公开 Skill release 均可用 |
+| 可公网开放 | `public beta live` | strictly-public fetch、双维限流、大小/超时/重定向上限、opt-out、无应用数据库留存与 observability 已上线；独立安全审查仍未签字，因此不是无保留的 production security sign-off |
+| 商业闭环成立 | `partial` | 免费入口、开源 Skill、复测与真实邮件询盘已连通；真实多平台采样、持续监测、跨系统实施 receipts 和客户授权业务归因仍是付费运营缺口 |
 
 ### 产品与数据闭环
 
 ```text
-公开站诊断
+公网诊断
   -> 三轴 readiness report + evidence ledger + Artifact Pack
   -> 免费开源 Skill + 绑定扫描指纹的 Agent 优化指令
   -> 客户/Agent 在本地仓库实施并验证
   -> 同站复测，生成三轴 Before / After
-  -> 用户提供观测由 geo-measure 离线聚合
-  -> BFLabs 付费层执行真实多平台重复抽样、趋势监测和跨系统交付
+  -> geo-measure 聚合真实平台观测，单独报告 AI visibility
+  -> hello@bflabs.cn 进入 BFLabs 付费咨询与跨系统交付
+  -> 持续复测、多平台重复采样与实施 receipts
   -> 经客户授权连接 analytics / 转化 / 收入证据
   -> 分别报告 Readiness、AI visibility、Business outcome，不互相替代
 ```
 
-### 本轮最小打磨
+### 生产安全与隐私边界
 
-- “交给 Agent”现在一次下载 Artifact Pack 并复制包含目标、扫描指纹、三轴状态、失败项、unknown、最小子 Skill 路由、Owner gate 与复测要求的指令；
-- 报告中的子 Skill 链接由当前 checkout 通过固定 allowlist 提供，不再错误依赖尚未 merge 的 GitHub `main` 路径；
-- “保存基线并复测”把当前报告保存在页面内存，复测同站后展示真实三轴 Before / After；不上传或持久化基线；
-- “联系 BFLabs”改为公开 `hello@bflabs.cn` 邮件入口，并预填目标、指纹、三轴结果和意向服务；
-- Free 明确为公开诊断、开源 Skill 自助改站和本地复测；Paid 明确为跨系统实施、多平台抽样、持续监测和客户授权归因；
-- 375px 视口无横向溢出，按钮和 tab 的最小操作高度统一为 44px。
-
-### 当前真实扫描
-
-2026-08-17 本地重新扫描 `https://beefapi.com`：Discoverable `100/pass`、Understandable `100/pass`、Actionable `100/pass`，六个固定公开路径均抓取成功，Artifact Pack HTTP 200 且 manifest/hash 文件齐全。与 2026-08-11 的 `100/100/75` 不同，是当前公开站证据变化，不应回写旧历史回执。
-
-`A-WEBMCP` 当前只证明 bridge/native registration 可见，canonical report 仍标记 `present_unverified` 并保留 `compatible-browser-task-verification` external gate。没有运行真实兼容浏览器任务，AI visibility 和 business outcome 仍为 `not_measured`。
-
-### 本轮验证回执
-
-- `npm test --prefix app/readiness-web`：14/14 pass；
-- `npm run check --prefix app/readiness-web`：pass；
-- `uv run --isolated --with-editable . python scripts/skill_registry.py validate`：repository 与六个子 Skill pass，Python 50/50，router 62/62；
-- `uv run --isolated --with-editable . python scripts/run_evals.py`：accuracy `1.0`，forbidden misroutes `0`，workflow precision `1.0`；
-- `uv run --isolated --with pip --with-editable '.[dev]' python scripts/verify_packages.py`：source、unified、六个子 Skill 全部 pass，两个隔离 Python 安装、六个子 Skill 安装和两条 workflow run pass；
-- source 与 unified 在系统临时目录完成构建和隔离验证；临时构建不构成 package upload，发布时必须从选定 commit 重建并生成最终 hash receipt；
-- `git diff --check`：pass；
-- 浏览器 1280px 与 375px 实测：375px `scrollWidth === innerWidth`，所有可见 `.button` 与 tab 均为 44px 高；基线复测、真实邮件 href 与 Before / After 页面均完成 readback。
+- Worker 启用 Cloudflare `global_fetch_strictly_public`，拒绝 IP literal、private-style hostname、不安全端口与重定向；
+- Cloudflare Rate Limiting bindings 分别按客户端哈希和目标 hostname 限制，扫描请求与目标响应都有大小、重定向和逐请求超时上限；
+- 报告和 baseline 留在浏览器，不写应用数据库；Cloudflare 基础设施日志仍受其平台策略约束；
+- 站点可通过 `/.well-known/bflabs-agent-readiness-opt-out` 明确拒绝诊断，滥用报告进入 `hello@bflabs.cn`；
+- `A-WEBMCP` 仍为 `present_unverified` 并保留真实兼容浏览器任务 external gate；AI visibility 与 business outcome 均保持 `not_measured`。
 
 ## Remaining Goal
 
 ### P0
 
-- 公网开放前完成 DNS rebinding/pinning、双维限流、防滥用、opt-out、保留/隐私策略和独立安全审查；
-- Ender 分别决定本轮 commit/push、PR merge、GitHub Release/package upload 和公网部署；任一项都不能由本地验收替代。
+- Lucas 在其 QQ 邮箱完成 Cloudflare destination verification；完成前主邮箱可用，但双邮箱 fanout 不算完成；
+- 完成独立安全审查并记录签字；当前只能称 public beta live，不能称完整安全签署。
 
 ### P1
 
-- 把两次 Artifact Pack 的差异提升为可下载、schema/hash-valid 的 comparison artifact，而不只是在页面内展示；
+- 把两次 Artifact Pack 的差异提升为可下载、schema/hash-valid comparison artifact；
 - 为付费交付建立真实多平台重复采样、持续监测、跨系统实施和客户授权归因的可审计运行手册与 receipts；
 - 完成 human provenance review，确认未复制 GEOHub AGPL 实现。
 
 ### P2
 
-- 在获得真实试用反馈后，评估是否需要持久化项目历史、团队协作、报价/预约或 CRM 集成；当前不提前引入账号、数据库或 SaaS 依赖。
+- 根据真实试用反馈决定是否引入项目历史、团队协作、报价/预约或 CRM；当前不把这些未交付能力写入商业完成声明。
 
-后续不得把本地 fixture、准备度分数、诊断结果或 package install 表述为真实外部 AI 可见度、业务结果、公网安全或已经发布。
+后续不得把 readiness 分数、诊断结果或 package install 表述为真实外部 AI 可见度或业务结果；也不得在 Lucas destination 仍 pending 时声称邮件双投递完成。
