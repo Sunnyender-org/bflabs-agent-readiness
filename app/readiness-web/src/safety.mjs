@@ -10,9 +10,9 @@ export function normalizeTarget(input) {
   const url = new URL(withScheme);
   if (!['http:', 'https:'].includes(url.protocol)) throw new Error('只支持 HTTP 和 HTTPS');
   if (url.username || url.password) throw new Error('URL 不能包含账号或凭据');
-  if (url.port && !['80', '443'].includes(url.port)) throw new Error('P0 只允许 80 和 443 端口');
+  if (url.port && !['80', '443'].includes(url.port)) throw new Error('只允许 80 和 443 端口');
   const literalHostname = url.hostname.replace(/^\[|\]$/g, '');
-  if (net.isIP(literalHostname)) throw new Error('P0 不接受 IP 地址，请使用公开域名');
+  if (net.isIP(literalHostname)) throw new Error('不接受 IP 地址，请使用公开域名');
   const hostname = literalHostname.toLowerCase();
   if (hostname === 'localhost' || BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
     throw new Error('目标不是公开互联网域名');
@@ -89,7 +89,7 @@ export async function safeFetchText(input, options = {}) {
     try {
       const headers = {
         Accept: options.accept || 'text/html, application/json, text/plain, application/xml;q=0.9',
-        'User-Agent': 'BFLabs-GEO-Audit/0.1 local-prototype',
+        'User-Agent': 'BFLabs-Agent-Readiness/1.0; +https://readiness.bflabs.cn/privacy',
       };
       if (options.contentType) headers['Content-Type'] = options.contentType;
       response = await (options.fetchImpl || fetch)(current, {

@@ -11,7 +11,7 @@ Natural-language request
         -> evidence ledger + quality report + typed outputs + manifest hashes
 ```
 
-The local diagnostic app is another consumer of the same readiness report schema. It is not a separate product and does not own a second score model.
+The diagnostic app is another consumer of the same readiness report schema. It is not a separate product and does not own a second score model. Its web UI, versioned API, Markdown response, packaged CLI, and MCP scan tool return the same scan object.
 
 ## Capability registry
 
@@ -32,6 +32,17 @@ One intent enters one smallest capability. Multi-stage execution occurs only for
 - `quality.py`: schema, freshness, unsupported-claim, and measurement-boundary gates.
 - `providers/`: deterministic adapters for offline and local runs.
 - `packaging.py`: release allowlists and archive safety checks.
+- `app/readiness-web/src/product-contract.mjs`: Markdown projection, structured problems, methodology, and public interface constants.
+- `app/readiness-web/src/leaderboard.mjs`: explicit opt-in summary publication and disclosed three-axis ordering.
+- `app/readiness-web/src/mcp-server.mjs`: read-only Agent host tools over the same public report contract.
+
+## Public Agent seam
+
+The public site hosts the root and child Skills and publishes a SHA-256-bound Agent Skills index. A generated repair prompt selects one child Skill and includes enough current evidence to remain useful if the Agent cannot fetch the Skill.
+
+Agent Journey is a deterministic enter-understand-continue trace derived from already fetched public responses. It is stored in the scan report but has `affects_readiness_score: false`, `ai_visibility: not_measured`, and `business_outcome: not_measured`.
+
+The public leaderboard is opt-in. Its runtime truth owner is `leaderboard.mjs`; it stores only canonical origin, three readiness axes, scan fingerprint, and capture time. Ranking is lexicographic by passed-axis count, weakest-axis score, then average axis score, and is disclosed in the UI. No combined score enters the report contract. Each opted-in entry has a server-rendered `/leaderboard/{host}` share page so search visibility does not depend on client-side leaderboard rendering.
 
 ## Measurement model
 

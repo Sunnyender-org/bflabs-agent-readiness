@@ -1,0 +1,24 @@
+# BFLabs Agent Readiness
+
+BFLabs Agent Readiness checks whether a public website is discoverable, understandable, and actionable for agents. It keeps readiness separate from AI visibility and business outcome.
+
+## Use it
+
+- [Free diagnostic](https://readiness.bflabs.cn/)
+- [Opt-in public leaderboard](https://readiness.bflabs.cn/leaderboard)
+- [Methodology](https://readiness.bflabs.cn/methodology)
+- [OpenAPI](https://readiness.bflabs.cn/openapi.json)
+- [Agent Skills index](https://readiness.bflabs.cn/.well-known/agent-skills/index.json)
+- [Root Skill](https://readiness.bflabs.cn/skills/bflabs-agent-readiness)
+- [MCP server card](https://readiness.bflabs.cn/.well-known/mcp/server-card.json)
+- [BF Labs SkillHub](https://skills.bflabs.cn/catalog.html#geo)
+
+## Agent workflow
+
+1. Run a public scan through the website, API, CLI, or MCP.
+2. Read the three readiness axes and the deterministic Agent Journey separately.
+3. Use the single selected child Skill in the generated prompt.
+4. Change only evidence-backed items and run tests.
+5. After the site owner deploys, run a fresh public scan.
+
+Public leaderboard inclusion is optional and off by default. The readiness scan does not measure AI-platform visibility, leads, conversion, or revenue.

@@ -19,6 +19,10 @@
           <small>Agent Readiness</small>
         </span>
       </a>
+      <nav class="site-nav" aria-label="产品入口">
+        <a href="/leaderboard">公开榜单</a>
+        <a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a>
+      </nav>
     </header>
 
     <main id="main-content" class="app-shell">
@@ -45,7 +49,12 @@
             <button class="button button-primary button-large" type="submit">检查</button>
           </form>
 
-          <p id="url-help" class="landing-fine">30 秒出报告 · 公开页面 ONLY · 零登录</p>
+          <label class="leaderboard-consent" for="publish-to-leaderboard">
+            <input id="publish-to-leaderboard" name="publish_to_leaderboard" type="checkbox">
+            <span>我确认有权公开，把本次三轴结果加入榜单</span>
+          </label>
+
+          <p id="url-help" class="landing-fine">30 秒出报告 · 公开页面 ONLY · 默认不上榜</p>
           <p id="url-error" class="field-error" role="alert"></p>
           <ol id="progress" class="scan-progress" hidden aria-live="polite">
             <li data-stage="validate">验证目标</li>
@@ -67,6 +76,7 @@
             <div>
               <span id="report-status" class="status status-success">完成</span>
               <h2 id="report-origin" class="result-host"></h2>
+              <p id="leaderboard-publication" class="result-fine"></p>
             </div>
             <div class="result-actions">
               <button id="save-baseline" class="button button-secondary" type="button">保存基线并复测</button>
@@ -75,6 +85,29 @@
           </header>
 
           <div id="axis-rail" class="score-grid"></div>
+
+          <section class="agent-action" aria-labelledby="agent-action-title">
+            <div>
+              <span class="agent-action-eyebrow">下一步</span>
+              <h3 id="agent-action-title">交给你的 Agent 直接修</h3>
+              <p id="agent-action-copy">提示词已带上本次证据和唯一对应 Skill。</p>
+            </div>
+            <button id="copy-agent-prompt" class="button button-primary agent-action-button" type="button">复制给 Agent，开始修复</button>
+            <span id="copy-status" class="agent-action-status" role="status" aria-live="polite"></span>
+          </section>
+
+          <section class="journey-card" aria-labelledby="journey-title">
+            <header>
+              <div>
+                <span class="journey-eyebrow">Agent Journey</span>
+                <h3 id="journey-title">Agent 能否进入、理解并继续操作</h3>
+              </div>
+              <span id="journey-status" class="status status-progress">试跑中</span>
+            </header>
+            <p id="journey-task" class="journey-task"></p>
+            <ol id="journey-steps" class="journey-steps"></ol>
+            <p class="journey-boundary">这是公开页面的确定性试跑，不是 AI visibility 或业务结果。</p>
+          </section>
 
           <ul id="findings" class="finding-list" aria-label="主要证据缺口"></ul>
 
@@ -109,7 +142,11 @@
                 <li>同一浏览会话内 Before / After 复测</li>
               </ul>
               <div id="skill-routes" class="route-list"></div>
-              <a class="button button-secondary" href="https://github.com/Sunnyender-org/bflabs-agent-readiness">查看 GitHub <span aria-hidden="true">→</span></a>
+              <div class="offer-actions">
+                <a class="button button-secondary" href="/skills/bflabs-agent-readiness">读取根 Skill <span aria-hidden="true">→</span></a>
+                <a class="text-link text-link-dark" href="https://skills.bflabs.cn/catalog.html#geo">在 SkillHub 查看</a>
+                <a class="text-link text-link-dark" href="https://github.com/Sunnyender-org/bflabs-agent-readiness">查看源码</a>
+              </div>
             </article>
 
             <article class="offer-card offer-card-paid">
@@ -133,8 +170,7 @@
 
             <div class="artifact-actions">
               <button id="download-report" class="button button-secondary" type="button">下载 Artifact Pack</button>
-              <button id="copy-agent-prompt" class="button button-secondary" type="button">交给 Agent：下载 + 复制指令</button>
-              <span id="copy-status" role="status" aria-live="polite"></span>
+              <span>高级选项：下载完整证据与哈希清单。</span>
             </div>
           </section>
         </section>
@@ -173,7 +209,7 @@
 
     <footer class="site-footer">
       <span>BFLabs Agent Readiness</span>
-      <nav aria-label="法律与边界"><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
+      <nav aria-label="法律与边界"><a href="/leaderboard">公开榜单</a><a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
     </footer>
 
     <script type="module" src="/app.js"></script>

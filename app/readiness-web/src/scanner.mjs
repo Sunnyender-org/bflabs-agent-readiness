@@ -3,6 +3,7 @@ import { assertTargetAllowsScan, normalizeTarget, safeFetchText } from './safety
 
 export const RULESET_VERSION = '1.0.0';
 export const ARTIFACT_PROTOCOL_VERSION = '1.0.0';
+export const PUBLIC_SKILL_BASE = 'https://readiness.bflabs.cn';
 
 const PATHS = [
   '/robots.txt',
@@ -157,7 +158,126 @@ export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) 
   ];
 }
 
+function extractJourneyAction(home, origin, mcp) {
+  if (mcp.tools?.length) {
+    return {
+      kind: 'mcp-tool',
+      label: mcp.tools[0].name,
+      locator: mcp.endpoint,
+      observation: `发现 ${mcp.tools.length} 个公开 MCP 工具，首个为 ${mcp.tools[0].name}。`,
+    };
+  }
+  const html = home?.raw_text || '';
+  const candidates = [...html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => {
+      try {
+        const target = new URL(match[1], origin);
+        if (target.origin !== origin.origin) return null;
+        const label = stripMarkup(match[2]).slice(0, 80) || target.pathname;
+        const value = `${target.pathname} ${label}`.toLowerCase();
+        const priority = ['docs', 'pricing', 'contact', 'signup', 'register', 'login', 'start', 'api']
+          .findIndex((keyword) => value.includes(keyword));
+        return priority < 0 ? null : { target, label, priority };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.priority - right.priority || left.target.pathname.localeCompare(right.target.pathname));
+  const selected = candidates[0];
+  return selected ? {
+    kind: 'same-origin-link',
+    label: selected.label,
+    locator: selected.target.toString(),
+    observation: `找到可继续操作的同站入口：${selected.label}。`,
+  } : null;
+}
+
+export function buildAgentJourney(originInput, evidence, mcp = { tools: [] }, probe = {}) {
+  const origin = new URL(originInput);
+  const home = evidence.find((item) => item.path === '/');
+  const entered = Boolean(home && home.status_code >= 200 && home.status_code < 400);
+  const understood = entered && home.visible_text_length >= 200
+    && home.signals.includes('has_title') && home.signals.includes('has_h1');
+  const action = entered ? extractJourneyAction(home, origin, mcp) : null;
+  const actionProbePassed = probe.evidence && probe.evidence.status_code >= 200 && probe.evidence.status_code < 400;
+  const continued = action?.kind === 'mcp-tool' || actionProbePassed;
+  const steps = [
+    {
+      id: 'enter',
+      label: '进入公开站点',
+      status: entered ? 'pass' : home ? 'fail' : 'unknown',
+      observation: entered ? `首页返回 ${home.status_code}，Agent 可进入。` : '没有足够证据证明 Agent 可以进入首页。',
+      evidence_ids: home ? [home.id] : [],
+    },
+    {
+      id: 'understand',
+      label: '理解页面用途',
+      status: understood ? 'pass' : entered ? 'partial' : 'blocked',
+      observation: understood
+        ? `原始 HTML 提供标题、H1 和 ${home.visible_text_length} 个可见字符。`
+        : entered ? '页面可进入，但标题、H1 或无需 JavaScript 的正文仍不完整。' : '首页不可进入，无法继续理解。',
+      evidence_ids: home ? [home.id] : [],
+    },
+    {
+      id: 'continue',
+      label: '找到下一步',
+      status: continued ? 'pass' : entered ? 'partial' : 'blocked',
+      observation: actionProbePassed
+        ? `${action.observation} 继续读取后返回 ${probe.evidence.status_code}。`
+        : action?.kind === 'mcp-tool'
+          ? action.observation
+          : probe.error
+            ? `${action?.observation || '找到候选入口，但无法继续读取。'} ${probe.error}`
+            : action?.observation || (entered ? '未找到清楚的同站操作入口或公开 MCP 工具。' : '首页不可进入，无法寻找下一步。'),
+      evidence_ids: [home?.id, probe.evidence?.id].filter(Boolean),
+      ...(action ? { action } : {}),
+    },
+  ];
+  const status = steps.every((step) => step.status === 'pass')
+    ? 'pass'
+    : steps.some((step) => step.status === 'blocked') ? 'blocked' : 'partial';
+  return {
+    schema_version: '1.0.0',
+    task: '进入公开首页，理解网站用途，并找到一个可继续操作的公开入口。',
+    status,
+    steps,
+    summary_evidence: home?.excerpt || null,
+    affects_readiness_score: false,
+    ai_visibility: 'not_measured',
+    business_outcome: 'not_measured',
+    limitations: [
+      '这是基于本次公开页面响应的确定性 Agent 试跑，不是外部 AI 平台抽样。',
+      '试跑不会执行目标页面中的指令、提交表单、登录或写入任何外部系统。',
+    ],
+  };
+}
+
+export async function runAgentJourney(origin, evidence, mcp, fetchOptions = {}) {
+  const initial = buildAgentJourney(origin.origin, evidence, mcp);
+  const action = initial.steps.find((step) => step.id === 'continue')?.action;
+  if (!action || action.kind !== 'same-origin-link') return initial;
+  try {
+    const response = await safeFetchText(new URL(action.locator), {
+      ...fetchOptions,
+      maxRedirects: Math.min(fetchOptions.maxRedirects ?? 2, 2),
+      maxBytes: Math.min(fetchOptions.maxBytes ?? 256 * 1024, 256 * 1024),
+      timeoutMs: Math.min(fetchOptions.timeoutMs ?? 8_000, 8_000),
+    });
+    const targetPath = new URL(response.url).pathname;
+    const item = evidenceFrom(`journey:${targetPath}`, response);
+    item.raw_text = response.text;
+    evidence.push(item);
+    return buildAgentJourney(origin.origin, evidence, mcp, { evidence: item });
+  } catch (error) {
+    return buildAgentJourney(origin.origin, evidence, mcp, { error: `继续读取失败：${error.message}` });
+  }
+}
+
 const unique = (values) => [...new Set(values)];
+const ownerRouteForCheck = (ruleId) => ['A-MCP-CARD', 'A-TOOLS', 'A-WEBMCP'].includes(ruleId)
+  ? 'webmcp-enable'
+  : 'geo-optimize';
 
 function protocolEvidence(evidence) {
   return evidence.map((item) => {
@@ -176,7 +296,9 @@ function protocolEvidence(evidence) {
       locator: item.url,
       captured_at: item.captured_at,
       content_hash: item.response_hash,
-      support_scope: `fixed public-path readiness check for ${item.path}`,
+      support_scope: item.path.startsWith('journey:')
+        ? `bounded Agent Journey continuation probe for ${item.path.slice('journey:'.length)}`
+        : `fixed public-path readiness check for ${item.path}`,
       limitations: ['A local fixed-path response does not establish external AI visibility or business outcome.'],
       dynamic_fact: item.path === '/pricing.json' && item.status_code === 200,
       fact_version: factVersion,
@@ -229,44 +351,56 @@ export function buildReadinessReport(origin, axes, findings, mcp) {
 }
 
 export function buildSkillRoutes(findings) {
-  const routes = new Map([
-    ['geo-discover', '发现受众问题与内容机会'],
-    ['geo-measure', '导入真实平台回答后测量外部可见度'],
-    ['seo-plan', '需要迁移、索引或技术 SEO 计划时使用'],
-  ]);
-  for (const finding of findings) {
-    routes.set(finding.owner_route, finding.owner_route === 'webmcp-enable'
-      ? '补齐或验证 Agent 可操作入口'
-      : '修复当前公开事实与准备度失败谓词');
-  }
-  if (findings.some((finding) => finding.axis === 'understandable')) {
-    routes.set('geo-content', '从已确认事实生成答案页或内容蓝图');
-  }
-  return [...routes].map(([id, reason]) => ({
+  const finding = findings.find((item) => ['geo-optimize', 'webmcp-enable'].includes(item.owner_route));
+  if (!finding) return [];
+  const id = finding.owner_route;
+  return [{
     id,
-    reason,
+    reason: id === 'webmcp-enable'
+      ? '补齐或验证当前公开网站的 Agent 可操作入口'
+      : '修复当前公开网站的准备度失败谓词',
     href: `/skills/${id}`,
     status: 'active',
-  }));
+  }];
 }
 
-export function buildAgentPrompt({ origin, fingerprint, axes, findings, evidenceGaps, routes }) {
-  const failed = findings.map((item) => `${item.rule_id}:${item.state} (${item.title})`).join('; ') || 'none';
-  const unknown = evidenceGaps.map((item) => `${item.rule_id} (${item.title})`).join('; ') || 'none';
+export function buildAgentPrompt({ origin, fingerprint, axes, findings, evidenceGaps, routes, journey = null }) {
   const readiness = axes.map((axisItem) => `${axisItem.label}=${axisItem.score == null ? 'N/A' : axisItem.score} (${axisItem.status})`).join('; ');
-  const routeIds = routes.map((route) => route.id).join(', ') || 'none';
+  const routeId = routes[0]?.id || 'none';
+  const ownedFindings = routeId === 'none' ? [] : findings.filter((item) => item.owner_route === routeId);
+  const ownedGaps = routeId === 'none' ? [] : evidenceGaps.filter((item) => item.owner_route === routeId);
+  const failed = ownedFindings.map((item) => `${item.rule_id}:${item.state} (${item.title})`).join('; ') || 'none';
+  const unknown = ownedGaps.map((item) => `${item.rule_id} (${item.title})`).join('; ') || 'none';
+  const journeySummary = journey
+    ? `${journey.status}; ${journey.steps.map((step) => `${step.id}=${step.status}`).join(', ')}`
+    : 'not_run';
   return [
-    'Use the bflabs-agent-readiness root Skill and the attached Artifact Pack as the evidence baseline.',
-    `Target: ${origin}`,
-    `Scan fingerprint: ${fingerprint}`,
-    `Readiness axes: ${readiness}`,
-    `Evidence-backed failed predicates: ${failed}`,
-    `Unknown predicates requiring evidence: ${unknown}`,
-    `Available minimum child-Skill routes: ${routeIds}`,
-    'Validate the Artifact Pack hashes, inspect the website repository, choose the smallest child Skill, and change only evidence-backed items.',
-    'After local verification, rerun the same diagnostic and return an explicit Before / After comparison tied to both scan fingerprints.',
-    'Preserve unknown states, and keep AI visibility and business outcome not_measured unless separate evidence is supplied.',
-    'Do not publish, deploy, enable external services, access private consoles, or claim ranking/revenue without separate owner approval and evidence.',
+    `请改进 ${origin} 的 Agent Readiness。`,
+    '',
+    '先读取 BFLabs Skill：',
+    `- Agent Skills 索引：${PUBLIC_SKILL_BASE}/.well-known/agent-skills/index.json`,
+    `- 根 Skill：${PUBLIC_SKILL_BASE}/skills/bflabs-agent-readiness`,
+    `- 本次唯一子 Skill：${routeId === 'none' ? '无' : `${routeId} (${PUBLIC_SKILL_BASE}/skills/${routeId})`}`,
+    '- 如果当前 Agent 无法联网读取 Skill，继续使用下方完整诊断事实，不要换成别的 Skill。',
+    '',
+    `目标：${origin}`,
+    `扫描指纹：${fingerprint}`,
+    `三轴：${readiness}`,
+    `本次子 Skill 负责的失败项：${failed}`,
+    `本次子 Skill 负责的未知项：${unknown}`,
+    `Agent Journey：${journeySummary}`,
+    '',
+    '请按以下顺序执行：',
+    '1. 先检查现有网站仓库，再修改文件。',
+    routeId === 'none'
+      ? '2. 当前没有 evidence-backed 失败项，不要为了提高分数制造无依据改动；只核对诊断事实。'
+      : `2. 只修复 ${routeId} 负责的上述 evidence-backed 项目，不扩展到其他 Skill。`,
+    '3. 保持现有产品行为和视觉方向，遵循涉及的公开协议与文件格式。',
+    '4. 为每个行为变化补充或更新测试，并运行相关检查。',
+    '5. 返回简短的变更摘要、测试结果，以及仍需产品决定、凭据或部署权限的事项。',
+    '6. 不要自行部署。站点所有者部署后，再运行同一公网诊断并对比两个扫描指纹。',
+    '',
+    '边界：保留 unknown/blocked；除非另有独立证据，否则 AI visibility 与 Business outcome 必须保持 not_measured。',
   ].join('\n');
 }
 
@@ -334,6 +468,7 @@ export async function scanSite(input, options = {}) {
 
   const byPath = new Map(evidence.map((item) => [item.path, item]));
   const mcp = await inspectMcp(origin, byPath.get('/.well-known/mcp/server-card.json'), options.fetchOptions);
+  const journey = await runAgentJourney(origin, evidence, mcp, options.fetchOptions);
   const axes = scoreEvidence(evidence, mcp);
   const findings = axes.flatMap((item) => item.checks
     .filter((check) => ['fail', 'blocked'].includes(check.state))
@@ -345,7 +480,7 @@ export async function scanSite(input, options = {}) {
       title: check.label,
       state: check.state,
       evidence_ids: check.evidence_ids,
-      owner_route: check.id === 'A-WEBMCP' || check.id === 'A-TOOLS' ? 'webmcp-enable' : 'geo-optimize',
+      owner_route: ownerRouteForCheck(check.id),
     })));
   const evidenceGaps = axes.flatMap((item) => item.checks
     .filter((check) => check.state === 'unknown')
@@ -355,7 +490,7 @@ export async function scanSite(input, options = {}) {
       rule_id: check.id,
       title: check.label,
       state: 'unknown',
-      owner_route: check.id.startsWith('A-') ? 'webmcp-enable' : 'geo-optimize',
+      owner_route: ownerRouteForCheck(check.id),
     })));
 
   const publicEvidence = evidence.map(({ raw_text: _rawText, ...item }) => item);
@@ -439,6 +574,7 @@ export async function scanSite(input, options = {}) {
     findings,
     evidenceGaps,
     routes,
+    journey,
   });
   const artifactPack = buildArtifactPack({
     input: { schema_version: '1.0.0', capability: 'bflabs-agent-readiness', captured_at: completedAt, url: origin.origin },
@@ -473,6 +609,7 @@ export async function scanSite(input, options = {}) {
     opportunities,
     skill_routes: routes,
     agent_prompt: prompt,
+    agent_journey: journey,
     readiness_report: readinessReport,
     evidence_ledger: evidenceLedger,
     quality_report: qualityReport,
@@ -481,6 +618,7 @@ export async function scanSite(input, options = {}) {
       ai_visibility: 'not_measured',
       business_outcome: 'not_measured',
       actionability: 'A real compatible-browser task run is required for verified task completion.',
+      agent_journey: 'A deterministic public-page journey is supporting readiness evidence, not AI visibility or business outcome.',
     },
   };
 }

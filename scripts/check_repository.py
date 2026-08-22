@@ -15,6 +15,7 @@ REQUIRED = [
     "THIRD_PARTY_NOTICES.md",
     "pyproject.toml",
     "SKILL.md",
+    "skill.yml",
     "agents/openai.yaml",
     "registry/capabilities.json",
     "registry/workflows.json",

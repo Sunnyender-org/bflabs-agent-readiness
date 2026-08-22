@@ -1,0 +1,99 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BFLabs Agent Readiness API",
+    "version": "1.0.0",
+    "description": "Run a bounded public-site readiness scan and read the opt-in readiness leaderboard. Readiness, AI visibility, and business outcome remain separate.",
+    "contact": {"email": "hello@bflabs.cn"},
+    "license": {"name": "MIT", "identifier": "MIT"}
+  },
+  "servers": [{"url": "https://readiness.bflabs.cn"}],
+  "paths": {
+    "/api/v1/scans": {
+      "post": {
+        "operationId": "runReadinessScan",
+        "summary": "Run a fresh public-site readiness scan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": {"type": "string", "format": "uri"},
+                  "publish_to_leaderboard": {"type": "boolean", "default": false}
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completed report",
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/ScanReport"}},
+              "text/markdown": {"schema": {"type": "string"}}
+            }
+          },
+          "400": {"$ref": "#/components/responses/Problem"},
+          "403": {"$ref": "#/components/responses/Problem"},
+          "429": {"$ref": "#/components/responses/Problem"}
+        }
+      }
+    },
+    "/api/v1/leaderboard": {
+      "get": {
+        "operationId": "getReadinessLeaderboard",
+        "summary": "Read the opt-in public readiness leaderboard",
+        "responses": {"200": {"description": "Leaderboard", "content": {"application/json": {"schema": {"type": "object"}}}}}
+      }
+    },
+    "/api/v1/rulesets/current": {
+      "get": {
+        "operationId": "getCurrentRuleset",
+        "summary": "Read the current three-axis ruleset version",
+        "responses": {"200": {"description": "Ruleset", "content": {"application/json": {"schema": {"type": "object"}}}}}
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ScanReport": {
+        "type": "object",
+        "required": ["schema_version", "scan_fingerprint", "target", "scan", "axes", "agent_prompt", "agent_journey"],
+        "properties": {
+          "schema_version": {"type": "string"},
+          "scan_fingerprint": {"type": "string"},
+          "target": {"type": "object"},
+          "scan": {"type": "object"},
+          "axes": {"type": "array"},
+          "agent_prompt": {"type": "string"},
+          "agent_journey": {"type": "object"},
+          "leaderboard_publication": {"type": "object"}
+        },
+        "additionalProperties": true
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "required": ["type", "title", "status", "code", "detail", "resolution"],
+        "properties": {
+          "type": {"type": "string", "format": "uri"},
+          "title": {"type": "string"},
+          "status": {"type": "integer"},
+          "code": {"type": "string"},
+          "detail": {"type": "string"},
+          "resolution": {"type": "string"},
+          "instance": {"type": "string"}
+        }
+      }
+    },
+    "responses": {
+      "Problem": {
+        "description": "Structured problem details",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemDetails"}}}
+      }
+    }
+  }
+}

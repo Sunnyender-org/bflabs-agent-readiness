@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BFLabs Agent Readiness 公开榜单，只收录用户主动公开的三轴诊断结果。">
+    <title>公开榜单 · BFLabs Agent Readiness</title>
+    <link rel="icon" href="/bf-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="BFLabs Agent Readiness 首页">
+        <img src="/bf-mark.svg" alt="">
+        <span class="brand-copy"><strong>BF LABS</strong><small>Agent Readiness</small></span>
+      </a>
+      <nav class="site-nav" aria-label="产品入口"><a href="/">开始诊断</a><a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a></nav>
+    </header>
+    <main id="main-content" class="app-shell leaderboard-shell">
+      <header class="leaderboard-hero">
+        <span>OPT-IN PUBLIC INDEX</span>
+        <h1>公开榜单</h1>
+        <p>只展示用户主动公开的当前三轴结果。排名不混入 AI visibility 或 Business outcome。</p>
+        <a class="button button-primary" href="/">检查你的网站</a>
+      </header>
+      <section aria-labelledby="ranking-title">
+        <div class="leaderboard-heading">
+          <h2 id="ranking-title">Agent Readiness</h2>
+          <p>依次按通过轴数、最弱轴、三轴平均分排序，不生成隐藏总分。</p>
+        </div>
+        <ol id="leaderboard-list" class="leaderboard-list" aria-live="polite">
+          <li class="leaderboard-empty">正在读取公开榜单…</li>
+        </ol>
+        <p id="leaderboard-note" class="leaderboard-note"></p>
+      </section>
+    </main>
+    <footer class="site-footer"><span>BFLabs Agent Readiness</span><nav><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav></footer>
+    <script type="module" src="/leaderboard.js"></script>
+  </body>
+</html>

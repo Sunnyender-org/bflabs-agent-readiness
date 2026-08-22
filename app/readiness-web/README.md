@@ -31,16 +31,18 @@ The scan response keeps the legacy `axes` array, evidence rows, scan metadata, f
 
 The page displays failed predicates, evidence gaps, bounded opportunities, and the smallest relevant child Skills. It also provides:
 
+- **Copy to Agent**: the primary result action copies a self-contained prompt with the scan fingerprint, one selected child Skill, stable site-hosted Skill URLs, verification requirements, and no-deploy boundary;
+- **Agent Journey**: runs a deterministic enter-understand-continue task from the same public responses. It is supporting readiness evidence only and never changes a score or measurement layer;
+- **Opt-in leaderboard**: off by default. When explicitly selected, it stores only the domain, three axes, scan time, and fingerprint summary;
 - **Download Artifact Pack**: downloads the protocol manifest, input, evidence ledger, quality report, and canonical readiness report with SHA-256 hashes;
-- **Hand off to Agent**: downloads the Artifact Pack and copies an evidence-bounded prompt tied to the scan fingerprint, unknown states, minimum child-Skill routes, owner gates, and required Before / After rerun;
 - **Save baseline and retest**: keeps one baseline in page memory, reruns the same public target, and displays a three-axis Before / After comparison without mixing in AI visibility or business outcome;
 - **Contact BFLabs**: opens the public `hello@bflabs.cn` inquiry route with the target, scan fingerprint, readiness results, and requested paid-delivery lane prefilled.
 
-Child-Skill links are served from the current checked-out repository through a fixed allowlist. A controlled preview therefore does not depend on the Draft PR already being merged into GitHub `main`.
+The root and child Skills are served through a fixed allowlist and a SHA-256-bound `/.well-known/agent-skills/index.json`. The same report is available through the versioned API, `text/markdown`, packaged `bflabs-readiness scan` CLI, and Streamable HTTP MCP tools.
 
 The free surface covers public diagnosis, the open-source Skill, local changes, and in-session retesting. The paid surface covers customer repository/CMS/infrastructure implementation, repeated real-platform sampling, monitoring, and customer-authorized business attribution. The email route starts a service conversation; it is not an automated checkout or proof that paid delivery operations are complete.
 
-The scanner remains a bounded six-path audit. It does not crawl the full site or run a compatible-browser task, so WebMCP can be `present_unverified` but cannot become `verified` here.
+The scanner remains a bounded six-path audit. Agent Journey uses those responses and may follow at most one selected same-origin public link to prove continuation. It does not execute page instructions, submit forms, log in, or crawl the full site. WebMCP can be `present_unverified` but cannot become verified compatible-browser task completion here.
 
 ## Compatibility and verification
 
@@ -52,7 +54,7 @@ Manual local regression is performed at desktop width and 360px. Controls are se
 
 This build rejects credentials, unsupported schemes and ports, IP literals, unsafe DNS results, and unsafe redirects. It caps redirects and response bodies and does not forward cookies, authorization, or referrers.
 
-The Worker build uses Cloudflare `global_fetch_strictly_public`, rejects literal/private-style targets and unsafe ports, applies separate client and target rate-limit bindings, caps request/response bodies and redirects, uses per-fetch timeouts, keeps reports in the browser instead of an application database, and honors `/.well-known/bflabs-agent-readiness-opt-out`. Cloudflare observability is enabled for operational errors. Passing local smoke or a dry run does not prove a live deployment; use the canonical release checklist for live state.
+The Worker build uses Cloudflare `global_fetch_strictly_public`, rejects literal/private-style targets and unsafe ports, applies separate client and target rate-limit bindings, caps request/response bodies and redirects, uses per-fetch timeouts, and honors `/.well-known/bflabs-agent-readiness-opt-out`. Full reports stay in the browser. An optional `LEADERBOARD` KV binding stores only explicitly opted-in public summaries; without that binding, scans still succeed and publication reports `unavailable`. Cloudflare observability is enabled for operational errors. Passing local smoke or a dry run does not prove a live deployment; use the canonical release checklist for live state.
 
 ```bash
 npm run build:worker

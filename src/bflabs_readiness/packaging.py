@@ -36,6 +36,7 @@ SOURCE_ROOT_FILES = {
     "README.md",
     "SECURITY.md",
     "SKILL.md",
+    "skill.yml",
     "THIRD_PARTY_NOTICES.md",
     "pyproject.toml",
 }
