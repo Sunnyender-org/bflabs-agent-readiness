@@ -68,6 +68,7 @@ IGNORED_PARTS = {
     ".mypy_cache",
     ".pytest_cache",
     ".receipts",
+    ".venv",
     ".worker-build",
     ".wrangler",
     "__pycache__",
