@@ -222,7 +222,10 @@ def skillhub_files(root: Optional[Path] = None) -> List[Tuple[PurePosixPath, byt
     base = (root or repository_root()).resolve()
     selected: List[Path] = [base / name for name in sorted(SKILLHUB_ROOT_FILES | SKILLHUB_EXTRA_FILES)]
     for directory in sorted(SKILLHUB_DIRS):
-        selected.extend(path for path in sorted((base / directory).rglob("*")) if path.is_file())
+        selected.extend(
+            path for path in sorted((base / directory).rglob("*"))
+            if path.is_file() and not IGNORED_PARTS.intersection(path.parts)
+        )
     entries: List[Tuple[PurePosixPath, bytes, int]] = []
     for path in selected:
         if not path.is_file():
