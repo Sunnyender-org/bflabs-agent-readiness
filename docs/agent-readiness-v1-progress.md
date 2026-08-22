@@ -5,7 +5,7 @@
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
 位置：0.4.3 已发布 / 两个站点 live / SkillHub 已审核上架
-状态：PR #7 merged、v0.4.3 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.3
+状态：PR #8 merged、v0.4.3 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.3
 本轮：完成 Prompt-first 公网诊断、可选榜单、Agent Journey、Agent-native API/CLI/MCP、GitHub 发布、Skills catalog、SkillHub 上架与 BFLabs Logo
 下一关口：Lucas 点击新验证邮件；独立安全审查签字；完成首个真实付费 pilot，形成多平台测量、复测和业务归因 receipt
 ```
@@ -53,6 +53,7 @@ verified_state:
 - SkillHub 0.4.2 首次成功提交为 `skillId=169315`、`versionId=262582`，随后通过审核并公开；0.4.3 更新绑定真实 BFLabs 图标。平台后台最终读回 `reviewStatus=approved`、`latestApprovedVersion=0.4.3`、`status=listed`，公共搜索解析为 `@user_49f8ec71/bflabs-agent-readiness`，两个公开详情 URL 均为 200；
 - PR #7 已 merge 为 `fa2ae364dcc909707fb8b503c6f269660e1d8265`，两项 CI 均通过；Release [`v0.4.3`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.3) 从该 commit 发布九个带 SHA-256 digest 的资产；Worker `11762449-743b-4385-bba6-1e53f7b0f09e` 已上线；
 - `bflabs-skills` PR #4 已 merge 为 `1176bc4250d4ba66e78f7e4ae205c344d4874457`，Worker `f06910c4-da47-4cc2-b366-27d232b564d2` 已读回 SkillHub ready 状态、0.4.3 与真实 listing URL；
+- 最终状态 PR #8 已 merge 为 `02f908f4aa1fd29718b6a90be7858970d341f67f`，两项 CI 均通过；Worker `d44d8072-1c45-45d8-8e9c-ae4f50611638` 已部署并读回站点托管根 Skill 的外部 SkillHub listing 与 published metadata；
 - Cloudflare Email Routing 主目标仍为已验证且已真实收件的 Owner 邮箱。旧 Lucas pending destination 已撤销，同一协作者目标于 2026-08-23 01:16 +08 重新创建并发送验证邮件，当前仍为 `pending`；点击前双邮箱 fanout 仍不算完成。
 
 ## Phase 0 — Contract And License Baseline

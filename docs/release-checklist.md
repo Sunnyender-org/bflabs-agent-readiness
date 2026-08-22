@@ -52,6 +52,7 @@ Last live readback: 2026-08-23
 - [x] The 0.4.1 source asset was withdrawn before any download after package audit found local `.wrangler` and generated `.worker-build` files; the seven unaffected wheel/child assets remain available.
 - [x] Package-hygiene PR #6 merged as `5677a2824fee281ffc17d4b9dc4b69e2e08d30fa`; Release [`v0.4.2`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.2) contains nine assets, including a 68-file SkillHub ZIP and a source archive with generated/runtime state excluded.
 - [x] Icon-binding PR #7 merged as `fa2ae364dcc909707fb8b503c6f269660e1d8265`; Release [`v0.4.3`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.3) contains nine uploaded assets with GitHub SHA-256 digests.
+- [x] Final status PR #8 merged as `02f908f4aa1fd29718b6a90be7858970d341f67f`; both checks passed.
 
 ## Production live state
 
@@ -63,6 +64,7 @@ Last live readback: 2026-08-23
 - [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed; Cloudflare sent a fresh verification email on 2026-08-23 and the current state is `pending`.
 - [x] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
 - [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
+- [x] Current Worker version `d44d8072-1c45-45d8-8e9c-ae4f50611638` serves the finalized 0.4.3 SkillHub publication metadata while preserving the verified KV and rate-limit bindings.
 - [x] `bflabs-skills` PR #3 merged as `b46ec827d47b0da880053b98230b155b87442ed1`; Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` serves the updated GEO entry and four public catalog pages.
 - [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.3; public search and both detail URLs resolve, and the dashboard icon URL was visually verified as the BFLabs logo.
 
