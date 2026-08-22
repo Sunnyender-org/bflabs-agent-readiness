@@ -10,5 +10,6 @@ dist/
 build/
 runs/
 .receipts/
+.grok-companion/
 coverage/
 *.receipt.json

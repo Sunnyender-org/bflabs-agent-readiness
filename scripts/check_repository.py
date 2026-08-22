@@ -104,6 +104,12 @@ if "Not for" not in frontmatter.group(1):
 if "sunny_skill_type: library" not in frontmatter.group(1):
     fail("root skill must be classified as library")
 
+skill_body = skill[frontmatter.end():]
+if "![" in skill_body or re.search(r"<img\b", skill_body, re.I):
+    fail("root Skill body must not embed a logo or other image")
+if len(re.findall(r"[\u4e00-\u9fff]", skill_body)) < 100:
+    fail("root Skill body must remain Chinese-first for the public SkillHub page")
+
 for routed_path in [
     "skills/geo-discover/SKILL.md",
     "skills/geo-content/SKILL.md",
@@ -171,7 +177,7 @@ if len(router_cases) < 40:
     fail("router eval needs at least 40 bilingual and boundary cases")
 
 allowed_suffixes = {".md", ".json", ".yaml", ".yml", ".py", ".js", ".mjs", ".toml"}
-ignored_parts = {".git", ".receipts", "node_modules", ".venv", "dist", "build", "runs"}
+ignored_parts = {".git", ".grok-companion", ".receipts", "node_modules", ".venv", "dist", "build", "runs"}
 for path in ROOT.rglob("*"):
     if not path.is_file() or ignored_parts.intersection(path.parts) or path.suffix not in allowed_suffixes:
         continue

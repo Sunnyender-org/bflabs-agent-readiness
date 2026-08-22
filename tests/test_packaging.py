@@ -51,13 +51,14 @@ class PackagingTests(unittest.TestCase):
             with self.assertRaises(PackageError):
                 validate_archive(archive, "geo-optimize")
 
-    def test_source_package_excludes_wrangler_and_generated_worker_state(self) -> None:
+    def test_source_package_excludes_local_and_generated_runtime_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             archive = build_source_package(Path(temp))
             with tarfile.open(archive, "r:gz") as bundle:
                 names = bundle.getnames()
             self.assertFalse(any("/.wrangler/" in name for name in names))
             self.assertFalse(any("/.worker-build/" in name for name in names))
+            self.assertFalse(any("/.venv/" in name for name in names))
 
     def test_skillhub_package_is_bounded_and_contains_the_brand_asset(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

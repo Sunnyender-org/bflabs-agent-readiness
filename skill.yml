@@ -1,6 +1,6 @@
 name: bflabs-agent-readiness
 display_name: BFLabs Agent Readiness
-version: 0.4.3
+version: 0.4.4
 description: 免费诊断公开网站的可发现、可理解、可操作状态，并把唯一 evidence-backed 下一步交给 Agent。
 license: MIT
 runtime: portable
@@ -9,7 +9,7 @@ entrypoint: SKILL.md
 install: https://readiness.bflabs.cn/skills/bflabs-agent-readiness
 discovery: https://readiness.bflabs.cn/.well-known/agent-skills/index.json
 diagnostic: https://readiness.bflabs.cn
-icon_url: https://skillhub-1388575217.cos.accelerate.myqcloud.com/skill-icons/uploads/636363/865285e5a7314589ab1a65cc5e4a7789.png
+icon_url: https://skillhub-1388575217.cos.accelerate.myqcloud.com/skill-icons/uploads/636363/6ee92b9fe5dd4db8af1a35ec6cb5d7d4.png
 hosts:
   - codex
   - claude

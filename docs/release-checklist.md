@@ -35,7 +35,6 @@ Last live readback: 2026-08-23
 - [x] The local web UI, versioned API, Markdown projection, packaged CLI, and MCP scan tool use the same report contract.
 - [x] The local opt-in leaderboard defaults off, stores summary-only records for at most 30 days, and discloses its three-axis ordering without creating a combined score.
 - [x] The root and all six child Skills are exposed through a SHA-256-bound Agent Skills index; the local BF Labs Skills catalog lists GEO as a SkillHub host using stable site URLs.
-- [ ] Before / After can be downloaded as one schema/hash-valid comparison artifact.
 - [ ] Paid delivery has auditable real-platform sampling, monitoring, implementation, and attribution runbooks/receipts.
 
 ## GitHub live state
@@ -66,6 +65,7 @@ Last live readback: 2026-08-23
 - [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
 - [x] Current Worker version `d44d8072-1c45-45d8-8e9c-ae4f50611638` serves the finalized 0.4.3 SkillHub publication metadata while preserving the verified KV and rate-limit bindings.
 - [x] `bflabs-skills` PR #3 merged as `b46ec827d47b0da880053b98230b155b87442ed1`; Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` serves the updated GEO entry and four public catalog pages.
+- [x] `bflabs-skills` PR #4 merged as `1176bc4250d4ba66e78f7e4ae205c344d4874457`; current Worker `f06910c4-da47-4cc2-b366-27d232b564d2` links the approved 0.4.3 SkillHub listing and states the BFLabs logo receipt.
 - [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.3; public search and both detail URLs resolve, and the dashboard icon URL was visually verified as the BFLabs logo.
 
 ## Owner gates

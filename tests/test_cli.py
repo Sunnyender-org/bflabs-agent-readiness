@@ -50,6 +50,14 @@ class CliTests(unittest.TestCase):
             self.assertEqual(report["target"], "geo-optimize")
             self.assertEqual(report["status"], "pass")
 
+    def test_package_command_builds_skillhub_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            status, output = self.run_cli(["package", "--target", "skillhub", "--output", temp])
+            report = json.loads(output)
+            self.assertEqual(status, 0)
+            self.assertEqual(report["target"], "skillhub")
+            self.assertEqual(report["status"], "pass")
+
     @mock.patch("bflabs_readiness.cli.scan_public_site")
     def test_scan_command_uses_versioned_public_api_without_leaderboard_by_default(self, scan) -> None:
         scan.return_value = ("application/json", '{"scan_fingerprint":"sha256:test"}')
