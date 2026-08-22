@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bflabs-agent-readiness"
-version = "0.4.0"
+version = "0.4.1"
 description = "Evidence-bounded GEO, SEO, and AI-agent website readiness skills"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -29,6 +29,7 @@ bflabs_readiness = ["py.typed"]
 
 [tool.setuptools.data-files]
 "share/bflabs-agent-readiness" = ["SKILL.md", "skill.yml", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"]
+"share/bflabs-agent-readiness/assets" = ["assets/*.svg"]
 "share/bflabs-agent-readiness/agents" = ["agents/*.yaml"]
 "share/bflabs-agent-readiness/docs" = ["docs/architecture.md", "docs/artifact-protocol.md", "docs/install-codex-claude.md", "docs/release-checklist.md"]
 "share/bflabs-agent-readiness/evals" = ["evals/*.json"]

@@ -1,6 +1,6 @@
 # Public release candidate checklist
 
-Last live readback: 2026-08-17; local post-release worktree readback: 2026-08-23
+Last live readback: 2026-08-23
 
 ## Contract
 
@@ -46,6 +46,8 @@ Last live readback: 2026-08-17; local post-release worktree readback: 2026-08-23
 - [x] GitHub Release [`v0.3.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.3.0) is published from the merge commit.
 - [x] The release contains source, unified wheel, and all six child-Skill packages with GitHub SHA-256 digests.
 - [x] Email follow-up commit `dd87282c4b453bbf76904d68c0e4ee870bf5f6f9` is on `main`; Actions run `31961670907` passed.
+- [x] Productization PR [#4](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/4) merged as `8cebb0801f9cb809d50716d61fc424945e74522e`; both checks passed.
+- [x] GitHub Release [`v0.4.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.0) was published from that merge commit with eight uploaded assets and GitHub SHA-256 digests.
 
 ## Production live state
 
@@ -55,8 +57,8 @@ Last live readback: 2026-08-17; local post-release worktree readback: 2026-08-23
 - [x] A production `https://beefapi.com` scan returned `100 / 100 / 75`, Artifact Pack `pass`, AI visibility `not_measured`, and business outcome `not_measured`.
 - [x] `hello@bflabs.cn` routes to the email Worker; the owner destination is verified and a real smoke message was received.
 - [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed.
-- [ ] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
-- [ ] A production `LEADERBOARD` KV binding exists, opt-in publication is verified, and default-private behavior is rechecked.
+- [x] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
+- [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
 - [ ] The updated GEO entry is deployed and read back from `skills.bflabs.cn`.
 - [ ] The prepared `skill.yml` is submitted to the external SkillHub and an accepted listing receipt is read back.
 
@@ -81,12 +83,12 @@ Last live readback: 2026-08-17; local post-release worktree readback: 2026-08-23
 
 The checked GitHub and production items above are live readbacks, not inferences from local tests. The remaining unchecked items stay open.
 
-The checked 2026-08-18 and 2026-08-22/23 local prototype items are not release or production claims. Their public-repository changes are uncommitted on `codex/productize-agent-readiness`; the private WorkBuddy-compatible package is local only and has not been installed, published, connected to customer accounts, or used for a real paid engagement. A remote KV namespace exists and is present in deployment dry-run, but production binding and behavior remain unverified until deploy/readback.
+The checked 2026-08-18 private paid-delivery prototype remains local only: it has not been installed in WorkBuddy, published, connected to customer accounts, or used for a real paid engagement. The public 0.4.0 productization items above are live only where explicit production readback is recorded. The 0.4.1 SkillHub metadata/logo patch is still local until its own commit, release, deploy, and platform receipt exist.
 
 Latest local verification on 2026-08-17: 50 Python tests, 18 Node/Worker tests, Node syntax checks, Worker build and Cloudflare dry-run, 62/62 router cases, zero forbidden misroutes, and 100% workflow precision passed. Package verification passed for source, unified, and all six child Skills, including two isolated Python installs and both workflow runs. Release `v0.3.0` was rebuilt from the merge commit and its eight artifacts were uploaded with GitHub digests.
 
 Latest local post-release verification on 2026-08-23: 53 Python tests, 31 Node/Worker tests, 62/62 router cases, repository/Skill validators, Worker build, OpenAPI JSON, CLI live scan, Markdown, MCP, Agent Skills index, opt-in leaderboard and server-rendered share-page scenarios, 30-day KV retention, desktop/390px browser checks, and BF Labs Skills catalog syntax/render passed. Package verification passed for the 0.4.0 candidate with 207 source files, 156 unified-wheel files, all six child packages, two isolated installs, and both workflow runs. These are local worktree receipts only.
 
-A real production scan of `https://beefapi.com` returned `100 / 100 / 75` and Artifact Pack `pass`; the report still marks WebMCP `present_unverified`, requires compatible-browser task verification, and keeps AI visibility/business outcome `not_measured`.
+A real 2026-08-23 production scan of `https://beefapi.com` returned `100 / 100 / 75`, Agent Journey `pass`, AI visibility `not_measured`, and business outcome `not_measured`; the report still requires a compatible-browser task before WebMCP can become verified.
 
 The 2026-08-11 release-candidate receipt remains historical evidence for router p95 `127.146 ms` and deterministic workflow p95 `27.115 ms` / max `28.435 ms`. Re-run package verification after any further source change and again from the exact commit selected for publication.
