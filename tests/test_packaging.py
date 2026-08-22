@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import io
+import tarfile
 import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 
-from bflabs_readiness.packaging import CAPABILITY_IDS, PackageError, build_skill_package, validate_archive
+from bflabs_readiness.packaging import CAPABILITY_IDS, PackageError, build_skill_package, build_skillhub_package, build_source_package, validate_archive
 
 
 class PackagingTests(unittest.TestCase):
@@ -49,6 +50,27 @@ class PackagingTests(unittest.TestCase):
                 bundle.writestr("geo-optimize/PACKAGE_MANIFEST.json", "{}")
             with self.assertRaises(PackageError):
                 validate_archive(archive, "geo-optimize")
+
+    def test_source_package_excludes_wrangler_and_generated_worker_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            archive = build_source_package(Path(temp))
+            with tarfile.open(archive, "r:gz") as bundle:
+                names = bundle.getnames()
+            self.assertFalse(any("/.wrangler/" in name for name in names))
+            self.assertFalse(any("/.worker-build/" in name for name in names))
+
+    def test_skillhub_package_is_bounded_and_contains_the_brand_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            archive = build_skillhub_package(Path(temp))
+            report = validate_archive(archive, "skillhub")
+            with zipfile.ZipFile(archive) as bundle:
+                names = bundle.namelist()
+            self.assertEqual(report["status"], "pass")
+            self.assertLessEqual(len(names), 200)
+            self.assertIn("SKILL.md", names)
+            self.assertIn("assets/bflabs-logo.svg", names)
+            self.assertNotIn("LICENSE", names)
+            self.assertFalse(any(".wrangler" in name or ".worker-build" in name for name in names))
 
 
 if __name__ == "__main__":

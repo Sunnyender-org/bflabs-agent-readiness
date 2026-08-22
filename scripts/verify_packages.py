@@ -35,6 +35,8 @@ def verify(output: Path) -> dict[str, object]:
     artifacts.append(validate_archive(source, "source"))
     unified = package_target("unified", output, ROOT)
     artifacts.append(validate_archive(unified, "unified"))
+    skillhub = package_target("skillhub", output, ROOT)
+    artifacts.append(validate_archive(skillhub, "skillhub"))
     for capability_id in CAPABILITY_IDS:
         archive = package_target(capability_id, output, ROOT)
         artifacts.append(validate_archive(archive, capability_id))

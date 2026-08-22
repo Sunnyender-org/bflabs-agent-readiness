@@ -4,10 +4,10 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：0.4.0 Prompt-first 已上线 / 0.4.1 SkillHub 元数据补丁本地完成
-状态：PR #4 merged、v0.4.0 released、readiness.bflabs.cn 新版 live；`codex/skillhub-metadata-0.4.1` 尚未 commit/push
-本轮：生产验证 Prompt-first、站点托管 Skill、可选榜单、Agent Journey、版本化 API、Markdown、CLI 与 MCP；补齐官方 SkillHub 元数据和 BFLabs Logo
-下一关口：提交/合并/发布 0.4.1，部署 skills.bflabs.cn，提交外部 SkillHub 并读取审核状态；独立安全复核仍单列
+位置：0.4.1 已上线 / 0.4.2 SkillHub 包卫生补丁本地进行中
+状态：PR #5 merged、v0.4.1 released、readiness.bflabs.cn 0.4.1 live、skills.bflabs.cn GEO catalog live；外部 SkillHub 尚未接受
+本轮：生产验证两个站点；补齐官方 SkillHub 元数据和 BFLabs Logo；撤下误含本地 Wrangler cache 的 0.4.1 source asset
+下一关口：提交/合并/发布 0.4.2，使用平台专用 ZIP 提交 SkillHub 并读取审核状态；独立安全复核仍单列
 ```
 
 ## Verified State
@@ -45,7 +45,10 @@ verified_state:
 - PR [#4](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/4) 已 merge 为 `8cebb0801f9cb809d50716d61fc424945e74522e`，两项 GitHub Actions 均通过；GitHub Release [`v0.4.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.0) 已从该 merge commit 发布八个带 SHA-256 digest 的资产；
 - Cloudflare Worker 版本 `f626760b-73c3-4332-9b9e-1a48381ed44e` 已绑定 `LEADERBOARD` KV、客户端/目标限流和 Assets；生产读回验证首页、榜单、隐私、条款、OpenAPI、`llms.txt`、Agent Skills、MCP card、methodology 与根 Skill 均为 200；
 - 生产默认私有扫描后榜单仍为空；显式 opt-in 的 `beefapi.com` 写入成功，KV 控制面读到 `entry:beefapi.com` 与到期时间，公开 API 和独立分享页均可读；生产 Markdown、MCP `tools/list` 和 0.4.0 wheel CLI 扫描均通过；
-- 生产 BeefAPI 扫描为 Discoverable `100`、Understandable `100`、Actionable `75/partial`，确定性 Journey `pass`；AI visibility 与 business outcome 均保持 `not_measured`。`skills.bflabs.cn`、外部 SkillHub、Lucas 邮箱验证与真实付费交付仍未因此成立。
+- 生产 BeefAPI 扫描为 Discoverable `100`、Understandable `100`、Actionable `75/partial`，确定性 Journey `pass`；AI visibility 与 business outcome 均保持 `not_measured`。外部 SkillHub、Lucas 邮箱验证与真实付费交付仍未因此成立。
+- PR #5 已 merge 为 `e32788a0e0a5a672d0c898589f6d3387700bcd4a`，Release `v0.4.1` 与 Worker `e9ab84ad-34df-4301-b8d7-5439c3b41235` 已发布；线上根 Skill 读回官方 SkillHub 元数据与 BFLabs Logo 引用；
+- `bflabs-skills` PR #3 已 merge 为 `b46ec827d47b0da880053b98230b155b87442ed1`，Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` 已部署；目录、宿主、层级和安装页生产 200；
+- SkillHub 首次真实提交因 218 个文件超过平台 200 上限而未创建 listing；第二次缩包被平台拒绝无扩展名 `LICENSE`。随后审计发现 0.4.1 source tarball 带入本地 `.wrangler` 和 `.worker-build`；该 source asset 下载数为 0，已从 GitHub Release 撤下，wheel 和六个 child Skill 资产不受影响。0.4.2 将在构建器层永久排除这些目录，并生成平台允许的专用 ZIP。
 
 ## Phase 0 — Contract And License Baseline
 

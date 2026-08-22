@@ -17,7 +17,7 @@ from bflabs_readiness.packaging import CAPABILITY_IDS, package_target, validate_
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target", required=True, choices=["source", "unified", *CAPABILITY_IDS])
+    parser.add_argument("--target", required=True, choices=["source", "unified", "skillhub", *CAPABILITY_IDS])
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     args = parser.parse_args()
     archive = package_target(args.target, args.output, ROOT)
