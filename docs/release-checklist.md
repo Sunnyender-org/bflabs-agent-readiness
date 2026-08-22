@@ -52,6 +52,8 @@ Last live readback: 2026-08-23
 - [x] Package-hygiene PR #6 merged as `5677a2824fee281ffc17d4b9dc4b69e2e08d30fa`; Release [`v0.4.2`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.2) contains nine assets, including a 68-file SkillHub ZIP and a source archive with generated/runtime state excluded.
 - [x] Icon-binding PR #7 merged as `fa2ae364dcc909707fb8b503c6f269660e1d8265`; Release [`v0.4.3`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.3) contains nine uploaded assets with GitHub SHA-256 digests.
 - [x] Final status PR #8 merged as `02f908f4aa1fd29718b6a90be7858970d341f67f`; both checks passed.
+- [x] Chinese SkillHub-body PR [#10](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/10) merged as `def5dcd65946c6bfc292cc8640452466d44adced`; both checks passed.
+- [x] GitHub Release [`v0.4.4`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.4) is published from that merge commit with source, wheel, SkillHub, and all six child-Skill assets plus GitHub SHA-256 digests.
 
 ## Production live state
 
@@ -63,10 +65,11 @@ Last live readback: 2026-08-23
 - [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed; Cloudflare sent a fresh verification email on 2026-08-23 and the current state is `pending`.
 - [x] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
 - [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
-- [x] Current Worker version `d44d8072-1c45-45d8-8e9c-ae4f50611638` serves the finalized 0.4.3 SkillHub publication metadata while preserving the verified KV and rate-limit bindings.
+- [x] Current Worker version `d971f697-2127-4aec-989c-fb08d49747b3` serves the 0.4.4 Chinese root Skill without a body image while preserving the verified KV and rate-limit bindings.
 - [x] `bflabs-skills` PR #3 merged as `b46ec827d47b0da880053b98230b155b87442ed1`; Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` serves the updated GEO entry and four public catalog pages.
 - [x] `bflabs-skills` PR #4 merged as `1176bc4250d4ba66e78f7e4ae205c344d4874457`; current Worker `f06910c4-da47-4cc2-b366-27d232b564d2` links the approved 0.4.3 SkillHub listing and states the BFLabs logo receipt.
-- [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.3; public search and both detail URLs resolve, and the dashboard icon URL was visually verified as the BFLabs logo.
+- [x] `bflabs-skills` PR #5 merged as `40e82ec12f45ecc17e1fa94ed298ee2e7afa19d0`; current Worker `1548db78-fbf4-4bae-8ec9-4d1c0db1bec4` presents the reviewed 0.4.4 Chinese listing state on the public catalog, host, and install surfaces.
+- [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.4; Keen and Sanbu scans are benign, public search returns 0.4.4, the real Chrome detail page shows Chinese body copy with no body-level logo, and the independent BFLabs card icon remains present.
 
 ## Owner gates
 
@@ -93,7 +96,7 @@ The checked 2026-08-18 private paid-delivery prototype remains local only: it ha
 
 Latest local verification on 2026-08-17: 50 Python tests, 18 Node/Worker tests, Node syntax checks, Worker build and Cloudflare dry-run, 62/62 router cases, zero forbidden misroutes, and 100% workflow precision passed. Package verification passed for source, unified, and all six child Skills, including two isolated Python installs and both workflow runs. Release `v0.3.0` was rebuilt from the merge commit and its eight artifacts were uploaded with GitHub digests.
 
-Latest local verification on 2026-08-23: 55 Python tests, 31 Node/Worker tests, 62/62 router cases, repository/Skill validators, Worker build, OpenAPI JSON, CLI live scan, Markdown, MCP, Agent Skills index, opt-in leaderboard and server-rendered share pages, 30-day KV retention, desktop/390px browser checks, and BF Labs Skills catalog syntax/render passed. Package verification passed with 200 source files, 157 unified-wheel files, a 68-file SkillHub package, all six child packages, two isolated installs, and both workflow runs.
+Latest local verification on 2026-08-23: 56 Python tests, 31 Node/Worker tests, 62/62 router cases, repository/Skill validators, Worker build, OpenAPI JSON, CLI live scan, Markdown, MCP, Agent Skills index, opt-in leaderboard and server-rendered share pages, 30-day KV retention, desktop/390px browser checks, and BF Labs Skills catalog syntax/render passed. Package verification passed with 200 source files, 157 unified-wheel files, a 68-file SkillHub package, all six child packages, two isolated installs, both workflow runs, the installed CLI `skillhub` package target, and `.venv` exclusion.
 
 A real 2026-08-23 production scan of `https://beefapi.com` returned `100 / 100 / 75`, Agent Journey `pass`, AI visibility `not_measured`, and business outcome `not_measured`; the report still requires a compatible-browser task before WebMCP can become verified.
 
