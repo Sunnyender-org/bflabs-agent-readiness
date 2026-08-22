@@ -145,6 +145,7 @@ npm run check --prefix app/readiness-web
 bflabs-readiness eval
 bflabs-readiness package --target source
 bflabs-readiness package --target unified
+bflabs-readiness package --target skillhub
 bflabs-readiness package --target geo-optimize
 python3 scripts/verify_packages.py
 ```

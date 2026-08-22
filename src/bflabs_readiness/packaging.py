@@ -68,6 +68,8 @@ IGNORED_PARTS = {
     ".mypy_cache",
     ".pytest_cache",
     ".receipts",
+    ".worker-build",
+    ".wrangler",
     "__pycache__",
     "build",
     "dist",
@@ -75,6 +77,19 @@ IGNORED_PARTS = {
     "runs",
 }
 TEXT_SUFFIXES = {"", ".css", ".csv", ".html", ".js", ".json", ".md", ".mjs", ".py", ".toml", ".txt", ".yaml", ".yml"}
+SKILLHUB_ALLOWED_SUFFIXES = {".csv", ".json", ".md", ".py", ".svg", ".yaml", ".yml"}
+SKILLHUB_MAX_FILES = 200
+SKILLHUB_ROOT_FILES = {
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "SKILL.md",
+    "skill.yml",
+    "THIRD_PARTY_NOTICES.md",
+}
+SKILLHUB_DIRS = {"assets", "references", "skills", "templates"}
+SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md"}
 PRIVATE_PATTERNS = (
     (re.compile(rb"/(?:Users|home)/[^/\s]+/"), "private home path"),
     (re.compile(rb"[A-Za-z]:\\Users\\[^\\\s]+\\"), "private Windows home path"),
@@ -203,6 +218,45 @@ def build_source_package(output_dir: Path, root: Optional[Path] = None) -> Path:
     return archive
 
 
+def skillhub_files(root: Optional[Path] = None) -> List[Tuple[PurePosixPath, bytes, int]]:
+    base = (root or repository_root()).resolve()
+    selected: List[Path] = [base / name for name in sorted(SKILLHUB_ROOT_FILES | SKILLHUB_EXTRA_FILES)]
+    for directory in sorted(SKILLHUB_DIRS):
+        selected.extend(
+            path for path in sorted((base / directory).rglob("*"))
+            if path.is_file() and not IGNORED_PARTS.intersection(path.parts)
+        )
+    entries: List[Tuple[PurePosixPath, bytes, int]] = []
+    for path in selected:
+        if not path.is_file():
+            raise PackageError("SkillHub package is missing required file: {}".format(path.relative_to(base)))
+        relative = _safe_relative(path, base)
+        if relative.suffix.lower() not in SKILLHUB_ALLOWED_SUFFIXES:
+            raise PackageError("SkillHub package contains an unsupported file type: {}".format(relative))
+        mode = 0o755 if relative.parts[0] == "skills" and relative.suffix == ".py" else 0o644
+        entries.append((relative, path.read_bytes(), mode))
+    if len(entries) + 1 > SKILLHUB_MAX_FILES:
+        raise PackageError("SkillHub package exceeds {} files".format(SKILLHUB_MAX_FILES))
+    return sorted(entries, key=lambda item: item[0].as_posix())
+
+
+def build_skillhub_package(output_dir: Path, root: Optional[Path] = None) -> Path:
+    entries = skillhub_files(root)
+    manifest = _package_manifest("skillhub", entries)
+    manifest_data = (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    entries = [*entries, (PurePosixPath("PACKAGE_MANIFEST.json"), manifest_data, 0o644)]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    archive = output_dir / "bflabs-agent-readiness-skillhub-{}.zip".format(__version__)
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
+        for relative, data, mode in entries:
+            info = zipfile.ZipInfo(relative.as_posix(), date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = (mode & 0xFFFF) << 16
+            bundle.writestr(info, data)
+    validate_archive(archive, target="skillhub")
+    return archive
+
+
 def build_unified_package(output_dir: Path, root: Optional[Path] = None) -> Path:
     base = (root or repository_root()).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -235,6 +289,8 @@ def package_target(target: str, output_dir: Path, root: Optional[Path] = None) -
         return build_source_package(output_dir, root)
     if target == "unified":
         return build_unified_package(output_dir, root)
+    if target == "skillhub":
+        return build_skillhub_package(output_dir, root)
     return build_skill_package(target, output_dir, root)
 
 
@@ -277,8 +333,19 @@ def validate_archive(path: Path, target: str) -> Dict[str, Any]:
                     raise PackageError("{} leaked in {}".format(label, name))
     if len(names) != len(set(names)):
         raise PackageError("archive contains duplicate members")
-    if not has_license or not has_notices:
+    if target != "skillhub" and (not has_license or not has_notices):
         raise PackageError("archive must contain LICENSE and THIRD_PARTY_NOTICES.md")
+    if target == "skillhub":
+        if not has_notices:
+            raise PackageError("SkillHub package must contain THIRD_PARTY_NOTICES.md")
+        if len(names) > SKILLHUB_MAX_FILES:
+            raise PackageError("SkillHub package exceeds {} files".format(SKILLHUB_MAX_FILES))
+        if "SKILL.md" not in names or "assets/bflabs-logo.svg" not in names:
+            raise PackageError("SkillHub package lacks its root Skill or BFLabs logo")
+        if any(PurePosixPath(name).suffix.lower() not in SKILLHUB_ALLOWED_SUFFIXES for name in names):
+            raise PackageError("SkillHub package contains a platform-unsupported file type")
+        if not re.search(r"(?m)^license:\s*MIT\s*$", entry_data["SKILL.md"].decode("utf-8")):
+            raise PackageError("SkillHub package must declare the MIT license in SKILL.md")
     if target in CAPABILITY_IDS:
         prefix = target + "/"
         if not names or any(not name.startswith(prefix) for name in names):

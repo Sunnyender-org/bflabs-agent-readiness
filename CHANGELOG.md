@@ -2,6 +2,11 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.2 - 2026-08-23
+
+- Excluded local Wrangler state and generated Worker build output from source packages.
+- Added a verified, platform-bounded SkillHub ZIP that stays under 200 files, uses supported file types, and includes the BFLabs logo.
+
 ## 0.4.1 - 2026-08-23
 
 - Added the official SkillHub front-matter fields and a portable BFLabs logo asset so the public Skill can be uploaded without platform-specific repackaging.
