@@ -26,4 +26,8 @@ boundaries:
   ai_visibility: not_measured
   business_outcome: not_measured
   leaderboard: explicit_opt_in
-publication_status: prepared_for_external_skillhub_submission
+publication_status: published_on_external_skillhub
+skillhub_coordinate: "@user_49f8ec71/bflabs-agent-readiness"
+skillhub_listing: https://skillhub.cn/skills/user_49f8ec71/bflabs-agent-readiness
+skillhub_approved_version: 0.4.3
+skillhub_checked_at: 2026-08-23T01:20:06+08:00
