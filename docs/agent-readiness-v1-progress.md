@@ -4,10 +4,10 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：0.4.2 已发布并上架 SkillHub / 0.4.3 商店卡片 Logo 补丁本地进行中
-状态：PR #6 merged、v0.4.2 released、SkillHub 0.4.2 显示已发布/安全；卡片图标 URL 已上传，尚未提交 0.4.3 更新
-本轮：完成平台专用 68 文件 ZIP、生产上架与 BFLabs Logo 上传；准备把卡片图标写入新版本
-下一关口：提交/合并/发布 0.4.3，并把带 iconUrl 的同一 SkillHub 包提交审核；独立安全复核仍单列
+位置：0.4.3 已发布 / 两个站点 live / SkillHub 已审核上架
+状态：PR #7 merged、v0.4.3 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.3
+本轮：完成 Prompt-first 公网诊断、可选榜单、Agent Journey、Agent-native API/CLI/MCP、GitHub 发布、Skills catalog、SkillHub 上架与 BFLabs Logo
+下一关口：Lucas 点击新验证邮件；独立安全审查签字；完成首个真实付费 pilot，形成多平台测量、复测和业务归因 receipt
 ```
 
 ## Verified State
@@ -40,7 +40,7 @@ verified_state:
 - 新增 opt-in 公开榜单：默认不公开，只有请求显式选择时才写入；记录仅含 canonical origin、三轴、指纹和时间，不含证据正文、Prompt 或 IP，KV 最多保留 30 天；排序依次使用通过轴数、最弱轴和三轴平均分，不生成隐藏总分；每个已上榜域名有服务端可读的独立分享页，避免榜单只靠客户端 JSON 而失去搜索流量价值；
 - 新增 `/api/v1/scans`、`/api/v1/leaderboard`、版本化 ruleset、`text/markdown`、OpenAPI、`llms.txt`、RFC-style `code/detail/resolution` problem responses、`bflabs-readiness scan` CLI 和四个 MCP tools；网页、CLI、Markdown 和 MCP scan 返回同一报告合同；
 - executable scenarios 4/4：默认私有、明确公开、存储未配置降级、Journey 不越过测量边界；生产 truth owner 为 `app/readiness-web/src/leaderboard.mjs` 与 `app/readiness-web/src/scanner.mjs#buildAgentJourney`，没有第二套评分或 Journey evaluator；
-- 本地验证：Node/Worker 31 tests、Python 53 tests、router 62/62、repository validator、Skill quick validator、Worker build、OpenAPI JSON、SkillHub JS syntax 全部 pass；0.4.0 source 207 files、unified wheel 156 files、六个 child packages、两个隔离安装和两个 workflow runs全部通过 package verification；CLI→公网扫描→Markdown→显式上榜→榜单读回与 MCP/Skill index 实际链路通过；桌面与 390px 页面均完成浏览器检查且无横向溢出；
+- 本地验证：Node/Worker 31 tests、Python 55 tests、router 62/62、repository validator、Skill quick validator、Worker build、OpenAPI JSON、SkillHub JS syntax 全部 pass；0.4.3 source 200 files、unified wheel 157 files、SkillHub ZIP 68 files、六个 child packages、两个隔离安装和两个 workflow runs 全部通过 package verification；CLI→公网扫描→Markdown→显式上榜→榜单读回与 MCP/Skill index 实际链路通过；桌面与 390px 页面均完成浏览器检查且无横向溢出；
 - 2026-08-22 本地新扫描器对当前 `https://beefapi.com` 的公开读回为 Discoverable `100`、Understandable `100`、Actionable `100`，确定性 Journey `pass`，发现 6 个公开 MCP tools；由于兼容浏览器真实任务仍未执行，WebMCP 继续是 `present_unverified`，该结果不升级 AI visibility 或 business outcome；
 - PR [#4](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/4) 已 merge 为 `8cebb0801f9cb809d50716d61fc424945e74522e`，两项 GitHub Actions 均通过；GitHub Release [`v0.4.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.0) 已从该 merge commit 发布八个带 SHA-256 digest 的资产；
 - Cloudflare Worker 版本 `f626760b-73c3-4332-9b9e-1a48381ed44e` 已绑定 `LEADERBOARD` KV、客户端/目标限流和 Assets；生产读回验证首页、榜单、隐私、条款、OpenAPI、`llms.txt`、Agent Skills、MCP card、methodology 与根 Skill 均为 200；
@@ -49,6 +49,11 @@ verified_state:
 - PR #5 已 merge 为 `e32788a0e0a5a672d0c898589f6d3387700bcd4a`，Release `v0.4.1` 与 Worker `e9ab84ad-34df-4301-b8d7-5439c3b41235` 已发布；线上根 Skill 读回官方 SkillHub 元数据与 BFLabs Logo 引用；
 - `bflabs-skills` PR #3 已 merge 为 `b46ec827d47b0da880053b98230b155b87442ed1`，Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` 已部署；目录、宿主、层级和安装页生产 200；
 - SkillHub 首次真实提交因 218 个文件超过平台 200 上限而未创建 listing；第二次缩包被平台拒绝无扩展名 `LICENSE`。随后审计发现 0.4.1 source tarball 带入本地 `.wrangler` 和 `.worker-build`；该 source asset 下载数为 0，已从 GitHub Release 撤下，wheel 和六个 child Skill 资产不受影响。0.4.2 将在构建器层永久排除这些目录，并生成平台允许的专用 ZIP。
+- PR #6 已 merge 为 `5677a2824fee281ffc17d4b9dc4b69e2e08d30fa`，Release [`v0.4.2`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.2) 从该 commit 发布九个资产；source 固定 200 files、SkillHub ZIP 固定 68 files，`.wrangler`、`.worker-build` 与运行时 cache 均被构建器排除；
+- SkillHub 0.4.2 首次成功提交为 `skillId=169315`、`versionId=262582`，随后通过审核并公开；0.4.3 更新绑定真实 BFLabs 图标。平台后台最终读回 `reviewStatus=approved`、`latestApprovedVersion=0.4.3`、`status=listed`，公共搜索解析为 `@user_49f8ec71/bflabs-agent-readiness`，两个公开详情 URL 均为 200；
+- PR #7 已 merge 为 `fa2ae364dcc909707fb8b503c6f269660e1d8265`，两项 CI 均通过；Release [`v0.4.3`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.3) 从该 commit 发布九个带 SHA-256 digest 的资产；Worker `11762449-743b-4385-bba6-1e53f7b0f09e` 已上线；
+- `bflabs-skills` PR #4 已 merge 为 `1176bc4250d4ba66e78f7e4ae205c344d4874457`，Worker `f06910c4-da47-4cc2-b366-27d232b564d2` 已读回 SkillHub ready 状态、0.4.3 与真实 listing URL；
+- Cloudflare Email Routing 主目标仍为已验证且已真实收件的 Owner 邮箱。旧 Lucas pending destination 已撤销，同一协作者目标于 2026-08-23 01:16 +08 重新创建并发送验证邮件，当前仍为 `pending`；点击前双邮箱 fanout 仍不算完成。
 
 ## Phase 0 — Contract And License Baseline
 
@@ -360,11 +365,9 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 
 ### P0
 
-- 将已创建的 `LEADERBOARD` KV binding 随 Worker 部署，并生产复核默认不上榜、summary-only、30 天保留、目标 opt-out 与移除/滥用响应路径；
-- 部署并读回本轮 Prompt-first/API/CLI/MCP/Journey/Skill index；独立安全审查仍需单独签字；
-- 完成外部 SkillHub 平台提交并读取 accepted listing receipt；当前只有 `skill.yml` 与本地目录准备完成；
 - Lucas 在其 QQ 邮箱完成 Cloudflare destination verification；完成前主邮箱可用，但双邮箱 fanout 不算完成；
 - 完成独立安全审查并记录签字；当前只能称 public beta live，不能称完整安全签署。
+- 完成首个真实付费 pilot：客户授权诊断与实施、真实多平台采样、同站 Before/After、持续复测和客户可读报告全部留存 receipt；完成前商业闭环仍是 `partial`。
 
 ### P1
 

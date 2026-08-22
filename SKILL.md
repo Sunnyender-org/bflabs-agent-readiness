@@ -95,7 +95,8 @@ bflabs-readiness package --target geo-optimize
 - Root Skill: `https://readiness.bflabs.cn/skills/bflabs-agent-readiness`
 - OpenAPI: `https://readiness.bflabs.cn/openapi.json`
 - MCP: `https://readiness.bflabs.cn/mcp`
-- SkillHub listing: `https://skills.bflabs.cn/catalog.html#geo`
+- External SkillHub listing: `https://skillhub.cn/skills/user_49f8ec71/bflabs-agent-readiness`
+- BFLabs Skills catalog: `https://skills.bflabs.cn/catalog.html#geo`
 
 The website, CLI, Markdown response, and MCP scan tool use the same report contract. The public leaderboard stores only an explicitly opted-in domain summary, three readiness axes, scan time, and fingerprint. It does not store the evidence body, Agent prompt, IP address, AI visibility, or business outcome.
 
