@@ -2,6 +2,10 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.3 - 2026-08-23
+
+- Bound the approved BFLabs SkillHub icon URL into the portable publication metadata.
+
 ## 0.4.2 - 2026-08-23
 
 - Excluded local Wrangler state and generated Worker build output from source packages.

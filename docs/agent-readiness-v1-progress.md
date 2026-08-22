@@ -4,10 +4,10 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：0.4.1 已上线 / 0.4.2 SkillHub 包卫生补丁本地进行中
-状态：PR #5 merged、v0.4.1 released、readiness.bflabs.cn 0.4.1 live、skills.bflabs.cn GEO catalog live；外部 SkillHub 尚未接受
-本轮：生产验证两个站点；补齐官方 SkillHub 元数据和 BFLabs Logo；撤下误含本地 Wrangler cache 的 0.4.1 source asset
-下一关口：提交/合并/发布 0.4.2，使用平台专用 ZIP 提交 SkillHub 并读取审核状态；独立安全复核仍单列
+位置：0.4.2 已发布并上架 SkillHub / 0.4.3 商店卡片 Logo 补丁本地进行中
+状态：PR #6 merged、v0.4.2 released、SkillHub 0.4.2 显示已发布/安全；卡片图标 URL 已上传，尚未提交 0.4.3 更新
+本轮：完成平台专用 68 文件 ZIP、生产上架与 BFLabs Logo 上传；准备把卡片图标写入新版本
+下一关口：提交/合并/发布 0.4.3，并把带 iconUrl 的同一 SkillHub 包提交审核；独立安全复核仍单列
 ```
 
 ## Verified State
