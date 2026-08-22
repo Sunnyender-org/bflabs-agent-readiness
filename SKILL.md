@@ -29,7 +29,8 @@ Never fold Actionable into a GEO indexing score. Never present readiness as proo
    - For WebMCP implementation, external enablement, or compatible-browser task verification, read and follow [skills/webmcp-enable/SKILL.md](skills/webmcp-enable/SKILL.md).
    - For a local read-only domain scan, use [app/readiness-web/README.md](app/readiness-web/README.md).
 4. Keep AI visibility and business outcome explicitly `not_measured` unless separate evidence exists.
-5. Return changed paths, deterministic checks, external readback, unresolved gates, and a rollback route when applicable.
+5. Treat `agent_journey` as supporting public-page evidence only. It never changes readiness scores and never establishes AI visibility or business outcome.
+6. Return changed paths, deterministic checks, external readback, unresolved gates, and a rollback route when applicable.
 
 ## Routing Boundary
 
@@ -54,6 +55,8 @@ Use [templates/readiness-report.json](templates/readiness-report.json) when a po
 ## Agent-readable Package Interface
 
 ```bash
+bflabs-readiness scan https://example.com --format json
+bflabs-readiness scan https://example.com --format markdown
 bflabs-readiness list --format markdown
 bflabs-readiness read geo-optimize
 bflabs-readiness route --text "Audit this website for GEO readiness"
@@ -71,6 +74,18 @@ bflabs-readiness package --target source
 bflabs-readiness package --target unified
 bflabs-readiness package --target geo-optimize
 ```
+
+`scan` uses the versioned public diagnostic API. It does not publish to the public leaderboard unless the caller adds `--publish-to-leaderboard` explicitly.
+
+## Public Agent Interface
+
+- Agent Skills index: `https://readiness.bflabs.cn/.well-known/agent-skills/index.json`
+- Root Skill: `https://readiness.bflabs.cn/skills/bflabs-agent-readiness`
+- OpenAPI: `https://readiness.bflabs.cn/openapi.json`
+- MCP: `https://readiness.bflabs.cn/mcp`
+- SkillHub listing: `https://skills.bflabs.cn/catalog.html#geo`
+
+The website, CLI, Markdown response, and MCP scan tool use the same report contract. The public leaderboard stores only an explicitly opted-in domain summary, three readiness axes, scan time, and fingerprint. It does not store the evidence body, Agent prompt, IP address, AI visibility, or business outcome.
 
 The legacy interface remains available during the v1 compatibility window:
 

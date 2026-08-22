@@ -5,6 +5,7 @@ import io
 import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from bflabs_readiness.cli import main
@@ -48,6 +49,20 @@ class CliTests(unittest.TestCase):
             self.assertEqual(status, 0)
             self.assertEqual(report["target"], "geo-optimize")
             self.assertEqual(report["status"], "pass")
+
+    @mock.patch("bflabs_readiness.cli.scan_public_site")
+    def test_scan_command_uses_versioned_public_api_without_leaderboard_by_default(self, scan) -> None:
+        scan.return_value = ("application/json", '{"scan_fingerprint":"sha256:test"}')
+        status, output = self.run_cli(["scan", "https://example.com", "--endpoint", "https://readiness.example", "--format", "json"])
+        self.assertEqual(status, 0)
+        self.assertIn("scan_fingerprint", output)
+        scan.assert_called_once_with(
+            "https://example.com",
+            "https://readiness.example",
+            output_format="json",
+            publish_to_leaderboard=False,
+            timeout=90.0,
+        )
 
 
 if __name__ == "__main__":

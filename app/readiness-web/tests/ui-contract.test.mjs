@@ -27,6 +27,9 @@ test('keeps the real scanner and protocol actions wired into the visual shell', 
     'evidence-body',
     'download-report',
     'copy-agent-prompt',
+    'publish-to-leaderboard',
+    'journey-steps',
+    'journey-status',
     'skill-routes',
     'save-baseline',
     'contact-bflabs',
@@ -45,6 +48,12 @@ test('exposes a real BFLabs inquiry route and an in-session retest contract', ()
   assert.match(app, /复测并对比/);
   assert.match(app, /AI visibility 与 Business outcome 仍需独立测量/);
   assert.match(app, /downloadArtifactPack/);
+  assert.match(app, /复制给 Agent，开始修复/);
+  assert.match(app, /publish_to_leaderboard: publishCheckbox\.checked/);
+  assert.doesNotMatch(app, /await downloadArtifactPack\(\);\s*await navigator\.clipboard\.writeText/);
+  assert.match(html, /href="\/leaderboard"/);
+  assert.match(html, /skills\.bflabs\.cn\/catalog\.html#geo/);
+  assert.match(html, /我确认有权公开，把本次三轴结果加入榜单/);
   assert.match(server, /const SKILL_IDS = new Set/);
   assert.match(server, /text\/plain; charset=utf-8/);
 });

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
@@ -20,6 +21,7 @@ from .providers.geo_content import run_geo_content
 from .providers.geo_measure import load_measurement_input, run_geo_measure
 from .providers.seo_plan import run_seo_plan
 from .registry import CapabilityRegistry, RegistryError
+from .remote import scan_public_site
 from .router import route
 from .schemas import validate_all_schemas, validate_instance
 
@@ -69,6 +71,13 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--run", type=Path)
 
     commands.add_parser("eval")
+
+    scan_parser = commands.add_parser("scan")
+    scan_parser.add_argument("url")
+    scan_parser.add_argument("--endpoint", default=os.environ.get("BFLABS_READINESS_ENDPOINT", "https://readiness.bflabs.cn"))
+    scan_parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    scan_parser.add_argument("--publish-to-leaderboard", action="store_true")
+    scan_parser.add_argument("--timeout", type=float, default=90.0)
 
     package_parser = commands.add_parser("package")
     package_parser.add_argument("--target", required=True, choices=["source", "unified", *CAPABILITY_IDS])
@@ -142,6 +151,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             report = run_router_evals()
             print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0 if report["status"] == "pass" else 1
+        if args.command == "scan":
+            _content_type, output = scan_public_site(
+                args.url,
+                args.endpoint,
+                output_format=args.format,
+                publish_to_leaderboard=args.publish_to_leaderboard,
+                timeout=args.timeout,
+            )
+            print(output.rstrip())
+            return 0
         if args.command == "package":
             archive = package_target(args.target, args.output)
             print(json.dumps(validate_archive(archive, args.target), indent=2))

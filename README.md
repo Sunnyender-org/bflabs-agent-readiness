@@ -119,13 +119,13 @@ npm run check
 npm start
 ```
 
-打开 `http://127.0.0.1:4177`，输入公开域名即可获得三轴报告、失败谓词、证据缺口、机会入口和最小子 Skill 路由。网页可下载统一 Artifact Pack，也可复制一段保留 unknown 和 Owner gate 的 Agent 优化指令。
+打开 `http://127.0.0.1:4177`，输入公开域名即可获得三轴报告、失败谓词、确定性 Agent Journey 和最小子 Skill 路由。结果页首先提供一键 Agent 提示词；Artifact Pack 是高级下载项。公开榜单默认关闭，只有明确勾选才保存域名与三轴摘要。
 
 网页保留旧 API response 作为兼容层，canonical `readiness_report`、evidence ledger、quality report 与 manifest 使用 CLI 相同的 JSON Schema 和 hash 规则。缺证据不会被换算成失败或分数；AI visibility 与 business outcome 始终独立显示为未测量。
 
 诊断网站同时保留本地 Node 原型与 Cloudflare Worker 发布入口。Worker 使用 strictly-public fetch、客户端/目标双限流、固定超时与正文上限、无应用数据库报告留存和公开 opt-out；是否已经公网部署以 [release checklist](docs/release-checklist.md) 的 live readback 为准。
 
-当前本地页面支持把一次报告保存为页面内存基线，优化后对同站复测并显示三轴 Before / After；也能一次下载 Artifact Pack 并复制绑定扫描指纹的 Agent 指令。免费层到此为止。多平台真实抽样、跨系统实施、持续监测和客户授权的业务归因属于 BFLabs 付费交付，可通过 `hello@bflabs.cn` 发起咨询。
+当前本地页面支持把一次报告保存为页面内存基线，优化后对同站复测并显示三轴 Before / After。网页、`bflabs-readiness scan`、版本化 API、Markdown 和 MCP 共用一份报告；根/子 Skill 也通过站点与 Agent Skills 索引直接提供。免费层到此为止。多平台真实抽样、跨系统实施、持续监测和客户授权的业务归因属于 BFLabs 付费交付，可通过 `hello@bflabs.cn` 发起咨询。
 
 ## 验证整个仓库
 

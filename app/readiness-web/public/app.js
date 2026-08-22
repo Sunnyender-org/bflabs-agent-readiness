@@ -11,10 +11,11 @@ const reportTab = document.querySelector('#report-tab');
 const deliveryTab = document.querySelector('#delivery-tab');
 const improvementPanel = document.querySelector('#improvement-panel');
 const showMoreButton = document.querySelector('#show-more');
+const publishCheckbox = document.querySelector('#publish-to-leaderboard');
 let currentReport = null;
 let baselineReport = null;
 
-const defaultHelp = '30 秒出报告 · 公开页面 ONLY · 零登录';
+const defaultHelp = '30 秒出报告 · 公开页面 ONLY · 默认不上榜';
 
 const axisDescriptions = {
   discoverable: '公开页面与机器入口是否能被找到。',
@@ -159,6 +160,38 @@ function updateContactLink(report) {
   document.querySelector('#contact-bflabs').href = `mailto:hello@bflabs.cn?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+function renderJourney(journey) {
+  const status = document.querySelector('#journey-status');
+  const task = document.querySelector('#journey-task');
+  const steps = document.querySelector('#journey-steps');
+  if (!journey) {
+    status.textContent = '未运行';
+    task.textContent = '本次没有可显示的 Agent 试跑。';
+    steps.innerHTML = '';
+    return;
+  }
+  status.textContent = journey.status === 'pass' ? '已通过' : journey.status === 'blocked' ? '受阻' : '有缺口';
+  task.textContent = journey.task;
+  steps.innerHTML = journey.steps.map((step) => `
+    <li data-status="${escapeHtml(step.status)}">
+      <strong>${escapeHtml(step.label)}</strong>
+      <span>${escapeHtml(step.status)}</span>
+      <p>${escapeHtml(step.observation)}</p>
+    </li>
+  `).join('');
+}
+
+function renderLeaderboardPublication(publication) {
+  const node = document.querySelector('#leaderboard-publication');
+  if (publication?.status === 'published') {
+    node.innerHTML = '已加入 <a href="/leaderboard">公开榜单</a>。';
+  } else if (publication?.status === 'unavailable') {
+    node.textContent = '你选择了公开，但榜单存储尚未配置，本次没有上榜。';
+  } else {
+    node.textContent = '本次结果未公开到榜单。';
+  }
+}
+
 function renderReport(report) {
   currentReport = report;
   const host = displayHost(report.target.canonical_origin);
@@ -176,6 +209,8 @@ function renderReport(report) {
   document.querySelector('#report-status').textContent = report.scan.status === 'complete' ? '完成' : '报告不完整';
   document.querySelector('#report-fingerprint').textContent = report.scan_fingerprint;
   renderAxes(report.axes);
+  renderJourney(report.agent_journey);
+  renderLeaderboardPublication(report.leaderboard_publication);
   updateContactLink(report);
 
   const findings = document.querySelector('#findings');
@@ -212,6 +247,14 @@ function renderReport(report) {
     ? report.skill_routes.map((item) => `<a href="${escapeHtml(item.href)}">${escapeHtml(item.id)}</a>`).join('')
     : '<span>当前无需额外子 Skill</span>';
 
+  const promptButton = document.querySelector('#copy-agent-prompt');
+  const hasRepair = (report.skill_routes || []).length > 0;
+  promptButton.textContent = hasRepair ? '复制给 Agent，开始修复' : '复制给 Agent，核对结果';
+  document.querySelector('#agent-action-copy').textContent = hasRepair
+    ? `提示词已带上本次证据和 ${report.skill_routes[0].id} Skill。`
+    : '本次没有 evidence-backed 失败项，提示词会让 Agent 只核对结果。';
+  document.querySelector('#copy-status').textContent = '';
+
   resetComparisonExample();
   renderComparison(report);
 
@@ -222,6 +265,7 @@ async function pollReport(statusUrl) {
   for (let attempt = 0; attempt < 90; attempt += 1) {
     const response = await fetch(statusUrl, { headers: { Accept: 'application/json' } });
     const report = await response.json();
+    if (!response.ok) throw new Error(report.detail || report.error || '诊断失败');
     if (report.status === 'failed') throw new Error(report.error || '诊断失败');
     if (['complete', 'partial', 'blocked'].includes(report.status)) return report;
     setStage(attempt < 2 ? 'validate' : attempt < 9 ? 'fetch' : 'contracts');
@@ -243,13 +287,13 @@ form.addEventListener('submit', async (event) => {
   submitButton.disabled = true;
   setStage('validate');
   try {
-    const response = await fetch('/api/scans', {
+    const response = await fetch('/api/v1/scans', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: value }),
+      body: JSON.stringify({ url: value, publish_to_leaderboard: publishCheckbox.checked }),
     });
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || '无法创建诊断');
+    if (!response.ok) throw new Error(body.detail || body.error || '无法创建诊断');
     const report = body.status_url ? await pollReport(body.status_url) : (body.report || body);
     setStage('report');
     renderReport(report);
@@ -318,10 +362,9 @@ document.querySelector('#copy-agent-prompt').addEventListener('click', async () 
   if (!currentReport?.agent_prompt) return;
   const status = document.querySelector('#copy-status');
   try {
-    await downloadArtifactPack();
     await navigator.clipboard.writeText(currentReport.agent_prompt);
-    status.textContent = 'Artifact Pack 已下载，指令已复制。把两者一起交给 Agent。';
+    status.textContent = '已复制。粘贴到 Codex、Cursor、Claude Code 或 WorkBuddy 即可。';
   } catch {
-    status.textContent = 'Artifact Pack 已尝试下载；复制失败，请手动附上报告。';
+    status.textContent = '复制失败，请允许剪贴板访问后重试。';
   }
 });

@@ -2,6 +2,14 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.0 - 2026-08-23
+
+- Made the diagnostic result prompt-first: one click copies the current evidence, root Skill, and the single owning child Skill directly to an Agent.
+- Added deterministic Agent Journey evidence for entering, understanding, and continuing through one bounded public path without changing readiness scores.
+- Added versioned JSON and Markdown scan responses, a packaged remote CLI, a read-only MCP surface, OpenAPI, `llms.txt`, and a SHA-256-bound Agent Skills index.
+- Added an explicit opt-in public leaderboard with server-rendered share pages, disclosed ranking, summary-only storage, and 30-day retention.
+- Added stable site-hosted root and child Skill URLs for external SkillHub and agent-host discovery.
+
 ## 0.3.0 - 2026-08-11
 
 - Added the bilingual root router, seven active capabilities, and exactly two stable workflows.

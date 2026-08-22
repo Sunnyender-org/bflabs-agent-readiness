@@ -1,13 +1,13 @@
 # BFLabs Agent Readiness v1 Progress
 
-更新时间：2026-08-17
+更新时间：2026-08-23
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：v1 已发布 / 公网诊断与主邮箱询盘已完成真实验收
-状态：PR merged、v0.3.0 released、readiness.bflabs.cn public beta live；Lucas 邮箱与独立安全审查仍待完成
-本轮：完成 Artifact Pack + Agent handoff、Before / After、免费/付费边界、Cloudflare Worker 安全边界、公开发布与真实主邮箱收件
-下一关口：Lucas 完成 destination verification；随后复测双邮箱 fanout，并安排独立安全审查与付费交付 receipts
+位置：v1 已发布 / 公网旧版 live / 0.4.0 Prompt-first 产品化分支待提交
+状态：PR #1 merged、v0.3.0 released、readiness.bflabs.cn public beta live；`codex/productize-agent-readiness` 尚未 commit/push/deploy
+本轮：完成 Prompt-first、站点托管 Skill/SkillHub、可选榜单、确定性 Agent Journey、版本化 API、Markdown、CLI、MCP 与结构化错误
+下一关口：提交/合并 0.4.0，部署两个站点并生产复测，再提交外部 SkillHub；独立安全复核仍单列
 ```
 
 ## Verified State
@@ -22,6 +22,28 @@ verified_state:
 ```
 
 本文件记录当前 live readback，但不是独立安全 Verifier 签字。发布与部署证明分别来自 GitHub Release、Cloudflare production readback 和真实邮件收件；它们不证明 AI visibility 或 business outcome。
+
+## 2026-08-18 Local Paid-Delivery Prototype
+
+- 公网诊断的 Agent handoff 现只选择第一个 evidence-backed owner Skill，不再默认同时推荐发现、测量、SEO 与内容 Skill；报告仍只陈述当前公开网站状态；
+- 建立独立本地目录 `bflabs-geo-delivery`，内部含可移植 engagement JSON、authority scopes、三层状态、确定性校验脚本、合成 fixture 和 WorkBuddy `/geo-delivery` 薄入口；
+- WorkBuddy 被限定为 cockpit，不保存唯一真相；engagement 文件可被 WorkBuddy、Codex 或人工流程共同使用；
+- 私有合同明确分离 readiness、AI visibility、business outcome，缺证据保持 `not_measured`，并拒绝 secret-shaped 字段、无证据的 measured 状态，以及未授权的平台/业务 evidence；
+- 本地验证：公开仓库 Python 50 tests、router 62/62、诊断 Web 19 tests、syntax/Worker build pass；私有交付合同 7 tests、合成 engagement validate/status、plugin manifest JSON 和 Skill 官方 quick validator 均 pass；Python 总门禁通过 `uv` 隔离依赖环境运行，不改变系统 Python；
+- 上述改动均为本地未提交状态；WorkBuddy 未安装此插件，未创建远端仓库，未进行真实客户采样、账号登录、生产写入、发布或部署，因此商业闭环判断仍为 `partial`。
+
+## 2026-08-22 Prompt-first And Agent-native Productization
+
+- 结果页把“复制给 Agent，开始修复”提升为三轴后的第一主动作；复制不再强制下载 Artifact Pack，提示词包含扫描指纹、站点托管根 Skill、唯一子 Skill、当前证据、测试要求和部署边界；
+- 根 Skill 与六个子 Skill 通过 `/skills/{id}` 和 `/.well-known/agent-skills/index.json` 提供，索引绑定 SHA-256；本地 BF Labs Skills 目录已把 GEO 标为 SkillHub host，并改用稳定站点 URL；
+- 新增确定性 Agent Journey：基于本次公开响应执行“进入、理解、找到下一步”三步试跑，并最多继续读取一个选中的同源公开入口；不执行页面指令、不提交表单、不登录、不增加外部模型成本；合同固定 `affects_readiness_score=false`，AI visibility 与 business outcome 保持 `not_measured`；
+- 新增 opt-in 公开榜单：默认不公开，只有请求显式选择时才写入；记录仅含 canonical origin、三轴、指纹和时间，不含证据正文、Prompt 或 IP，KV 最多保留 30 天；排序依次使用通过轴数、最弱轴和三轴平均分，不生成隐藏总分；每个已上榜域名有服务端可读的独立分享页，避免榜单只靠客户端 JSON 而失去搜索流量价值；
+- 新增 `/api/v1/scans`、`/api/v1/leaderboard`、版本化 ruleset、`text/markdown`、OpenAPI、`llms.txt`、RFC-style `code/detail/resolution` problem responses、`bflabs-readiness scan` CLI 和四个 MCP tools；网页、CLI、Markdown 和 MCP scan 返回同一报告合同；
+- executable scenarios 4/4：默认私有、明确公开、存储未配置降级、Journey 不越过测量边界；生产 truth owner 为 `app/readiness-web/src/leaderboard.mjs` 与 `app/readiness-web/src/scanner.mjs#buildAgentJourney`，没有第二套评分或 Journey evaluator；
+- 本地验证：Node/Worker 31 tests、Python 53 tests、router 62/62、repository validator、Skill quick validator、Worker build、OpenAPI JSON、SkillHub JS syntax 全部 pass；0.4.0 source 207 files、unified wheel 156 files、六个 child packages、两个隔离安装和两个 workflow runs全部通过 package verification；CLI→公网扫描→Markdown→显式上榜→榜单读回与 MCP/Skill index 实际链路通过；桌面与 390px 页面均完成浏览器检查且无横向溢出；
+- 2026-08-22 本地新扫描器对当前 `https://beefapi.com` 的公开读回为 Discoverable `100`、Understandable `100`、Actionable `100`，确定性 Journey `pass`，发现 6 个公开 MCP tools；由于兼容浏览器真实任务仍未执行，WebMCP 继续是 `present_unverified`，该结果不升级 AI visibility 或 business outcome；
+- Cloudflare 账户已创建 `LEADERBOARD` KV namespace；本地 `wrangler.jsonc` 已绑定，dry-run 读到 10 个静态资源、KV、现有客户端/目标限流和 Assets binding；该配置尚未 deploy，不能当作生产 binding；
+- 当前产品代码仍只在本地分支。`readiness.bflabs.cn` 与 `skills.bflabs.cn` 均未部署本轮改动，因此生产仍是 2026-08-17 已验证版本；真实模型平台 Journey、AI visibility 和商业交付仍未因此成立。
 
 ## Phase 0 — Contract And License Baseline
 
@@ -308,8 +330,10 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 
 ```text
 公网诊断
-  -> 三轴 readiness report + evidence ledger + Artifact Pack
-  -> 免费开源 Skill + 绑定扫描指纹的 Agent 优化指令
+  -> 三轴 readiness report + 独立 Agent Journey + evidence ledger
+  -> 可选公开三轴摘要到榜单（默认关闭）
+  -> Prompt-first：站点托管根 Skill + 唯一子 Skill + 扫描指纹
+  -> Artifact Pack 作为高级证据下载
   -> 客户/Agent 在本地仓库实施并验证
   -> 同站复测，生成三轴 Before / After
   -> geo-measure 聚合真实平台观测，单独报告 AI visibility
@@ -331,6 +355,9 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 
 ### P0
 
+- 将已创建的 `LEADERBOARD` KV binding 随 Worker 部署，并生产复核默认不上榜、summary-only、30 天保留、目标 opt-out 与移除/滥用响应路径；
+- 部署并读回本轮 Prompt-first/API/CLI/MCP/Journey/Skill index；独立安全审查仍需单独签字；
+- 完成外部 SkillHub 平台提交并读取 accepted listing receipt；当前只有 `skill.yml` 与本地目录准备完成；
 - Lucas 在其 QQ 邮箱完成 Cloudflare destination verification；完成前主邮箱可用，但双邮箱 fanout 不算完成；
 - 完成独立安全审查并记录签字；当前只能称 public beta live，不能称完整安全签署。
 

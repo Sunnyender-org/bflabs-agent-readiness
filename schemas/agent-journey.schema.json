@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.cn/schemas/agent-journey.schema.json",
+  "title": "BFLabs deterministic Agent Journey",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task", "status", "steps", "summary_evidence", "affects_readiness_score", "ai_visibility", "business_outcome", "limitations"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "task": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pass", "partial", "blocked"]},
+    "steps": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "status", "observation", "evidence_ids"],
+        "properties": {
+          "id": {"enum": ["enter", "understand", "continue"]},
+          "label": {"type": "string", "minLength": 1},
+          "status": {"enum": ["pass", "partial", "fail", "unknown", "blocked"]},
+          "observation": {"type": "string", "minLength": 1},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "action": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "label", "locator", "observation"],
+            "properties": {
+              "kind": {"enum": ["mcp-tool", "same-origin-link"]},
+              "label": {"type": "string"},
+              "locator": {"type": ["string", "null"]},
+              "observation": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "summary_evidence": {"type": ["string", "null"]},
+    "affects_readiness_score": {"const": false},
+    "ai_visibility": {"const": "not_measured"},
+    "business_outcome": {"const": "not_measured"},
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  }
+}

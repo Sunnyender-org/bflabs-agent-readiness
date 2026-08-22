@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bflabs-agent-readiness",
+  "account_id": "ae2e9fc7cd28528a178c6fb4ce9debb9",
   "main": ".worker-build/worker-entry.mjs",
   "compatibility_date": "2026-08-16",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -21,6 +22,12 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "kv_namespaces": [
+    {
+      "binding": "LEADERBOARD",
+      "id": "dcbe6382f87842cf8b7ebcd82961d768"
+    }
+  ],
   "ratelimits": [
     {
       "name": "CLIENT_RATE_LIMITER",

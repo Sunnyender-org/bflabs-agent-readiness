@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "invariants": [
+    "leaderboard publication is opt-in and off by default",
+    "leaderboard stores readiness summary only",
+    "Agent Journey never changes readiness, AI visibility, or business outcome"
+  ],
+  "cases": [
+    {
+      "id": "private-default",
+      "publish_to_leaderboard": false,
+      "store": "ready",
+      "expected_publication": "not_requested"
+    },
+    {
+      "id": "public-opt-in",
+      "publish_to_leaderboard": true,
+      "store": "ready",
+      "expected_publication": "published"
+    },
+    {
+      "id": "public-opt-in-storage-missing",
+      "publish_to_leaderboard": true,
+      "store": "unavailable",
+      "expected_publication": "unavailable"
+    },
+    {
+      "id": "journey-supporting-evidence-only",
+      "journey_status": "partial",
+      "expected_ai_visibility": "not_measured",
+      "expected_business_outcome": "not_measured",
+      "expected_score_effect": false
+    }
+  ]
+}

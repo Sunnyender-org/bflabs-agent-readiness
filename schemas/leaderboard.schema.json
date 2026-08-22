@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.cn/schemas/leaderboard.schema.json",
+  "title": "BFLabs opt-in readiness leaderboard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "storage", "generated_at", "entries"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "storage": {"enum": ["ready", "unavailable"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "ranking_method": {"type": "string"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rank", "schema_version", "host", "canonical_origin", "axes", "scan_fingerprint", "scanned_at", "ranking_basis"],
+        "properties": {
+          "rank": {"type": "integer", "minimum": 1},
+          "schema_version": {"const": "1.0.0"},
+          "host": {"type": "string", "minLength": 1},
+          "canonical_origin": {"type": "string", "format": "uri"},
+          "axes": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["id", "label", "score", "status"],
+              "properties": {
+                "id": {"enum": ["discoverable", "understandable", "actionable"]},
+                "label": {"type": "string"},
+                "score": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+                "status": {"enum": ["pass", "partial", "fail", "unknown", "blocked"]}
+              },
+              "additionalProperties": false
+            }
+          },
+          "scan_fingerprint": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+          "scanned_at": {"type": "string", "format": "date-time"},
+          "ranking_basis": {
+            "type": "object",
+            "required": ["passed_axes", "weakest_axis_score", "average_axis_score"],
+            "properties": {
+              "passed_axes": {"type": "integer", "minimum": 0, "maximum": 3},
+              "weakest_axis_score": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+              "average_axis_score": {"type": ["integer", "null"], "minimum": 0, "maximum": 100}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
