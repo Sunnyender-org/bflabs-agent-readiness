@@ -80,7 +80,7 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--timeout", type=float, default=90.0)
 
     package_parser = commands.add_parser("package")
-    package_parser.add_argument("--target", required=True, choices=["source", "unified", *CAPABILITY_IDS])
+    package_parser.add_argument("--target", required=True, choices=["source", "unified", "skillhub", *CAPABILITY_IDS])
     package_parser.add_argument("--output", type=Path, default=Path("dist"))
     return parser
 

@@ -2,6 +2,13 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.4 - 2026-08-23
+
+- Rewrote the public SkillHub body in user-facing Chinese while preserving the three-layer product boundary.
+- Removed the body-level Markdown logo that broke on external hosts; the approved BFLabs card icon remains platform-managed.
+- Added a repository check that prevents the root Skill body from regressing to an English-first or embedded-image presentation.
+- Exposed the documented `skillhub` package target through the installed CLI and covered it with a regression test.
+
 ## 0.4.3 - 2026-08-23
 
 - Bound the approved BFLabs SkillHub icon URL into the portable publication metadata.

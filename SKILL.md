@@ -1,13 +1,13 @@
 ---
 name: bflabs-agent-readiness
 slug: bflabs-agent-readiness
-version: 0.4.3
+version: 0.4.4
 displayName: BFLabs Agent Readiness
 summary: 免费诊断网站是否对 AI Agent 可发现、可理解、可操作，并把证据与唯一下一步交给 Agent。
 tags: [GEO, Agent Readiness, Website Audit, MCP, SEO]
 license: MIT
 homepage: https://readiness.bflabs.cn
-iconUrl: https://skillhub-1388575217.cos.accelerate.myqcloud.com/skill-icons/uploads/636363/865285e5a7314589ab1a65cc5e4a7789.png
+iconUrl: https://skillhub-1388575217.cos.accelerate.myqcloud.com/skill-icons/uploads/636363/6ee92b9fe5dd4db8af1a35ec6cb5d7d4.png
 platforms: [WorkBuddy, Codex, Claude Code, Cursor]
 description: Diagnose and improve whether a product website is discoverable, understandable, and actionable by AI agents. Use when auditing a public website or repository, routing evidence-backed GEO repairs, exposing approved WebMCP tools, or verifying a readiness report. Not for ranking guarantees, bulk SEO content, hidden admin exposure, autonomous payments, production traffic changes, or business-outcome attribution without independent evidence.
 metadata:
@@ -17,97 +17,80 @@ metadata:
 
 # BFLabs Agent Readiness
 
-![BFLabs logo](assets/bflabs-logo.svg)
+检查网站能不能被 AI Agent 找到、读懂和用起来。你可以提交公开网址、网站仓库或旧报告。系统会先记录证据，再把任务交给一个最小、最合适的子 Skill。
 
-Treat website readiness as three independent questions:
+打开 https://readiness.bflabs.cn 就能免费诊断。也可以从 SkillHub 安装本 Skill，或通过 CLI、MCP 读取同一份报告。
 
-1. **Discoverable**: can public pages and machine entry points be found?
-2. **Understandable**: are product facts explicit, current, and internally consistent?
-3. **Actionable**: can an Agent complete approved tasks through stable links, typed tools, MCP, or WebMCP?
+## 三层结果，不要混在一起
 
-Never fold Actionable into a GEO indexing score. Never present readiness as proof of ranking, recommendation, conversion, or revenue.
+- **Agent Readiness**：网站是否可发现、可理解、可操作。这三轴分别判断，不合成一个神秘总分。
+- **AI Visibility / GEO Measurement**：真实 AI 平台是否引用或推荐网站。免费诊断默认不测这一层，状态保持为 `not_measured`。
+- **Business Outcome**：是否带来线索、转化和收入。没有客户授权的业务数据，状态保持为 `not_measured`。
 
-## Workflow
+准备度不是排名，也不承诺推荐、流量、转化或收入。缺少证据时明确标为未知，不会把猜测写成结论。
 
-1. Identify whether the input is a public URL, an existing repository, or a prior report.
-2. Record evidence for all three axes before recommending changes.
-3. Route only the smallest necessary repair:
-   - For evidence-backed question and opportunity discovery, read and follow [skills/geo-discover/SKILL.md](skills/geo-discover/SKILL.md).
-   - For evidence-linked titles, explainers, comparisons, rankings, page blueprints, refinements, or article restructuring, read and follow [skills/geo-content/SKILL.md](skills/geo-content/SKILL.md).
-   - For offline aggregation of supplied AI answer observations, read and follow [skills/geo-measure/SKILL.md](skills/geo-measure/SKILL.md).
-   - For evidence-bounded technical SEO planning, read and follow [skills/seo-plan/SKILL.md](skills/seo-plan/SKILL.md).
-   - For repository-local GEO and public-fact work, read and follow [skills/geo-optimize/SKILL.md](skills/geo-optimize/SKILL.md).
-   - For WebMCP implementation, external enablement, or compatible-browser task verification, read and follow [skills/webmcp-enable/SKILL.md](skills/webmcp-enable/SKILL.md).
-   - For a local read-only domain scan, use [app/readiness-web/README.md](app/readiness-web/README.md).
-4. Keep AI visibility and business outcome explicitly `not_measured` unless separate evidence exists.
-5. Treat `agent_journey` as supporting public-page evidence only. It never changes readiness scores and never establishes AI visibility or business outcome.
-6. Return changed paths, deterministic checks, external readback, unresolved gates, and a rollback route when applicable.
+## 怎么用
 
-## Routing Boundary
+1. 提供公开网址、网站仓库或旧报告。
+2. 先记录可发现、可理解、可操作三轴的证据，再判断下一步。
+3. 只路由一个最小子 Skill，不一次摊开全部改造。
+4. 诊断站生成一段可直接复制的改站提示词，其中包含本次证据、根 Skill 入口和唯一子 Skill 路由。
+5. 把提示词交给你自己的 Agent。公网扫描本身只读；只有得到你的明确授权，Agent 才能修改本地仓库，何时部署仍由你决定。
+6. 部署后，一键复测当时公开可见的网站，并查看 Before / After。
+7. 准备度确认后，如需判断真实平台是否引用或推荐，再进入多平台 GEO measurement。
+8. 如需跨系统实施、持续验证或业务归因，联系 BFLabs：hello@bflabs.cn。
 
-Read [references/routing.md](references/routing.md) before choosing a sub-Skill. Read [references/product-boundary.md](references/product-boundary.md) before making product claims or proposing paid delivery.
+## 根入口和六个子 Skill
 
-`geo-optimize` may repair an approved local repository but does not enable external services. `webmcp-enable` is explicit-only for real Cloudflare, BrowserRun, browser-session, permission, or production-facing actions.
+根 Skill 负责判断意图，并只选择下面一个最小能力。
 
-## Output Contract
+- [**geo-discover**](https://readiness.bflabs.cn/skills/geo-discover)：基于证据整理用户问题和机会地图，不虚构搜索量。
+- [**geo-content**](https://readiness.bflabs.cn/skills/geo-content)：生成有证据支撑的标题、解释、比较、榜单方法、页面蓝图或内容改写，是否发布由用户决定。
+- [**geo-measure**](https://readiness.bflabs.cn/skills/geo-measure)：汇总用户提供的真实 AI 平台观察，不自动采样，也不推断因果或业务结果。
+- [**seo-plan**](https://readiness.bflabs.cn/skills/seo-plan)：制定有证据边界的技术 SEO 计划，不自动修改生产环境。
+- [**geo-optimize**](https://readiness.bflabs.cn/skills/geo-optimize)：在用户批准的本地仓库中检查或修复公开事实、结构化信息、robots、sitemap、llms.txt 和准备度问题。
+- [**webmcp-enable**](https://readiness.bflabs.cn/skills/webmcp-enable)：实现或核验 MCP、WebMCP 与代表性 Agent 任务；启用外部服务或修改生产环境必须再次获得明确授权。
 
-A valid readiness result includes:
+<!-- Agent-only local routing:
+Read references/routing.md before choosing one child Skill. Read references/product-boundary.md before making product claims or proposing paid delivery.
+For a local read-only scan, use app/readiness-web/README.md.
+Child entrypoints: skills/geo-discover/SKILL.md, skills/geo-content/SKILL.md, skills/geo-measure/SKILL.md, skills/seo-plan/SKILL.md, skills/geo-optimize/SKILL.md, skills/webmcp-enable/SKILL.md.
+-->
 
-- independent Discoverable, Understandable, and Actionable states;
-- evidence URLs or repository paths;
-- failed or blocked predicates;
-- the owning sub-Skill for each repair;
-- verification commands and receipts;
-- `ai_visibility` and `business_outcome` states;
-- any external or production gate still requiring the owner.
+## 一份合格的结果包含什么
 
-Use [templates/readiness-report.json](templates/readiness-report.json) when a portable machine-readable report is required.
+- 可发现、可理解、可操作三轴的独立状态；
+- 对应的公开证据网址或仓库路径；
+- 失败、受阻和未知的检查项；
+- 唯一负责下一步的子 Skill；
+- 验证命令、外部读回、未完成关口和必要的回滚方式；
+- `ai_visibility` 与 `business_outcome` 的真实状态。
 
-## Agent-readable Package Interface
+`agent_journey` 只记录一个公开路径能否进入、看懂并继续下一步。它是辅助证据，不参与三轴评分，也不能证明 AI visibility 或 business outcome。
+
+需要可移交的机器可读报告时，使用 [readiness-report.json 模板](templates/readiness-report.json)。
+
+## 从哪里使用
+
+- 公网诊断站：https://readiness.bflabs.cn
+- SkillHub：https://skillhub.cn/skills/user_49f8ec71/bflabs-agent-readiness
+- Agent Skills 索引：https://readiness.bflabs.cn/.well-known/agent-skills/index.json
+- MCP：https://readiness.bflabs.cn/mcp
+- BFLabs Skills 目录：https://skills.bflabs.cn/catalog.html#geo
+- CLI：
 
 ```bash
-bflabs-readiness scan https://example.com --format json
 bflabs-readiness scan https://example.com --format markdown
-bflabs-readiness list --format markdown
-bflabs-readiness read geo-optimize
-bflabs-readiness route --text "Audit this website for GEO readiness"
-bflabs-readiness run --text "先挖掘用户问题，然后诊断网站" --input workflow-request.json --output runs
-bflabs-readiness run --capability geo-discover --input discovery-brief.json --output runs
-bflabs-readiness run --workflow discover-diagnose --input workflow-request.json --output runs
-bflabs-readiness run --capability geo-content --input content-brief.json --output runs
-bflabs-readiness run --workflow discover-content --input workflow-request.json --output runs
-bflabs-readiness run --capability geo-measure --input observations.json --output runs
-bflabs-readiness run --capability seo-plan --input seo-plan-brief.json --output runs
-bflabs-readiness run --capability geo-optimize --input request.json --output runs
-bflabs-readiness validate --run runs/run-id
-bflabs-readiness eval
-bflabs-readiness package --target source
-bflabs-readiness package --target unified
-bflabs-readiness package --target skillhub
-bflabs-readiness package --target geo-optimize
 ```
 
-`scan` uses the versioned public diagnostic API. It does not publish to the public leaderboard unless the caller adds `--publish-to-leaderboard` explicitly.
+网页、CLI、Markdown 和 MCP 使用同一份三轴报告合同。CLI 默认不会把网站发布到公开榜单；只有显式添加 `--publish-to-leaderboard` 才会申请公开。
 
-## Public Agent Interface
+## 公开榜单
 
-- Agent Skills index: `https://readiness.bflabs.cn/.well-known/agent-skills/index.json`
-- Root Skill: `https://readiness.bflabs.cn/skills/bflabs-agent-readiness`
-- OpenAPI: `https://readiness.bflabs.cn/openapi.json`
-- MCP: `https://readiness.bflabs.cn/mcp`
-- External SkillHub listing: `https://skillhub.cn/skills/user_49f8ec71/bflabs-agent-readiness`
-- BFLabs Skills catalog: `https://skills.bflabs.cn/catalog.html#geo`
+榜单完全自愿，默认关闭。只有用户主动选择时，才会展示域名、三轴摘要、扫描时间和指纹；不会公开证据正文、Agent 提示词、IP 地址、AI visibility 或 business outcome。不想出现可以一直不上榜，已经加入也可以发送邮件到 hello@bflabs.cn 请求移除。
 
-The website, CLI, Markdown response, and MCP scan tool use the same report contract. The public leaderboard stores only an explicitly opted-in domain summary, three readiness axes, scan time, and fingerprint. It does not store the evidence body, Agent prompt, IP address, AI visibility, or business outcome.
+## 复测和交付边界
 
-The legacy interface remains available during the v1 compatibility window:
+复测只读取扫描当时公开可见的网站。仓库改了但没有上线，复测不会当成已经更新；BFLabs 也不负责替用户证明网站曾经改过。Before / After 只比较两次公开网站状态。
 
-```bash
-python3 scripts/skill_registry.py list --format markdown
-python3 scripts/skill_registry.py read skills/geo-optimize/SKILL.md
-python3 scripts/skill_registry.py validate
-```
-
-The legacy registry read wrapper exposes only Skill SOP files. It refuses scripts, private receipts, arbitrary paths, and generated artifacts. Release packages use a separate explicit allowlist and include only declared portable assets. Successful runtime executions publish an atomic Artifact Protocol run with a manifest, evidence ledger, quality report, and schema-validated capability outputs.
-
-The deterministic router returns one minimum capability for a single intent. It returns a workflow DAG only for an explicit discovery-then-diagnosis or discovery-then-content request. Both approved workflows are executable and publish one atomic run; other planned routes remain non-executable and expose an active fallback without silently running hidden stages.
+免费层提供诊断、Agent 提示词、六个公开子 Skill 和复测。`geo-measure` 只汇总用户已经提供的观察。BFLabs 收费服务负责真实多平台抽样、跨系统实施、持续验证，以及客户授权后的业务结果归因。需要完整交付时，请联系 hello@bflabs.cn。

@@ -5,7 +5,7 @@
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
 位置：0.4.3 已发布 / 两个站点 live / SkillHub 已审核上架
-状态：PR #8 merged、v0.4.3 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.3
+状态：main launch closeout merged、v0.4.3 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.3
 本轮：完成 Prompt-first 公网诊断、可选榜单、Agent Journey、Agent-native API/CLI/MCP、GitHub 发布、Skills catalog、SkillHub 上架与 BFLabs Logo
 下一关口：Lucas 点击新验证邮件；独立安全审查签字；完成首个真实付费 pilot，形成多平台测量、复测和业务归因 receipt
 ```
@@ -372,7 +372,6 @@ Phase 2 不把两个 workflow 标记为 executable：`geo-discover` 和 `geo-con
 
 ### P1
 
-- 把两次 Artifact Pack 的差异提升为可下载、schema/hash-valid comparison artifact；
 - 为付费交付建立真实多平台重复采样、持续监测、跨系统实施和客户授权归因的可审计运行手册与 receipts；
 - 完成 human provenance review，确认未复制 GEOHub AGPL 实现。
 
