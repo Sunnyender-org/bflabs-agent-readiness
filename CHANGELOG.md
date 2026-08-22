@@ -2,6 +2,11 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.1 - 2026-08-23
+
+- Added the official SkillHub front-matter fields and a portable BFLabs logo asset so the public Skill can be uploaded without platform-specific repackaging.
+- Aligned the packaged CLI user-agent with the installed package version.
+
 ## 0.4.0 - 2026-08-23
 
 - Made the diagnostic result prompt-first: one click copies the current evidence, root Skill, and the single owning child Skill directly to an Agent.

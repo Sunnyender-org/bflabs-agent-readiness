@@ -44,6 +44,7 @@ SOURCE_DIRS = {
     ".github",
     "agents",
     "app",
+    "assets",
     "evals",
     "examples",
     "references",

@@ -1,6 +1,6 @@
 name: bflabs-agent-readiness
 display_name: BFLabs Agent Readiness
-version: 0.4.0
+version: 0.4.1
 description: 免费诊断公开网站的可发现、可理解、可操作状态，并把唯一 evidence-backed 下一步交给 Agent。
 license: MIT
 runtime: portable

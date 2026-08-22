@@ -1,5 +1,13 @@
 ---
 name: bflabs-agent-readiness
+slug: bflabs-agent-readiness
+version: 0.4.1
+displayName: BFLabs Agent Readiness
+summary: 免费诊断网站是否对 AI Agent 可发现、可理解、可操作，并把证据与唯一下一步交给 Agent。
+tags: [GEO, Agent Readiness, Website Audit, MCP, SEO]
+license: MIT
+homepage: https://readiness.bflabs.cn
+platforms: [WorkBuddy, Codex, Claude Code, Cursor]
 description: Diagnose and improve whether a product website is discoverable, understandable, and actionable by AI agents. Use when auditing a public website or repository, routing evidence-backed GEO repairs, exposing approved WebMCP tools, or verifying a readiness report. Not for ranking guarantees, bulk SEO content, hidden admin exposure, autonomous payments, production traffic changes, or business-outcome attribution without independent evidence.
 metadata:
   short-description: Diagnose, improve, and verify AI-agent website readiness
@@ -7,6 +15,8 @@ metadata:
 ---
 
 # BFLabs Agent Readiness
+
+![BFLabs logo](assets/bflabs-logo.svg)
 
 Treat website readiness as three independent questions:
 

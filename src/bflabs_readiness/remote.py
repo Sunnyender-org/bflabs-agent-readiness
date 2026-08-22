@@ -9,6 +9,11 @@ import urllib.parse
 import urllib.request
 from typing import Callable, Tuple
 
+from . import __version__
+
+
+USER_AGENT = "bflabs-readiness-cli/{}".format(__version__)
+
 
 def _read_response(response) -> Tuple[int, str, str]:
     status = getattr(response, "status", response.getcode())
@@ -48,7 +53,7 @@ def scan_public_site(
     request = urllib.request.Request(
         base + "/api/v1/scans",
         data=body,
-        headers={"Accept": accept, "Content-Type": "application/json", "User-Agent": "bflabs-readiness-cli/0.3"},
+        headers={"Accept": accept, "Content-Type": "application/json", "User-Agent": USER_AGENT},
         method="POST",
     )
     started = time.monotonic()
@@ -63,7 +68,7 @@ def scan_public_site(
     status_url = urllib.parse.urljoin(base + "/", value["status_url"])
 
     while time.monotonic() - started < timeout:
-        poll = urllib.request.Request(status_url, headers={"Accept": accept, "User-Agent": "bflabs-readiness-cli/0.3"})
+        poll = urllib.request.Request(status_url, headers={"Accept": accept, "User-Agent": USER_AGENT})
         status, content_type, text = _request(opener, poll, timeout)
         if status >= 400:
             _raise_problem(text, status)

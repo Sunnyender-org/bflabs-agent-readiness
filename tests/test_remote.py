@@ -4,6 +4,7 @@ import io
 import json
 import unittest
 
+from bflabs_readiness import __version__
 from bflabs_readiness.remote import scan_public_site
 
 
@@ -39,6 +40,7 @@ class RemoteScanTests(unittest.TestCase):
         self.assertEqual(content_type, "text/markdown")
         self.assertEqual(text, "# BFLabs report")
         self.assertEqual(requests[1].get_header("Accept"), "text/markdown")
+        self.assertEqual(requests[0].get_header("User-agent"), "bflabs-readiness-cli/{}".format(__version__))
 
     def test_publish_flag_is_explicit(self):
         captured = []

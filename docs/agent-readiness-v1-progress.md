@@ -4,10 +4,10 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：v1 已发布 / 公网旧版 live / 0.4.0 Prompt-first 产品化分支待提交
-状态：PR #1 merged、v0.3.0 released、readiness.bflabs.cn public beta live；`codex/productize-agent-readiness` 尚未 commit/push/deploy
-本轮：完成 Prompt-first、站点托管 Skill/SkillHub、可选榜单、确定性 Agent Journey、版本化 API、Markdown、CLI、MCP 与结构化错误
-下一关口：提交/合并 0.4.0，部署两个站点并生产复测，再提交外部 SkillHub；独立安全复核仍单列
+位置：0.4.0 Prompt-first 已上线 / 0.4.1 SkillHub 元数据补丁本地完成
+状态：PR #4 merged、v0.4.0 released、readiness.bflabs.cn 新版 live；`codex/skillhub-metadata-0.4.1` 尚未 commit/push
+本轮：生产验证 Prompt-first、站点托管 Skill、可选榜单、Agent Journey、版本化 API、Markdown、CLI 与 MCP；补齐官方 SkillHub 元数据和 BFLabs Logo
+下一关口：提交/合并/发布 0.4.1，部署 skills.bflabs.cn，提交外部 SkillHub 并读取审核状态；独立安全复核仍单列
 ```
 
 ## Verified State
@@ -42,8 +42,10 @@ verified_state:
 - executable scenarios 4/4：默认私有、明确公开、存储未配置降级、Journey 不越过测量边界；生产 truth owner 为 `app/readiness-web/src/leaderboard.mjs` 与 `app/readiness-web/src/scanner.mjs#buildAgentJourney`，没有第二套评分或 Journey evaluator；
 - 本地验证：Node/Worker 31 tests、Python 53 tests、router 62/62、repository validator、Skill quick validator、Worker build、OpenAPI JSON、SkillHub JS syntax 全部 pass；0.4.0 source 207 files、unified wheel 156 files、六个 child packages、两个隔离安装和两个 workflow runs全部通过 package verification；CLI→公网扫描→Markdown→显式上榜→榜单读回与 MCP/Skill index 实际链路通过；桌面与 390px 页面均完成浏览器检查且无横向溢出；
 - 2026-08-22 本地新扫描器对当前 `https://beefapi.com` 的公开读回为 Discoverable `100`、Understandable `100`、Actionable `100`，确定性 Journey `pass`，发现 6 个公开 MCP tools；由于兼容浏览器真实任务仍未执行，WebMCP 继续是 `present_unverified`，该结果不升级 AI visibility 或 business outcome；
-- Cloudflare 账户已创建 `LEADERBOARD` KV namespace；本地 `wrangler.jsonc` 已绑定，dry-run 读到 10 个静态资源、KV、现有客户端/目标限流和 Assets binding；该配置尚未 deploy，不能当作生产 binding；
-- 当前产品代码仍只在本地分支。`readiness.bflabs.cn` 与 `skills.bflabs.cn` 均未部署本轮改动，因此生产仍是 2026-08-17 已验证版本；真实模型平台 Journey、AI visibility 和商业交付仍未因此成立。
+- PR [#4](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/4) 已 merge 为 `8cebb0801f9cb809d50716d61fc424945e74522e`，两项 GitHub Actions 均通过；GitHub Release [`v0.4.0`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.0) 已从该 merge commit 发布八个带 SHA-256 digest 的资产；
+- Cloudflare Worker 版本 `f626760b-73c3-4332-9b9e-1a48381ed44e` 已绑定 `LEADERBOARD` KV、客户端/目标限流和 Assets；生产读回验证首页、榜单、隐私、条款、OpenAPI、`llms.txt`、Agent Skills、MCP card、methodology 与根 Skill 均为 200；
+- 生产默认私有扫描后榜单仍为空；显式 opt-in 的 `beefapi.com` 写入成功，KV 控制面读到 `entry:beefapi.com` 与到期时间，公开 API 和独立分享页均可读；生产 Markdown、MCP `tools/list` 和 0.4.0 wheel CLI 扫描均通过；
+- 生产 BeefAPI 扫描为 Discoverable `100`、Understandable `100`、Actionable `75/partial`，确定性 Journey `pass`；AI visibility 与 business outcome 均保持 `not_measured`。`skills.bflabs.cn`、外部 SkillHub、Lucas 邮箱验证与真实付费交付仍未因此成立。
 
 ## Phase 0 — Contract And License Baseline
 
