@@ -1,0 +1,69 @@
+name: User-facing copy review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'app/readiness-web/public/**'
+      - 'app/readiness-web/src/**'
+      - '.to-the-user.json'
+
+jobs:
+  review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Load to-the-user policy
+        uses: actions/checkout@v7
+        with:
+          repository: enderzcx/to-the-user
+          ref: 65d71075e17574f4de8065cceb9430678b8a9e96
+          path: .to-the-user-policy
+          persist-credentials: false
+      - name: Review user-facing copy
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.BEEFAPI_CI_API_KEY }}
+          responses-api-endpoint: https://beefapi.com/v1/responses
+          prompt-file: .to-the-user-policy/prompts/pr-review.md
+          permission-profile: ":read-only"
+          codex-args: '["--ephemeral"]'
+          model: gpt-5.5
+          effort: medium
+
+  comment:
+    runs-on: ubuntu-latest
+    needs: review
+    if: needs.review.outputs.final_message != ''
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          REVIEW: ${{ needs.review.outputs.final_message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const marker = '<!-- to-the-user-review -->';
+            const body = `${marker}\n## User-facing copy review (advisory)\n\n${process.env.REVIEW}`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const previous = comments.find((item) => item.user?.type === 'Bot' && item.body?.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.payload.pull_request.number, body });
+            }

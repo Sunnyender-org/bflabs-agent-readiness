@@ -15,7 +15,7 @@ const publishCheckbox = document.querySelector('#publish-to-leaderboard');
 let currentReport = null;
 let baselineReport = null;
 
-const defaultHelp = '30 秒出报告 · 公开页面 ONLY · 默认不上榜';
+const defaultHelp = '约 30 秒 · 只读取公开页面 · 默认不公开结果';
 
 const axisDescriptions = {
   discoverable: '公开页面与机器入口是否能被找到。',
@@ -27,8 +27,8 @@ const statusLabels = {
   pass: 'pass',
   partial: 'partial',
   fail: 'fail',
-  unknown: 'unknown',
-  blocked: 'blocked',
+  unknown: '证据不足',
+  blocked: '受阻',
 };
 
 function setStage(stage) {
@@ -122,15 +122,15 @@ function renderComparison(report) {
 
   document.querySelector('#delivery-context').textContent = `本地实测：${report.target.canonical_origin} 的同站复测对比`;
   document.querySelector('#delta-label').textContent = '真实三轴 Δ';
-  document.querySelector('#delta-value').textContent = 'Before → After';
+  document.querySelector('#delta-value').textContent = '修复前 → 修复后';
   document.querySelector('#delta-summary').textContent = deltas.join(' · ');
   document.querySelector('#delta-progress').style.width = `${progressValue}%`;
   document.querySelector('#before-value').textContent = '基线';
   document.querySelector('#before-summary').textContent = scoreText(baselineReport);
   document.querySelector('#after-value').textContent = '复测';
   document.querySelector('#after-summary').textContent = scoreText(report);
-  document.querySelector('#delivery-notice-title').textContent = 'Before / After 已由两次独立扫描生成';
-  document.querySelector('#delivery-notice-copy').textContent = '这只证明准备度变化，AI visibility 与 Business outcome 仍需独立测量。';
+  document.querySelector('#delivery-notice-title').textContent = '修复前后的结果来自两次独立检查';
+  document.querySelector('#delivery-notice-copy').textContent = '这里只证明网站准备度发生变化，外部 AI 平台可见度与业务结果仍需单独测量。';
   document.querySelector('#report-status').textContent = '已复测';
 }
 
@@ -141,10 +141,10 @@ function resetComparisonExample() {
   document.querySelector('#delta-summary').textContent = '示例：可理解 +45 · 关闭 4/7 缺口';
   document.querySelector('#delta-progress').style.width = '78%';
   document.querySelector('#before-value').innerHTML = '几乎<br>读不到';
-  document.querySelector('#before-summary').textContent = 'HTML 正文薄 · 无稳定答案页';
+  document.querySelector('#before-summary').textContent = '页面正文过少 · 没有稳定答案页';
   document.querySelector('#after-value').innerHTML = '事实<br>可核对';
-  document.querySelector('#after-summary').textContent = 'SSR 正文 · 答案页 · 接入路径';
-  document.querySelector('#delivery-notice-title').textContent = '没有 Before / After，就不算完成本阶段';
+  document.querySelector('#after-summary').textContent = '正文可直接读取 · 答案页 · 接入路径';
+  document.querySelector('#delivery-notice-title').textContent = '没有修复前后的复测对比，就不算完成本阶段';
   document.querySelector('#delivery-notice-copy').textContent = '下一阶段只修仍开放的项。';
 }
 
@@ -222,7 +222,7 @@ function renderReport(report) {
         <small>${escapeHtml(finding.owner_route)}</small>
       </li>
     `).join('')
-    : '<li class="finding-empty">本次固定入口没有发现失败谓词。真实平台表现仍未测量。</li>';
+    : '<li class="finding-empty">本次检查没有发现明确问题。外部 AI 平台表现仍未测量。</li>';
 
   document.querySelector('#evidence-body').innerHTML = report.evidence.map((item) => `
     <tr>
@@ -236,12 +236,12 @@ function renderReport(report) {
   renderCompactList('#evidence-gaps', report.evidence_gaps || [], (item) => `
     <code>${escapeHtml(item.rule_id)}</code>
     <p>${escapeHtml(item.title)} · ${escapeHtml(item.state)}</p>
-  `, '固定入口证据完整，没有未知谓词。');
+  `, '已检查的公开入口证据完整。');
 
   renderCompactList('#opportunities', report.opportunities || [], (item) => `
     <code>${escapeHtml(item.state)}</code>
     <p>${escapeHtml(item.title)} · ${escapeHtml(item.route)}</p>
-  `, '当前没有由失败或未知谓词产生的机会。');
+  `, '当前没有由问题或证据缺口产生的改进机会。');
 
   document.querySelector('#skill-routes').innerHTML = (report.skill_routes || []).length
     ? report.skill_routes.map((item) => `<a href="${escapeHtml(item.href)}">${escapeHtml(item.id)}</a>`).join('')
@@ -252,7 +252,7 @@ function renderReport(report) {
   promptButton.textContent = hasRepair ? '复制给 Agent，开始修复' : '复制给 Agent，核对结果';
   document.querySelector('#agent-action-copy').textContent = hasRepair
     ? `提示词已带上本次证据和 ${report.skill_routes[0].id} Skill。`
-    : '本次没有 evidence-backed 失败项，提示词会让 Agent 只核对结果。';
+    : '本次没有发现由公开证据支持的问题，提示词会让 Agent 只核对结果。';
   document.querySelector('#copy-status').textContent = '';
 
   resetComparisonExample();
@@ -332,7 +332,7 @@ document.querySelector('#save-baseline').addEventListener('click', () => {
   landing.hidden = false;
   input.value = displayHost(currentReport.target.canonical_origin);
   submitButton.textContent = '复测并对比';
-  document.querySelector('#url-help').textContent = '基线仅保存在当前页面内存 · 优化完成后点击复测';
+  document.querySelector('#url-help').textContent = '基线只保存在当前页面，关闭后会消失 · 优化完成后点击复测';
   input.focus();
   window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 });

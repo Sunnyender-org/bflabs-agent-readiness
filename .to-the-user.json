@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "surfaces": [
+    {
+      "paths": ["app/readiness-web/public/**"],
+      "surface": "public diagnostic and delivery website",
+      "audience": "website owner evaluating readiness"
+    },
+    {
+      "paths": ["app/readiness-web/src/product-contract.mjs", "app/readiness-web/src/scanner.mjs", "app/readiness-web/src/worker-entry.mjs"],
+      "surface": "diagnostic results, generated handoff, errors and legal boundaries",
+      "audience": "website owner and their implementation agent"
+    }
+  ]
+}

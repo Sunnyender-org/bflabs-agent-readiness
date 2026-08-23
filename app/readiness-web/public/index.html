@@ -54,12 +54,12 @@
             <span>我确认有权公开，把本次三轴结果加入榜单</span>
           </label>
 
-          <p id="url-help" class="landing-fine">30 秒出报告 · 公开页面 ONLY · 默认不上榜</p>
+          <p id="url-help" class="landing-fine">约 30 秒 · 只读取公开页面 · 默认不公开结果</p>
           <p id="url-error" class="field-error" role="alert"></p>
           <ol id="progress" class="scan-progress" hidden aria-live="polite">
             <li data-stage="validate">验证目标</li>
             <li data-stage="fetch">读取入口</li>
-            <li data-stage="contracts">核对契约</li>
+            <li data-stage="contracts">核对公开信息</li>
             <li data-stage="report">生成报告</li>
           </ol>
         </div>
@@ -106,14 +106,14 @@
             </header>
             <p id="journey-task" class="journey-task"></p>
             <ol id="journey-steps" class="journey-steps"></ol>
-            <p class="journey-boundary">这是公开页面的确定性试跑，不是 AI visibility 或业务结果。</p>
+            <p class="journey-boundary">这里只测试当前公开页面能否完成任务，不代表外部 AI 平台表现或业务结果。</p>
           </section>
 
           <ul id="findings" class="finding-list" aria-label="主要证据缺口"></ul>
 
           <div class="result-footer">
             <button id="show-more" class="button button-secondary" type="button" aria-expanded="false" aria-controls="improvement-panel">如何改进</button>
-            <span class="boundary-copy">不提供神秘总分，缺证据不计分。AI visibility 与 Business outcome 默认未测量。</span>
+            <span class="boundary-copy">不提供神秘总分，缺证据不计分。外部 AI 平台可见度与业务结果尚未测量。</span>
             <details class="evidence-disclosure">
               <summary>查看证据</summary>
               <div class="evidence-panel">
@@ -135,11 +135,11 @@
             <article class="offer-card offer-card-free">
               <span>Free</span>
               <h3>开源 Skill</h3>
-              <p>自己诊断、自己改站、自己复测，产物留在本地。</p>
+              <p>自己诊断、自己改站、自己复测，报告留在本地。</p>
               <ul class="boundary-list">
-                <li>公开站三轴诊断与 Artifact Pack</li>
+                <li>公开站三轴诊断与完整证据包</li>
                 <li>开源 Skill 指导 Agent 本地改站</li>
-                <li>同一浏览会话内 Before / After 复测</li>
+                <li>同一浏览会话内保存基线并复测</li>
               </ul>
               <div id="skill-routes" class="route-list"></div>
               <div class="offer-actions">
@@ -155,7 +155,7 @@
               <p>由 BFLabs 跨系统实施，并把准备度变化连接到外部可见度与业务结果证据。</p>
               <ul class="boundary-list">
                 <li>客户仓库、CMS 与基础设施实施</li>
-                <li>多平台重复抽样、持续监测与趋势回执</li>
+                <li>多平台重复抽样、持续监测与趋势报告</li>
                 <li>客户授权的转化与收入归因</li>
               </ul>
               <div class="compact-columns">
@@ -169,8 +169,8 @@
             </article>
 
             <div class="artifact-actions">
-              <button id="download-report" class="button button-secondary" type="button">下载 Artifact Pack</button>
-              <span>高级选项：下载完整证据与哈希清单。</span>
+              <button id="download-report" class="button button-secondary" type="button">下载完整证据包</button>
+              <span>高级选项：保存完整证据与校验清单。</span>
             </div>
           </section>
         </section>
@@ -198,11 +198,11 @@
               <p id="delta-summary">示例：可理解 +45 · 关闭 4/7 缺口</p>
               <div class="progress-bar"><i id="delta-progress" style="width:78%"></i></div>
             </article>
-            <article class="before-card"><span>Before</span><strong id="before-value">几乎<br>读不到</strong><p id="before-summary">HTML 正文薄 · 无稳定答案页</p></article>
-            <article class="after-card"><span>After</span><strong id="after-value">事实<br>可核对</strong><p id="after-summary">SSR 正文 · 答案页 · 接入路径</p></article>
+            <article class="before-card"><span>修复前</span><strong id="before-value">几乎<br>读不到</strong><p id="before-summary">页面正文过少 · 没有稳定答案页</p></article>
+            <article class="after-card"><span>修复后</span><strong id="after-value">事实<br>可核对</strong><p id="after-summary">正文可直接读取 · 答案页 · 接入路径</p></article>
           </div>
 
-          <aside class="delivery-notice"><i aria-hidden="true">✓</i><div><strong id="delivery-notice-title">没有 Before / After，就不算完成本阶段</strong><p id="delivery-notice-copy">下一阶段只修仍开放的项。</p></div></aside>
+          <aside class="delivery-notice"><i aria-hidden="true">✓</i><div><strong id="delivery-notice-title">没有修复前后的复测对比，就不算完成本阶段</strong><p id="delivery-notice-copy">下一阶段只修仍开放的项。</p></div></aside>
         </section>
       </section>
     </main>

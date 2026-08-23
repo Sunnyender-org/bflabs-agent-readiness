@@ -42,11 +42,11 @@ test('keeps the real scanner and protocol actions wired into the visual shell', 
 
 test('exposes a real BFLabs inquiry route and an in-session retest contract', () => {
   assert.match(html, /mailto:hello@bflabs\.cn/);
-  assert.match(html, /同一浏览会话内 Before \/ After 复测/);
-  assert.match(html, /多平台重复抽样、持续监测与趋势回执/);
+  assert.match(html, /同一浏览会话内保存基线并复测/);
+  assert.match(html, /多平台重复抽样、持续监测与趋势报告/);
   assert.match(app, /let baselineReport = null/);
   assert.match(app, /复测并对比/);
-  assert.match(app, /AI visibility 与 Business outcome 仍需独立测量/);
+  assert.match(app, /外部 AI 平台可见度与业务结果仍需单独测量/);
   assert.match(app, /downloadArtifactPack/);
   assert.match(app, /复制给 Agent，开始修复/);
   assert.match(app, /publish_to_leaderboard: publishCheckbox\.checked/);
