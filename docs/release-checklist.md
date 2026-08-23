@@ -35,6 +35,7 @@ Last live readback: 2026-08-23
 - [x] The local web UI, versioned API, Markdown projection, packaged CLI, and MCP scan tool use the same report contract.
 - [x] The local opt-in leaderboard defaults off, stores summary-only records for at most 30 days, and discloses its three-axis ordering without creating a combined score.
 - [x] The root and all six child Skills are exposed through a SHA-256-bound Agent Skills index; the local BF Labs Skills catalog lists GEO as a SkillHub host using stable site URLs.
+- [x] The rendered root Skill speaks only to the user workflow; runtime fields, routing, validation, interfaces, and rollback live in an Agent-only contract and are blocked from returning by the repository validator.
 - [ ] Paid delivery has auditable real-platform sampling, monitoring, implementation, and attribution runbooks/receipts.
 
 ## GitHub live state
@@ -54,6 +55,9 @@ Last live readback: 2026-08-23
 - [x] Final status PR #8 merged as `02f908f4aa1fd29718b6a90be7858970d341f67f`; both checks passed.
 - [x] Chinese SkillHub-body PR [#10](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/10) merged as `def5dcd65946c6bfc292cc8640452466d44adced`; both checks passed.
 - [x] GitHub Release [`v0.4.4`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.4) is published from that merge commit with source, wheel, SkillHub, and all six child-Skill assets plus GitHub SHA-256 digests.
+- [x] Project-rule PR [#12](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/12) merged as `11c956705f95f057ce2602f46776855c23daa10f`; project `AGENTS.md` and the repository validator now preserve the user-facing copy rule.
+- [x] User-first copy PR [#13](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/13) merged as `222dbeadd3cb0f3d3bbf4318134234312bcbeddb`; both checks passed.
+- [x] GitHub Release [`v0.4.5`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.5) is published from that merge commit with source, wheel, SkillHub, and all six child-Skill assets plus GitHub SHA-256 digests.
 
 ## Production live state
 
@@ -65,11 +69,11 @@ Last live readback: 2026-08-23
 - [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed; Cloudflare sent a fresh verification email on 2026-08-23 and the current state is `pending`.
 - [x] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
 - [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
-- [x] Current Worker version `d971f697-2127-4aec-989c-fb08d49747b3` serves the 0.4.4 Chinese root Skill without a body image while preserving the verified KV and rate-limit bindings.
+- [x] Current Worker version `5ffad7ec-b38c-4227-a01b-4e7896db14e6` serves the 0.4.5 user-first root Skill while preserving the verified KV and rate-limit bindings.
 - [x] `bflabs-skills` PR #3 merged as `b46ec827d47b0da880053b98230b155b87442ed1`; Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` serves the updated GEO entry and four public catalog pages.
 - [x] `bflabs-skills` PR #4 merged as `1176bc4250d4ba66e78f7e4ae205c344d4874457`; current Worker `f06910c4-da47-4cc2-b366-27d232b564d2` links the approved 0.4.3 SkillHub listing and states the BFLabs logo receipt.
-- [x] `bflabs-skills` PR #5 merged as `40e82ec12f45ecc17e1fa94ed298ee2e7afa19d0`; current Worker `1548db78-fbf4-4bae-8ec9-4d1c0db1bec4` presents the reviewed 0.4.4 Chinese listing state on the public catalog, host, and install surfaces.
-- [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.4; Keen and Sanbu scans are benign, public search returns 0.4.4, the real Chrome detail page shows Chinese body copy with no body-level logo, and the independent BFLabs card icon remains present.
+- [x] `bflabs-skills` PR #6 merged as `541d7140abcfa145d1f5ffcc6cacf07fbb83fc60`; current Worker `e8391b4c-392d-482f-bcb6-6b2d92561366` presents the user workflow without release bookkeeping or implementation receipts.
+- [x] External SkillHub lists `@user_49f8ec71/bflabs-agent-readiness` at approved version 0.4.5; Keen and Sanbu scans are benign, public search returns 0.4.5, the real Chrome detail page shows the user workflow without Agent-only language, and the independent BFLabs card icon remains present.
 
 ## Owner gates
 
@@ -96,7 +100,7 @@ The checked 2026-08-18 private paid-delivery prototype remains local only: it ha
 
 Latest local verification on 2026-08-17: 50 Python tests, 18 Node/Worker tests, Node syntax checks, Worker build and Cloudflare dry-run, 62/62 router cases, zero forbidden misroutes, and 100% workflow precision passed. Package verification passed for source, unified, and all six child Skills, including two isolated Python installs and both workflow runs. Release `v0.3.0` was rebuilt from the merge commit and its eight artifacts were uploaded with GitHub digests.
 
-Latest local verification on 2026-08-23: 56 Python tests, 31 Node/Worker tests, 62/62 router cases, repository/Skill validators, Worker build, OpenAPI JSON, CLI live scan, Markdown, MCP, Agent Skills index, opt-in leaderboard and server-rendered share pages, 30-day KV retention, desktop/390px browser checks, and BF Labs Skills catalog syntax/render passed. Package verification passed with 200 source files, 157 unified-wheel files, a 68-file SkillHub package, all six child packages, two isolated installs, both workflow runs, the installed CLI `skillhub` package target, and `.venv` exclusion.
+Latest local verification on 2026-08-23: 56 Python tests, 31 Node/Worker tests, 62/62 router cases, repository/Skill validators, Worker build, OpenAPI JSON, CLI live scan, Markdown, MCP, Agent Skills index, opt-in leaderboard and server-rendered share pages, 30-day KV retention, desktop/390px browser checks, and BF Labs Skills catalog syntax/render passed. Package verification passed with 201 source files, 158 unified-wheel files, a 69-file SkillHub package, all six child packages, two isolated installs, both workflow runs, the installed CLI `skillhub` package target, `.venv` exclusion, and a user-copy regression gate.
 
 A real 2026-08-23 production scan of `https://beefapi.com` returned `100 / 100 / 75`, Agent Journey `pass`, AI visibility `not_measured`, and business outcome `not_measured`; the report still requires a compatible-browser task before WebMCP can become verified.
 
