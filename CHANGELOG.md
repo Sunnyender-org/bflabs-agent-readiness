@@ -2,6 +2,12 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.5 - 2026-08-23
+
+- Rewrote the rendered SkillHub body around the user workflow: diagnose, copy to an Agent, authorize changes, deploy, and retest.
+- Moved status enums, routing mechanics, validation receipts, interfaces, and rollback instructions into an Agent-only root contract.
+- Added a repository gate that rejects implementation-language regressions in the rendered root Skill body.
+
 ## 0.4.4 - 2026-08-23
 
 - Rewrote the public SkillHub body in user-facing Chinese while preserving the three-layer product boundary.

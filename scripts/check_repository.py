@@ -57,6 +57,7 @@ REQUIRED = [
     "scripts/run_evals.py",
     "scripts/package.py",
     "scripts/verify_packages.py",
+    "references/root-agent-contract.md",
     "references/routing.md",
     "references/product-boundary.md",
     "references/licensing-and-attribution.md",
@@ -111,11 +112,37 @@ if "sunny_skill_type: library" not in frontmatter.group(1):
     fail("root skill must be classified as library")
 
 skill_body = skill[frontmatter.end():]
-if "![" in skill_body or re.search(r"<img\b", skill_body, re.I):
+visible_skill_body = re.sub(r"<!--.*?-->", "", skill_body, flags=re.S)
+visible_copy_text = re.sub(r"\]\([^)]+\)", "]", visible_skill_body)
+if "![" in visible_skill_body or re.search(r"<img\b", visible_skill_body, re.I):
     fail("root Skill body must not embed a logo or other image")
-if len(re.findall(r"[\u4e00-\u9fff]", skill_body)) < 100:
+if len(re.findall(r"[\u4e00-\u9fff]", visible_copy_text)) < 100:
     fail("root Skill body must remain Chinese-first for the public SkillHub page")
+for implementation_term in [
+    "not_measured",
+    "ai_visibility",
+    "business_outcome",
+    "扫描指纹",
+    "路由",
+    "验证命令",
+    "外部读回",
+    "回滚",
+    "报告合同",
+    "Agent Skills 索引",
+    "--publish-to-leaderboard",
+    "readiness-report.json",
+]:
+    if implementation_term in visible_copy_text:
+        fail(f"root Skill rendered copy exposes implementation language: {implementation_term}")
+for user_outcome in ["免费检查网站", "把提示词和网站仓库交给你自己的 Agent", "部署后再次检查", "联系 BFLabs", "榜单默认不会公开"]:
+    if user_outcome not in visible_copy_text:
+        fail(f"root Skill rendered copy is missing the user outcome: {user_outcome}")
+if re.search(r"\]\((?:references|skills|templates|app)/", visible_skill_body):
+    fail("root Skill rendered copy must not expose repository-relative implementation links")
+if "references/root-agent-contract.md" not in skill_body:
+    fail("root Skill must point agents to the Agent-only root contract")
 
+agent_contract = (ROOT / "references/root-agent-contract.md").read_text("utf-8")
 for routed_path in [
     "skills/geo-discover/SKILL.md",
     "skills/geo-content/SKILL.md",
@@ -127,8 +154,8 @@ for routed_path in [
     "references/routing.md",
     "references/product-boundary.md",
 ]:
-    if routed_path not in skill:
-        fail(f"root SKILL.md does not route to {routed_path}")
+    if routed_path not in agent_contract:
+        fail(f"Agent-only root contract does not route to {routed_path}")
 
 cases = json.loads((ROOT / "evals/trigger_cases.json").read_text("utf-8"))["cases"]
 ids = [case["id"] for case in cases]
