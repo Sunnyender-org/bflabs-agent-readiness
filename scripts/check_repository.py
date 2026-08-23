@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = [
+    "AGENTS.md",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
@@ -92,6 +93,11 @@ def fail(message: str) -> None:
 for relative in REQUIRED:
     if not (ROOT / relative).is_file():
         fail(f"missing {relative}")
+
+agents = (ROOT / "AGENTS.md").read_text("utf-8")
+user_copy_rule = "用户看见的字只对使用者负责。实现约束用来遵守，不要写进产品。没见过这次讨论的人读不懂的句子，就不该出现。"
+if user_copy_rule not in agents:
+    fail("project AGENTS.md must preserve the user-facing copy rule")
 
 skill = (ROOT / "SKILL.md").read_text("utf-8")
 frontmatter = re.match(r"^---\n(.*?)\n---\n", skill, re.S)
