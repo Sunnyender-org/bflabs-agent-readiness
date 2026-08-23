@@ -4,9 +4,9 @@
 
 ```text
 进度罗盘：BFLabs Agent Readiness v1 complete refactor
-位置：0.4.4 已发布 / 两个站点 live / SkillHub 0.4.4 已审核上架
-状态：PR #10 merged、v0.4.4 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.4
-本轮：用 Grok 起草中文 SkillHub 正文并按仓库事实校正，移除正文 Logo，保留平台卡片 BFLabs Logo；同步 GitHub Release、两个 Worker 和目录站
+位置：0.4.5 已发布 / 两个站点 live / SkillHub 0.4.5 已审核上架
+状态：PR #13 merged、v0.4.5 released、readiness.bflabs.cn 与 skills.bflabs.cn live、SkillHub latestApprovedVersion=0.4.5
+本轮：把用户正文与 Agent 实现合同彻底分开；项目 AGENTS 和 repository validator 共同锁定“用户看见的字只对使用者负责”
 下一关口：Lucas 点击新验证邮件；独立安全审查签字；完成首个真实付费 pilot，形成多平台测量、复测和业务归因 receipt
 ```
 
@@ -59,6 +59,12 @@ verified_state:
 - Worker `d971f697-2127-4aec-989c-fb08d49747b3` 已部署；稳定根 Skill URL 读回 `version: 0.4.4`、中文“三层结果”正文、无 Markdown 图片，KV 与双维限流 bindings 保持；
 - SkillHub 0.4.4 的 Keen 与三不云两项扫描均为 `benign`，后台读回 `reviewStatus=approved`、`latestApprovedVersion=0.4.4`、`status=listed`；公共搜索返回 0.4.4，真实 Chrome 详情页显示中文正文且不存在旧 `BFLabs logo` 正文图片节点，平台卡片 `BFLabs Agent Readiness 图标` 仍存在；
 - `bflabs-skills` PR [#5](https://github.com/Sunnyender-org/bflabs-skills/pull/5) 已 merge 为 `40e82ec12f45ecc17e1fa94ed298ee2e7afa19d0`，Worker `1548db78-fbf4-4bae-8ec9-4d1c0db1bec4` 已把目录、宿主页和安装页同步到已审核的 0.4.4 中文 listing；
+- 项目规则 PR [#12](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/12) 已 merge 为 `11c956705f95f057ce2602f46776855c23daa10f`；项目根 `AGENTS.md` 原样固化用户文案原则，repository validator 强制该规则存在；
+- 用户纯净正文 PR [#13](https://github.com/Sunnyender-org/bflabs-agent-readiness/pull/13) 已 merge 为 `222dbeadd3cb0f3d3bbf4318134234312bcbeddb`，两项 CI 均通过；SkillHub 可见正文只讲诊断、交给 Agent 修复、部署和复测，状态字段、路由、验证、接口和回滚进入 `references/root-agent-contract.md`；
+- GitHub Release [`v0.4.5`](https://github.com/Sunnyender-org/bflabs-agent-readiness/releases/tag/v0.4.5) 已从该 merge commit 发布九个带 SHA-256 digest 的资产；精确 commit 上 56 个 Python tests、31 个 Node/Worker tests、62/62 router eval 和完整 package verification 均通过；
+- Worker `5ffad7ec-b38c-4227-a01b-4e7896db14e6` 已部署；稳定根 Skill URL 读回 `version: 0.4.5`、用户流程正文和纯文本联系入口，可见正文不含状态枚举、扫描指纹、验证回执、回滚或接口合同；
+- SkillHub 0.4.5 的 Keen 与三不云两项扫描均为 `benign`，后台读回 `reviewStatus=approved`、`latestApprovedVersion=0.4.5`、`status=listed`；公共搜索返回 0.4.5，真实 Chrome 页面显示“先检查，再让你的 Agent 修”，Agent-only 注释未渲染，平台卡片 `BFLabs Agent Readiness 图标` 仍存在；
+- `bflabs-skills` PR [#6](https://github.com/Sunnyender-org/bflabs-skills/pull/6) 已 merge 为 `541d7140abcfa145d1f5ffcc6cacf07fbb83fc60`，Worker `e8391b4c-392d-482f-bcb6-6b2d92561366` 已删除目录站的版本 bookkeeping、审核回执和 Logo 实现说明，只保留检查网站、复制提示词和交给 Agent 修复的用户流程；
 - Cloudflare Email Routing 主目标仍为已验证且已真实收件的 Owner 邮箱。旧 Lucas pending destination 已撤销，同一协作者目标于 2026-08-23 01:16 +08 重新创建并发送验证邮件，当前仍为 `pending`；点击前双邮箱 fanout 仍不算完成。
 
 ## Phase 0 — Contract And License Baseline
