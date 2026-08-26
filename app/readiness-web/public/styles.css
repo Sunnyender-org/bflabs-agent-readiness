@@ -562,6 +562,24 @@ td code { overflow-wrap: anywhere; }
   padding-top: 0.25rem;
 }
 
+.learning-bridge {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--orange);
+  background: #fff;
+}
+
+.learning-bridge > div { min-width: 0; }
+.learning-bridge span { color: var(--orange); font-family: var(--font-display); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; }
+.learning-bridge h3 { margin: 0.35rem 0 0.25rem; font-size: 1rem; }
+.learning-bridge p { margin: 0; color: var(--steel); font-size: 0.75rem; line-height: 1.45; }
+.learning-bridge .button { flex-shrink: 0; }
+
 .offer-card {
   min-width: 0;
   padding: 1.15rem;
@@ -753,6 +771,7 @@ td code { overflow-wrap: anywhere; }
   .score-grid { grid-template-columns: 1fr; }
   .score-description { min-height: 0; }
   .improvement-panel { grid-template-columns: 1fr; }
+  .learning-bridge { grid-column: auto; align-items: flex-start; }
   .artifact-actions { grid-column: auto; }
   .delivery-steps { grid-template-columns: repeat(2, 1fr); }
   .delivery-grid { grid-template-columns: 1fr 1fr; }
@@ -775,6 +794,8 @@ td code { overflow-wrap: anywhere; }
   .landing-subtitle { max-width: 19rem; font-size: 0.95rem; }
   .scan-form { grid-template-columns: 1fr; }
   .button-large { width: 100%; }
+  .learning-bridge { display: grid; gap: 0.85rem; }
+  .learning-bridge .button { width: 100%; }
   .scan-progress { grid-template-columns: repeat(2, 1fr); }
   .workspace { padding-top: 0; }
   .result-header { align-items: center; }

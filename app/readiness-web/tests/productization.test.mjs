@@ -30,6 +30,17 @@ const report = {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scenarios = JSON.parse(fs.readFileSync(path.join(root, 'tests/fixtures/productization-scenarios.json'), 'utf8'));
 
+test('diagnostic page connects learning, diagnosis, and delivery in order', () => {
+  const page = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const learn = page.indexOf('data-product-stage="learn"');
+  const diagnose = page.indexOf('data-product-stage="diagnose"');
+  const deliver = page.indexOf('data-product-stage="deliver"');
+  assert.equal(learn >= 0 && learn < diagnose && diagnose < deliver, true);
+  assert.match(page, /https:\/\/wb\.bflabs\.app\/workbuddy\//);
+  assert.match(page, /mailto:hello@bflabs\.cn/);
+  assert.match(page, /先看懂，再动手/);
+});
+
 test('leaderboard stores only the public summary and ranks without a hidden total', async () => {
   const entry = buildLeaderboardEntry(report);
   assert.deepEqual(Object.keys(entry).sort(), ['axes', 'canonical_origin', 'host', 'scan_fingerprint', 'scanned_at', 'schema_version']);

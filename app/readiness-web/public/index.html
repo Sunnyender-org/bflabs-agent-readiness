@@ -20,6 +20,7 @@
         </span>
       </a>
       <nav class="site-nav" aria-label="产品入口">
+        <a href="https://wb.bflabs.app/workbuddy/">GEO 学院</a>
         <a href="/leaderboard">公开榜单</a>
         <a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a>
       </nav>
@@ -62,6 +63,7 @@
             <li data-stage="contracts">核对公开信息</li>
             <li data-stage="report">生成报告</li>
           </ol>
+
         </div>
       </section>
 
@@ -132,7 +134,16 @@
           </div>
 
           <section id="improvement-panel" class="improvement-panel" hidden>
-            <article class="offer-card offer-card-free">
+            <article class="learning-bridge" data-product-stage="learn">
+              <div>
+                <span>先看懂，再动手</span>
+                <h3>在 WorkBuddy 查询 GEO 方法和来源</h3>
+                <p>用有出处的知识库和四节练习理解报告，再回到这里完成诊断与复测。</p>
+              </div>
+              <a class="button button-secondary" href="https://wb.bflabs.app/workbuddy/">进入 GEO 学院 <span aria-hidden="true">→</span></a>
+            </article>
+
+            <article class="offer-card offer-card-free" data-product-stage="diagnose">
               <span>Free</span>
               <h3>开源 Skill</h3>
               <p>自己诊断、自己改站、自己复测，报告留在本地。</p>
@@ -149,7 +160,7 @@
               </div>
             </article>
 
-            <article class="offer-card offer-card-paid">
+            <article class="offer-card offer-card-paid" data-product-stage="deliver">
               <span>Paid</span>
               <h3>BFLabs 交付</h3>
               <p>由 BFLabs 跨系统实施，并把准备度变化连接到外部可见度与业务结果证据。</p>
@@ -209,7 +220,7 @@
 
     <footer class="site-footer">
       <span>BFLabs Agent Readiness</span>
-      <nav aria-label="法律与边界"><a href="/leaderboard">公开榜单</a><a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
+      <nav aria-label="法律与边界"><a href="https://wb.bflabs.app/workbuddy/">GEO 学院</a><a href="/leaderboard">公开榜单</a><a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
     </footer>
 
     <script type="module" src="/app.js"></script>

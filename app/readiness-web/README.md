@@ -2,6 +2,8 @@
 
 Diagnostic app inside the `bflabs-agent-readiness` monorepo. It is a UI over the same Artifact Protocol and `readiness-report.schema.json` used by the Python CLI, not a second scoring system. It can run as the local Node prototype or as the bounded Cloudflare Worker build.
 
+The public user path is `learn -> diagnose -> deliver`: WorkBuddy GEO Academy and the source-grounded knowledge base help a user understand the method, this site owns the free current-site diagnosis, and separately authorized BFLabs delivery owns implementation, repeated platform observations, and business evidence. These stages share a journey but never share or promote evidence states.
+
 It reports three independent axes:
 
 - Discoverable: public pages and machine entry points are reachable.
