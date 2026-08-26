@@ -124,10 +124,10 @@ summary:focus-visible {
 }
 
 .landing {
-  min-height: calc(100svh - 4rem);
+  min-height: auto;
   display: grid;
   place-items: center;
-  padding: 1rem 0 5.5rem;
+  padding: clamp(5rem, 12vh, 8rem) 0 clamp(3.5rem, 8vh, 5.5rem);
 }
 
 .landing-center {
@@ -242,6 +242,81 @@ summary:focus-visible {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+.home-leaderboard {
+  display: grid;
+  gap: 3.5rem;
+  padding: 2.5rem 0 clamp(3.5rem, 8vw, 6rem);
+  border-top: 1px solid var(--divider);
+}
+
+.home-score-group { min-width: 0; }
+
+.home-leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.home-leaderboard-header h2 {
+  margin: 0;
+  font-family: var(--font-display), var(--font-cjk);
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.home-leaderboard-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-leaderboard-list > li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(10rem, 1fr) minmax(20rem, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.home-leaderboard-rank {
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.home-leaderboard-list > li > a {
+  overflow-wrap: anywhere;
+  font-weight: 650;
+  text-decoration-color: var(--divider);
+  text-underline-offset: 0.25em;
+}
+
+.home-leaderboard-list dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.home-leaderboard-list dl div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface);
+}
+
+.home-leaderboard-list dt { color: var(--steel); font-size: 0.65rem; }
+.home-leaderboard-list dd { margin: 0; font-family: var(--font-display); font-size: 0.9rem; font-weight: 650; }
+.home-leaderboard-empty { display: block !important; color: var(--steel); }
 
 .leaderboard-consent {
   display: inline-flex;
@@ -414,6 +489,13 @@ summary:focus-visible {
   font-size: 0.85rem;
 }
 
+.score-number .score-unavailable {
+  display: block;
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
 .score-track {
   height: 0.35rem;
   overflow: hidden;
@@ -450,22 +532,13 @@ summary:focus-visible {
 
 .finding-list li {
   display: grid;
-  grid-template-columns: 5.5rem 1fr auto;
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   align-items: baseline;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--divider);
   font-size: 0.9rem;
 }
-
-.finding-list code {
-  color: var(--orange);
-  font-family: var(--font-display);
-  font-size: 0.68rem;
-  font-weight: 650;
-}
-
-.finding-list small { color: var(--silver); }
 
 .finding-empty {
   display: block !important;
@@ -636,7 +709,6 @@ td code { overflow-wrap: anywhere; }
 .compact-columns h4 { margin: 0 0 0.35rem; color: rgba(250, 248, 245, 0.55); font-size: 0.68rem; }
 .compact-list { color: rgba(250, 248, 245, 0.78); font-size: 0.72rem; }
 .compact-list article + article { margin-top: 0.35rem; }
-.compact-list code { color: var(--orange); }
 .compact-list p { margin: 0.1rem 0 0; }
 
 .offer-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; }
@@ -771,6 +843,8 @@ td code { overflow-wrap: anywhere; }
 .leaderboard-note { margin: 1rem 0 0; color: var(--silver); font-size: 0.7rem; }
 
 @media (max-width: 720px) {
+  .home-leaderboard-list > li { grid-template-columns: 2.25rem 1fr; }
+  .home-leaderboard-list dl { grid-column: 2; }
   .score-grid { grid-template-columns: 1fr; }
   .score-description { min-height: 0; }
   .improvement-panel { grid-template-columns: 1fr; }
@@ -793,9 +867,12 @@ td code { overflow-wrap: anywhere; }
   .brand-copy strong { font-size: 1rem; }
   .site-nav { gap: 0.7rem; }
   .site-nav a { font-size: 0.68rem; }
-  .landing { min-height: calc(100svh - 4.5rem); align-items: start; padding-top: 17vh; }
+  .landing { min-height: auto; align-items: start; padding: 5.5rem 0 4rem; }
   .landing h1 { max-width: 10em; font-size: 2.15rem; }
   .landing-subtitle { max-width: 19rem; font-size: 0.95rem; }
+  .home-leaderboard-list > li { grid-template-columns: 2rem 1fr; gap: 0.6rem; }
+  .home-leaderboard-list dl { grid-column: 1 / -1; }
+  .home-leaderboard-list dl div { align-items: flex-start; flex-direction: column; }
   .scan-form { grid-template-columns: 1fr; }
   .button-large { width: 100%; }
   .learning-bridge { display: grid; gap: 0.85rem; }

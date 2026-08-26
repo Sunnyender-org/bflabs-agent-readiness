@@ -179,7 +179,7 @@ for required_id in [
 ]:
     if required_id not in app_html:
         fail(f"diagnostic app is missing protocol UI control {required_id}")
-if "神秘总分" not in app_html or "外部 AI 平台可见度" not in app_html or "业务结果" not in app_html:
+if "三项分别计分" not in app_html or "外部 AI 平台表现" not in app_html or "业务结果" not in app_html:
     fail("diagnostic app does not state the scoring and measurement boundary")
 
 app_js = (ROOT / "app/readiness-web/public/app.js").read_text("utf-8")

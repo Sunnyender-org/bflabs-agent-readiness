@@ -224,15 +224,15 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });
       return response.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>BFLabs Agent Readiness</title><body><main><a href="/">返回诊断</a><h1>${url.pathname === '/privacy' ? '隐私边界' : '使用边界'}</h1><p>${url.pathname === '/privacy'
-        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和 Agent 提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有你主动勾选公开榜单时，才保存域名、三轴结果、扫描时间和指纹摘要；不保存 IP。'
-        : '仅可诊断你有权测试的公开网站。公开榜单默认关闭。Readiness、Agent Journey、AI visibility 与 Business outcome 彼此独立，不构成流量、转化或收入承诺。'}</p></main></body></html>`);
+        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有你主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。'
+        : '仅可诊断你有权测试的公开网站。公开榜单默认关闭。网站准备度检查和 Agent 任务试跑不等于外部 AI 平台表现，也不构成流量、转化或收入承诺。'}</p></main></body></html>`);
     }
     if (url.pathname.startsWith('/api/')) {
       return sendProblem(response, problemDetails(Object.assign(new Error('API 路径不存在'), { status: 404 }), url.pathname));
     }
     if (request.method === 'GET' && await serveStatic(request, response, url.pathname)) return;
     response.writeHead(404, { 'Content-Type': types['.html'] });
-    response.end('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>页面不存在</title><body><main><h1>这条证据路径不存在</h1><p><a href="/">返回诊断入口</a></p></main></body></html>');
+    response.end('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>页面不存在</title><body><main><h1>页面不存在</h1><p><a href="/">返回诊断首页</a></p></main></body></html>');
   } catch (error) {
     sendProblem(response, problemDetails(error, url.pathname));
   }

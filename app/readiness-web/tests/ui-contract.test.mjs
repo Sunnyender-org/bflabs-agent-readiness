@@ -13,8 +13,13 @@ const server = fs.readFileSync(path.join(root, 'src/server.mjs'), 'utf8');
 test('uses the committed BFLabs Grok prototype as the formal web shell', () => {
   assert.match(html, /BF LABS/);
   assert.match(html, /你的网站，AI 读得懂吗？/);
-  assert.match(html, /报告/);
-  assert.match(html, /交付示例/);
+  assert.match(html, /GEO（生成式引擎优化）与 Agent 准备度/);
+  assert.match(html, /不了解 GEO？先从 GEO 学院开始学习！/);
+  assert.match(html, /诊断报告/);
+  assert.match(html, /BFLabs 如何交付/);
+  assert.match(html, /精选评分/);
+  assert.match(html, /最新评分/);
+  assert.doesNotMatch(html, /Featured scores|Recent scores/);
   assert.doesNotMatch(html, /别先问 AI 会不会推荐你/);
   assert.doesNotMatch(css, /Iowan Old Style|folio/);
 });
@@ -36,6 +41,8 @@ test('keeps the real scanner and protocol actions wired into the visual shell', 
     'save-baseline',
     'contact-bflabs',
     'delivery-context',
+    'featured-scores-list',
+    'recent-scores-list',
   ]) {
     assert.match(html, new RegExp(`id="${id}"`));
     assert.match(app, new RegExp(`#${id}`));
@@ -44,7 +51,7 @@ test('keeps the real scanner and protocol actions wired into the visual shell', 
 
 test('exposes a real BFLabs inquiry route and an in-session retest contract', () => {
   assert.match(html, /mailto:hello@bflabs\.cn/);
-  assert.match(html, /同一浏览会话内保存基线并复测/);
+  assert.match(html, /同一浏览会话内保存首次结果并复测/);
   assert.match(html, /多平台重复抽样、持续监测与趋势报告/);
   assert.match(app, /let baselineReport = null/);
   assert.match(app, /复测并对比/);
@@ -60,7 +67,9 @@ test('exposes a real BFLabs inquiry route and an in-session retest contract', ()
   assert.doesNotMatch(app, /await downloadArtifactPack\(\);\s*await navigator\.clipboard\.writeText/);
   assert.match(html, /href="\/leaderboard"/);
   assert.match(html, /skills\.bflabs\.cn\/catalog\.html#geo/);
-  assert.match(html, /我确认有权公开，把本次三轴结果加入榜单/);
+  assert.match(html, /我确认有权公开，将本次诊断结果加入榜单/);
+  assert.doesNotMatch(html, /唯一对应 Skill|读取根 Skill|Agent Journey|SkillHub/);
+  assert.doesNotMatch(app, /finding\.rule_id|finding\.owner_route|item\.route|report\.skill_routes\[0\]\.id/);
   assert.match(server, /const SKILL_IDS = new Set/);
   assert.match(server, /text\/plain; charset=utf-8/);
 });

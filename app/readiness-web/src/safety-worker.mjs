@@ -108,9 +108,9 @@ export async function assertTargetAllowsScan(origin, options = {}) {
       timeoutMs: Math.min(options.timeoutMs ?? 5_000, 5_000),
     });
     if (response.status === 200 && /(?:^|\W)(?:true|deny|blocked|opt[\s_-]?out|do[\s_-]?not[\s_-]?scan)(?:\W|$)/i.test(response.text)) {
-      throw new Error('目标站点已通过公开 opt-out 文件拒绝诊断');
+      throw new Error('目标站点已通过公开文件拒绝扫描');
     }
   } catch (error) {
-    if (/已通过公开 opt-out/.test(error.message)) throw error;
+    if (/已通过公开文件拒绝扫描/.test(error.message)) throw error;
   }
 }
