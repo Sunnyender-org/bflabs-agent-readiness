@@ -34,6 +34,7 @@ The scan response keeps the legacy `axes` array, evidence rows, scan metadata, f
 The page displays failed predicates, evidence gaps, bounded opportunities, and the smallest relevant child Skills. It also provides:
 
 - **Copy to Agent**: the primary result action copies a self-contained prompt with the scan fingerprint, one selected child Skill, stable site-hosted Skill URLs, verification requirements, and no-deploy boundary;
+- **Continue in WorkBuddy**: the scan service can attach a 15-minute, one-time capability to its own completed report. It contains only the canonical HTTPS origin, scan fingerprint, three axes, bounded evidence gaps, and measurement disclaimers; the stored token is SHA-256 hashed and the copy action remains available when preparation fails;
 - **Agent Journey**: runs a deterministic enter-understand-continue task from the same public responses. It is supporting readiness evidence only and never changes a score or measurement layer;
 - **Opt-in leaderboard**: off by default. When explicitly selected, it stores only the domain, three axes, scan time, and fingerprint summary;
 - **Download Artifact Pack**: downloads the protocol manifest, input, evidence ledger, quality report, and canonical readiness report with SHA-256 hashes;
@@ -56,9 +57,11 @@ Manual local regression is performed at desktop width and 360px. Controls are se
 
 This build rejects credentials, unsupported schemes and ports, IP literals, unsafe DNS results, and unsafe redirects. It caps redirects and response bodies and does not forward cookies, authorization, or referrers.
 
-The Worker build uses Cloudflare `global_fetch_strictly_public`, rejects literal/private-style targets and unsafe ports, applies separate client and target rate-limit bindings, caps request/response bodies and redirects, uses per-fetch timeouts, and honors `/.well-known/bflabs-agent-readiness-opt-out`. Full reports stay in the browser. An optional `LEADERBOARD` KV binding stores only explicitly opted-in public summaries; without that binding, scans still succeed and publication reports `unavailable`. Cloudflare observability is enabled for operational errors. Passing local smoke or a dry run does not prove a live deployment; use the canonical release checklist for live state.
+The Worker build uses Cloudflare `global_fetch_strictly_public`, rejects literal/private-style targets and unsafe ports, applies separate client and target rate-limit bindings, caps request/response bodies and redirects, uses per-fetch timeouts, and honors `/.well-known/bflabs-agent-readiness-opt-out`. Full reports stay in the browser. A `GEO_HANDOFFS` D1 binding stores only short-lived bounded continuation receipts and token hashes; expired rows are removed by scheduled cleanup. An optional `LEADERBOARD` KV binding stores only explicitly opted-in public summaries; without that binding, scans still succeed and publication reports `unavailable`. Cloudflare observability is enabled for operational errors. Passing local smoke or a dry run does not prove a live deployment; use the canonical release checklist for live state.
 
 ```bash
 npm run build:worker
+npx wrangler d1 migrations apply bflabs-readiness-geo-handoffs --remote --config wrangler.jsonc
+npx wrangler d1 execute bflabs-readiness-geo-handoffs --remote --config wrangler.jsonc --command "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'geo_handoffs'"
 npx wrangler deploy --config wrangler.jsonc
 ```

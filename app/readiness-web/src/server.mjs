@@ -8,6 +8,7 @@ import { normalizeTarget } from './safety.mjs';
 import { handleMcp } from './mcp-server.mjs';
 import { memoryLeaderboardStore, publishToLeaderboard, readLeaderboard, readLeaderboardEntry } from './leaderboard.mjs';
 import { leaderboardIndexPage, leaderboardSharePage, methodology, problemDetails, reportToMarkdown, wantsMarkdown } from './product-contract.mjs';
+import { attachGeoHandoff, createMemoryGeoHandoffStore, handleGeoHandoffRequest } from './geo-handoff.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -15,6 +16,7 @@ const REPOSITORY_ROOT = path.resolve(ROOT, '..', '..');
 const PORT = Number(process.env.PORT || 4177);
 const reports = new Map();
 const leaderboard = memoryLeaderboardStore(new Map());
+const geoHandoffs = createMemoryGeoHandoffStore();
 const SKILL_IDS = new Set(['bflabs-agent-readiness', 'geo-content', 'geo-discover', 'geo-measure', 'geo-optimize', 'seo-plan', 'webmcp-enable']);
 
 const types = {
@@ -97,7 +99,8 @@ function startScan(url, options = {}) {
       const publication = options.publishToLeaderboard
         ? await publishToLeaderboard(leaderboard, report)
         : { status: 'not_requested' };
-      reports.set(id, { ...report, leaderboard_publication: publication, report_id: id, status: report.scan.status });
+      const withHandoff = await attachGeoHandoff(report, geoHandoffs, options.prepareWorkBuddyHandoff);
+      reports.set(id, { ...withHandoff, leaderboard_publication: publication, report_id: id, status: report.scan.status });
     })
     .catch((error) => reports.set(id, { report_id: id, status: 'failed', error: error.message }));
   return id;
@@ -130,10 +133,18 @@ async function serveStatic(request, response, pathname) {
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || `127.0.0.1:${PORT}`}`);
   try {
+    if (url.pathname === '/api/v1/geo-handoffs/redeem') {
+      const body = request.method === 'POST' ? await readBody(request) : undefined;
+      const webRequest = new Request(url, { method: request.method, headers: request.headers, ...(body !== undefined ? { body } : {}) });
+      return sendFetchResponse(response, await handleGeoHandoffRequest(webRequest, geoHandoffs));
+    }
     if (request.method === 'POST' && ['/api/scans', '/api/v1/scans'].includes(url.pathname)) {
       const body = await readJson(request);
       const target = normalizeTarget(body.url);
-      const reportId = startScan(target.toString(), { publishToLeaderboard: body.publish_to_leaderboard === true });
+      const reportId = startScan(target.toString(), {
+        publishToLeaderboard: body.publish_to_leaderboard === true,
+        prepareWorkBuddyHandoff: body.prepare_workbuddy_handoff === true,
+      });
       return sendJson(response, 202, { report_id: reportId, status_url: `/api/v1/scans/${reportId}` });
     }
     if (request.method === 'GET' && /^\/api\/(?:v1\/)?scans\//.test(url.pathname)) {
@@ -213,7 +224,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });
       return response.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>BFLabs Agent Readiness</title><body><main><a href="/">返回诊断</a><h1>${url.pathname === '/privacy' ? '隐私边界' : '使用边界'}</h1><p>${url.pathname === '/privacy'
-        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和 Agent 提示词不写入应用数据库。只有你主动勾选公开榜单时，才保存域名、三轴结果、扫描时间和指纹摘要；不保存 IP。'
+        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和 Agent 提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有你主动勾选公开榜单时，才保存域名、三轴结果、扫描时间和指纹摘要；不保存 IP。'
         : '仅可诊断你有权测试的公开网站。公开榜单默认关闭。Readiness、Agent Journey、AI visibility 与 Business outcome 彼此独立，不构成流量、转化或收入承诺。'}</p></main></body></html>`);
     }
     if (url.pathname.startsWith('/api/')) {

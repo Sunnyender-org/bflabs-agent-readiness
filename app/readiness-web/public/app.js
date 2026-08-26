@@ -12,6 +12,7 @@ const deliveryTab = document.querySelector('#delivery-tab');
 const improvementPanel = document.querySelector('#improvement-panel');
 const showMoreButton = document.querySelector('#show-more');
 const publishCheckbox = document.querySelector('#publish-to-leaderboard');
+const continueWorkBuddyButton = document.querySelector('#continue-workbuddy');
 let currentReport = null;
 let baselineReport = null;
 
@@ -254,6 +255,9 @@ function renderReport(report) {
     ? `提示词已带上本次证据和 ${report.skill_routes[0].id} Skill。`
     : '本次没有发现由公开证据支持的问题，提示词会让 Agent 只核对结果。';
   document.querySelector('#copy-status').textContent = '';
+  document.querySelector('#handoff-status').textContent = '';
+  continueWorkBuddyButton.disabled = false;
+  continueWorkBuddyButton.textContent = '在 WorkBuddy 中继续';
 
   resetComparisonExample();
   renderComparison(report);
@@ -290,7 +294,11 @@ form.addEventListener('submit', async (event) => {
     const response = await fetch('/api/v1/scans', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: value, publish_to_leaderboard: publishCheckbox.checked }),
+      body: JSON.stringify({
+        url: value,
+        publish_to_leaderboard: publishCheckbox.checked,
+        prepare_workbuddy_handoff: true,
+      }),
     });
     const body = await response.json();
     if (!response.ok) throw new Error(body.detail || body.error || '无法创建诊断');
@@ -366,5 +374,24 @@ document.querySelector('#copy-agent-prompt').addEventListener('click', async () 
     status.textContent = '已复制。粘贴到 Codex、Cursor、Claude Code 或 WorkBuddy 即可。';
   } catch {
     status.textContent = '复制失败，请允许剪贴板访问后重试。';
+  }
+});
+
+continueWorkBuddyButton.addEventListener('click', () => {
+  if (!currentReport) return;
+  const status = document.querySelector('#handoff-status');
+  status.textContent = '';
+  try {
+    const handoff = currentReport.geo_handoff;
+    const continueUrl = new URL(handoff?.continue_url || '');
+    const fragmentToken = new URLSearchParams(continueUrl.hash.slice(1)).get('token');
+    if (continueUrl.origin !== 'https://wb.bflabs.app' || continueUrl.pathname !== '/geo/claim' || continueUrl.search || !/^[A-Za-z0-9_-]{43}$/.test(fragmentToken || '')) {
+      throw new Error('handoff unavailable');
+    }
+    if (!handoff.expires_at || Date.parse(handoff.expires_at) <= Date.now()) throw new Error('handoff expired');
+    window.location.assign(handoff.continue_url);
+  } catch {
+    status.textContent = '继续链接暂时不可用，请复制给 Agent。';
+    document.querySelector('#copy-agent-prompt').focus();
   }
 });

@@ -28,6 +28,17 @@
       "id": "dcbe6382f87842cf8b7ebcd82961d768"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "GEO_HANDOFFS",
+      "database_name": "bflabs-readiness-geo-handoffs",
+      "database_id": "3124dc99-1564-4c92-8145-36251566653c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
   "ratelimits": [
     {
       "name": "CLIENT_RATE_LIMITER",

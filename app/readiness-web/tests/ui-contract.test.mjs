@@ -27,6 +27,8 @@ test('keeps the real scanner and protocol actions wired into the visual shell', 
     'evidence-body',
     'download-report',
     'copy-agent-prompt',
+    'continue-workbuddy',
+    'handoff-status',
     'publish-to-leaderboard',
     'journey-steps',
     'journey-status',
@@ -49,6 +51,11 @@ test('exposes a real BFLabs inquiry route and an in-session retest contract', ()
   assert.match(app, /外部 AI 平台可见度与业务结果仍需单独测量/);
   assert.match(app, /downloadArtifactPack/);
   assert.match(app, /复制给 Agent，开始修复/);
+  assert.match(app, /prepare_workbuddy_handoff: true/);
+  assert.match(app, /currentReport\.geo_handoff/);
+  assert.match(app, /window\.location\.assign\(handoff\.continue_url\)/);
+  assert.doesNotMatch(app, /fetch\('\/api\/v1\/geo-handoffs'/);
+  assert.match(app, /继续链接暂时不可用，请复制给 Agent/);
   assert.match(app, /publish_to_leaderboard: publishCheckbox\.checked/);
   assert.doesNotMatch(app, /await downloadArtifactPack\(\);\s*await navigator\.clipboard\.writeText/);
   assert.match(html, /href="\/leaderboard"/);

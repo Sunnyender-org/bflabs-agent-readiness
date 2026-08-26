@@ -1,0 +1,30 @@
+{
+  "schema_version": "bflabs.geo-handoff-contract/1.0.0",
+  "scan_request_flag": "prepare_workbuddy_handoff",
+  "scan_response_field": "geo_handoff",
+  "redeem_endpoint": "/api/v1/geo-handoffs/redeem",
+  "issue_response": {
+    "schema_version": "bflabs.geo-handoff-issue/1.0.0",
+    "continue_url": "https://wb.bflabs.app/geo/claim#token=example-opaque-token",
+    "expires_at": "2026-08-26T10:15:00.000Z"
+  },
+  "receipt": {
+    "schema_version": "bflabs.geo-handoff/1.0.0",
+    "target_origin": "https://example.com",
+    "scan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scanned_at": "2026-08-26T10:00:00.000Z",
+    "axes": [
+      { "id": "discoverable", "label": "可发现", "score": 100, "status": "pass" },
+      { "id": "understandable", "label": "可理解", "score": 75, "status": "partial" },
+      { "id": "actionable", "label": "可操作", "score": 50, "status": "partial" }
+    ],
+    "evidence_gaps": [
+      { "rule_id": "A-WEBMCP", "title": "缺少可发现的 Agent 操作入口", "state": "unknown", "owner_route": "webmcp-enable" }
+    ],
+    "recommended_skill": "webmcp-enable",
+    "disclaimers": {
+      "ai_visibility": "not_measured",
+      "business_outcome": "not_measured"
+    }
+  }
+}

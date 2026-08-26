@@ -497,7 +497,10 @@ summary:focus-visible {
 .agent-action h3 { margin: 0.45rem 0 0; font-size: clamp(1.25rem, 2.5vw, 1.7rem); }
 .agent-action p { margin: 0.35rem 0 0; color: rgba(250, 248, 245, 0.68); font-size: 0.8rem; }
 .agent-action-button { min-height: 4rem; padding-inline: 1.5rem; background: var(--orange); color: var(--charcoal); }
+.agent-action-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+.agent-action-copy-button { min-height: 4rem; border-color: rgba(250, 248, 245, 0.42); color: var(--warm-white); }
 .agent-action-status { grid-column: 1 / -1; min-height: 1em; color: rgba(250, 248, 245, 0.72); font-size: 0.75rem; }
+.agent-action-status:empty { display: none; }
 
 .journey-card {
   display: grid;
@@ -777,7 +780,8 @@ td code { overflow-wrap: anywhere; }
   .delivery-grid { grid-template-columns: 1fr 1fr; }
   .delta-card { grid-column: 1 / -1; }
   .agent-action { grid-template-columns: 1fr; }
-  .agent-action-button { width: 100%; }
+  .agent-action-buttons { justify-content: stretch; }
+  .agent-action-buttons .button { flex: 1 1 12rem; }
   .journey-steps { grid-template-columns: 1fr; }
   .leaderboard-row { grid-template-columns: 2.5rem 1fr; }
   .leaderboard-axes { grid-column: 2; }
@@ -809,6 +813,7 @@ td code { overflow-wrap: anywhere; }
   .compact-columns { grid-template-columns: 1fr; }
   .offer-actions,
   .artifact-actions { align-items: stretch; flex-direction: column; }
+  .agent-action-buttons { display: grid; }
   .delivery-steps { grid-template-columns: 1fr 1fr; }
   .delivery-steps li { min-height: 8rem; padding: 1rem; }
   .delivery-grid { grid-template-columns: 1fr; }

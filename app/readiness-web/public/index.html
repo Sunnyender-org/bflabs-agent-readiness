@@ -94,7 +94,11 @@
               <h3 id="agent-action-title">交给你的 Agent 直接修</h3>
               <p id="agent-action-copy">提示词已带上本次证据和唯一对应 Skill。</p>
             </div>
-            <button id="copy-agent-prompt" class="button button-primary agent-action-button" type="button">复制给 Agent，开始修复</button>
+            <div class="agent-action-buttons">
+              <button id="continue-workbuddy" class="button agent-action-button" type="button">在 WorkBuddy 中继续</button>
+              <button id="copy-agent-prompt" class="button agent-action-copy-button" type="button">复制给 Agent</button>
+            </div>
+            <span id="handoff-status" class="agent-action-status" role="status" aria-live="polite"></span>
             <span id="copy-status" class="agent-action-status" role="status" aria-live="polite"></span>
           </section>
 

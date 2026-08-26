@@ -5,6 +5,7 @@ import { forwardHelloEmail } from './email-forwarder.mjs';
 import { handleMcp } from './mcp-server.mjs';
 import { publishToLeaderboard, readLeaderboard, readLeaderboardEntry } from './leaderboard.mjs';
 import { leaderboardIndexPage, leaderboardSharePage, methodology, problemDetails, reportToMarkdown, wantsMarkdown } from './product-contract.mjs';
+import { attachGeoHandoff, createD1GeoHandoffStore, handleGeoHandoffRequest } from './geo-handoff.mjs';
 
 const json = (value, status = 200, headers = {}) => new Response(JSON.stringify(value), {
   status,
@@ -77,6 +78,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
+      if (url.pathname === '/api/v1/geo-handoffs/redeem') {
+        return handleGeoHandoffRequest(request, createD1GeoHandoffStore(env.GEO_HANDOFFS));
+      }
       if (request.method === 'POST' && ['/api/scans', '/api/v1/scans'].includes(url.pathname)) {
         const body = await readRequestJson(request);
         const target = normalizeTarget(body.url);
@@ -85,7 +89,8 @@ export default {
         report.leaderboard_publication = body.publish_to_leaderboard === true
           ? await publishToLeaderboard(env.LEADERBOARD, report)
           : { status: 'not_requested' };
-        return reportResponse(request, report);
+        const withHandoff = await attachGeoHandoff(report, createD1GeoHandoffStore(env.GEO_HANDOFFS), body.prepare_workbuddy_handoff === true);
+        return reportResponse(request, withHandoff);
       }
       if (request.method === 'GET' && ['/api/rulesets/current', '/api/v1/rulesets/current'].includes(url.pathname)) {
         return json({ version: RULESET_VERSION, axes: ['discoverable', 'understandable', 'actionable'], visibility: 'not_measured', business_outcome: 'not_measured' });
@@ -125,7 +130,7 @@ export default {
         return body ? new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-content-type-options': 'nosniff' } }) : json({ error: '未知子 Skill' }, 404);
       }
       if (request.method === 'GET' && url.pathname === '/privacy') {
-        return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和 Agent 提示词不写入应用数据库。只有用户主动勾选公开榜单时，才保存域名、三轴结果、扫描时间和指纹摘要；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。Cloudflare 仍会按其基础设施政策处理必要的安全与运行日志。</p><p>站点所有者可在 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 返回 HTTP 200，并包含 <code>opt-out</code>、<code>deny</code> 或 <code>do-not-scan</code> 来拒绝诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
+        return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和 Agent 提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动勾选公开榜单时，才保存域名、三轴结果、扫描时间和指纹摘要；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。Cloudflare 仍会按其基础设施政策处理必要的安全与运行日志。</p><p>站点所有者可在 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 返回 HTTP 200，并包含 <code>opt-out</code>、<code>deny</code> 或 <code>do-not-scan</code> 来拒绝诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
       }
       if (request.method === 'GET' && url.pathname === '/terms') {
         return html('公开 Beta 使用边界', '<p>仅可诊断你有权测试的公开网站。公开榜单默认关闭。Readiness 三轴与 Agent Journey 不等于 AI 平台可见度，也不构成流量、转化或收入承诺。服务设置客户端与目标域名限流，可能拒绝高频、异常或已 opt-out 的目标。</p>');
@@ -140,5 +145,8 @@ export default {
   },
   async email(message, env) {
     await forwardHelloEmail(message, env);
+  },
+  async scheduled(_event, env) {
+    await createD1GeoHandoffStore(env.GEO_HANDOFFS)?.purgeExpired(Date.now());
   },
 };

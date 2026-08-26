@@ -23,6 +23,7 @@ await Promise.all([
   fs.copyFile(path.join(ROOT, 'src', 'leaderboard.mjs'), path.join(OUTPUT, 'leaderboard.mjs')),
   fs.copyFile(path.join(ROOT, 'src', 'mcp-server.mjs'), path.join(OUTPUT, 'mcp-server.mjs')),
   fs.copyFile(path.join(ROOT, 'src', 'product-contract.mjs'), path.join(OUTPUT, 'product-contract.mjs')),
+  fs.copyFile(path.join(ROOT, 'src', 'geo-handoff.mjs'), path.join(OUTPUT, 'geo-handoff.mjs')),
 ]);
 
 const skills = {};
