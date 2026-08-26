@@ -10,7 +10,7 @@ import { leaderboardIndexPage, leaderboardSharePage, problemDetails, reportToMar
 const report = {
   target: { canonical_origin: 'https://example.com' },
   scan_fingerprint: `sha256:${'a'.repeat(64)}`,
-  scan: { completed_at: '2026-08-22T10:00:00.000Z' },
+  scan: { status: 'complete', completed_at: '2026-08-22T10:00:00.000Z' },
   axes: [
     { id: 'discoverable', label: '可发现', score: 100, status: 'pass' },
     { id: 'understandable', label: '可理解', score: 75, status: 'partial' },
@@ -40,7 +40,8 @@ test('diagnostic page connects learning, diagnosis, and delivery in order', () =
   assert.doesNotMatch(page, /https:\/\/wb\.bflabs\.app\/workbuddy\//);
   assert.match(page, /随 BF Labs 定制版 WorkBuddy 开通/);
   assert.match(page, /mailto:hello@bflabs\.cn/);
-  assert.match(page, /先看懂，再动手/);
+  assert.match(page, /从零开始/);
+  assert.match(page, /不了解 GEO？先从 GEO 学院开始学习！/);
 });
 
 test('leaderboard stores only the public summary and ranks without a hidden total', async () => {
@@ -58,6 +59,13 @@ test('leaderboard stores only the public summary and ranks without a hidden tota
 test('leaderboard publication degrades without storage instead of failing the scan', async () => {
   assert.deepEqual(await publishToLeaderboard(null, report), {
     status: 'unavailable', reason: 'leaderboard-storage-not-configured',
+  });
+});
+
+test('leaderboard refuses incomplete scans instead of ranking unknown evidence', async () => {
+  const incomplete = { ...report, scan: { ...report.scan, status: 'partial' } };
+  assert.deepEqual(await publishToLeaderboard(memoryLeaderboardStore(), incomplete), {
+    status: 'not_published', reason: 'scan-not-complete',
   });
 });
 
@@ -79,7 +87,7 @@ test('opt-in leaderboard entries have indexable share pages', async () => {
   const page = leaderboardSharePage(entry);
   assert.match(page, /<title>example\.com · BFLabs Agent Readiness 榜单<\/title>/);
   assert.match(page, /rel="canonical" href="https:\/\/readiness\.bflabs\.cn\/leaderboard\/example\.com"/);
-  assert.match(page, /AI visibility 或 Business outcome/);
+  assert.match(page, /外部 AI 平台表现和业务结果需要单独验证/);
   const index = leaderboardIndexPage(await readLeaderboard(store));
   assert.match(index, /href="\/leaderboard\/example\.com"/);
   assert.match(index, /rel="canonical" href="https:\/\/readiness\.bflabs\.cn\/leaderboard"/);
@@ -124,7 +132,7 @@ test('problem details include stable code and resolution', () => {
   const value = problemDetails(new Error('目标站点已通过公开 opt-out 文件拒绝诊断'), '/api/v1/scans');
   assert.equal(value.status, 403);
   assert.equal(value.code, 'target_opted_out');
-  assert.match(value.resolution, /opt-out/);
+  assert.match(value.resolution, /拒绝扫描文件/);
   const missing = problemDetails(Object.assign(new Error('API 路径不存在'), { status: 404 }), '/api/v1/nope');
   assert.equal(missing.code, 'api_route_not_found');
   assert.match(missing.resolution, /openapi\.json/);

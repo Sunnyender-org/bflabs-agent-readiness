@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="免费检查网站是否可发现、可理解、可操作。只给可核对的公开证据。">
+    <meta name="description" content="免费检查网站的 GEO 与 Agent 准备度：是否可发现、可理解、可操作。只给可核对的公开证据。">
     <title>BFLabs Agent Readiness</title>
     <link rel="icon" href="/bf-mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
@@ -22,7 +22,7 @@
       <nav class="site-nav" aria-label="产品入口">
         <a href="https://wb.bflabs.app/geo-academy/">GEO 学院</a>
         <a href="/leaderboard">公开榜单</a>
-        <a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a>
+        <a href="https://skills.bflabs.cn/catalog.html#geo">修复工具</a>
       </nav>
     </header>
 
@@ -30,7 +30,7 @@
       <section id="landing" class="landing" aria-labelledby="page-title">
         <div class="landing-center">
           <h1 id="page-title">你的网站，AI 读得懂吗？</h1>
-          <p class="landing-subtitle">免费检查可发现、可理解、可操作。不承诺排名，只给证据。</p>
+          <p class="landing-subtitle">免费检查网站的 GEO（生成式引擎优化）与 Agent 准备度：是否可发现、可理解、可操作。不承诺排名，只给证据。</p>
 
           <form id="scan-form" class="scan-form" novalidate>
             <div class="scan-field">
@@ -47,12 +47,12 @@
                 aria-describedby="url-help url-error"
               >
             </div>
-            <button class="button button-primary button-large" type="submit">检查</button>
+            <button class="button button-primary button-large" type="submit">开始诊断</button>
           </form>
 
           <label class="leaderboard-consent" for="publish-to-leaderboard">
             <input id="publish-to-leaderboard" name="publish_to_leaderboard" type="checkbox">
-            <span>我确认有权公开，把本次三轴结果加入榜单</span>
+            <span>我确认有权公开，将本次诊断结果加入榜单</span>
           </label>
 
           <p id="url-help" class="landing-fine">约 30 秒 · 只读取公开页面 · 默认不公开结果</p>
@@ -67,10 +67,29 @@
         </div>
       </section>
 
+      <section id="public-results" class="home-leaderboard" aria-label="公开榜单">
+        <section class="home-score-group" aria-labelledby="featured-scores-title">
+          <header class="home-leaderboard-header">
+            <h2 id="featured-scores-title">精选评分</h2>
+          </header>
+          <ol id="featured-scores-list" class="home-leaderboard-list" aria-live="polite">
+            <li class="home-leaderboard-empty">正在读取…</li>
+          </ol>
+        </section>
+        <section class="home-score-group" aria-labelledby="recent-scores-title">
+          <header class="home-leaderboard-header">
+            <h2 id="recent-scores-title">最新评分</h2>
+          </header>
+          <ol id="recent-scores-list" class="home-leaderboard-list" aria-live="polite">
+            <li class="home-leaderboard-empty">正在读取…</li>
+          </ol>
+        </section>
+      </section>
+
       <section id="workspace" class="workspace" hidden aria-live="polite">
         <div class="tabs" role="tablist" aria-label="诊断结果">
-          <button id="report-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="report-panel">报告</button>
-          <button id="delivery-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="delivery-panel">交付示例</button>
+          <button id="report-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="report-panel">诊断报告</button>
+          <button id="delivery-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="delivery-panel">BFLabs 如何交付</button>
         </div>
 
         <section id="report-panel" class="result" role="tabpanel" aria-labelledby="report-tab">
@@ -81,7 +100,7 @@
               <p id="leaderboard-publication" class="result-fine"></p>
             </div>
             <div class="result-actions">
-              <button id="save-baseline" class="button button-secondary" type="button">保存基线并复测</button>
+              <button id="save-baseline" class="button button-secondary" type="button">保存本次结果，改完后复测</button>
               <button id="rescan" class="button button-quiet" type="button">检查其他站</button>
             </div>
           </header>
@@ -92,7 +111,7 @@
             <div>
               <span class="agent-action-eyebrow">下一步</span>
               <h3 id="agent-action-title">交给你的 Agent 直接修</h3>
-              <p id="agent-action-copy">提示词已带上本次证据和唯一对应 Skill。</p>
+              <p id="agent-action-copy">提示词已带上本次诊断证据和修复方法。</p>
             </div>
             <div class="agent-action-buttons">
               <button id="continue-workbuddy" class="button agent-action-button" type="button">在 WorkBuddy 中继续</button>
@@ -105,7 +124,7 @@
           <section class="journey-card" aria-labelledby="journey-title">
             <header>
               <div>
-                <span class="journey-eyebrow">Agent Journey</span>
+                <span class="journey-eyebrow">任务试跑</span>
                 <h3 id="journey-title">Agent 能否进入、理解并继续操作</h3>
               </div>
               <span id="journey-status" class="status status-progress">试跑中</span>
@@ -118,13 +137,13 @@
           <ul id="findings" class="finding-list" aria-label="主要证据缺口"></ul>
 
           <div class="result-footer">
-            <button id="show-more" class="button button-secondary" type="button" aria-expanded="false" aria-controls="improvement-panel">如何改进</button>
-            <span class="boundary-copy">不提供神秘总分，缺证据不计分。外部 AI 平台可见度与业务结果尚未测量。</span>
+            <button id="show-more" class="button button-secondary" type="button" aria-expanded="false" aria-controls="improvement-panel">查看改进方案</button>
+            <span class="boundary-copy">三项分别计分，缺少证据时不计分。外部 AI 平台表现与业务结果需要单独验证。</span>
             <details class="evidence-disclosure">
               <summary>查看证据</summary>
               <div class="evidence-panel">
                 <div class="evidence-meta">
-                  <span>扫描指纹</span>
+                  <span>结果指纹</span>
                   <code id="report-fingerprint"></code>
                 </div>
                 <div class="table-wrap">
@@ -140,42 +159,42 @@
           <section id="improvement-panel" class="improvement-panel" hidden>
             <article class="learning-bridge" data-product-stage="learn">
               <div>
-                <span>先看懂，再动手</span>
-                <h3>先了解 GEO 学院，再决定是否开通</h3>
-                <p>查看课程、来源、网站诊断与交付路径。GEO 学院随 BF Labs 定制版 WorkBuddy 开通。</p>
+                <span>从零开始</span>
+                <h3>不了解 GEO？先从 GEO 学院开始学习！</h3>
+                <p>从基础概念、可靠来源到网站诊断，学会看懂报告和下一步怎么做。GEO 学院随 BF Labs 定制版 WorkBuddy 开通。</p>
               </div>
-              <a class="button button-secondary" href="https://wb.bflabs.app/geo-academy/">了解 GEO 学院 <span aria-hidden="true">→</span></a>
+              <a class="button button-secondary" href="https://wb.bflabs.app/geo-academy/">去 GEO 学院学习 <span aria-hidden="true">→</span></a>
             </article>
 
             <article class="offer-card offer-card-free" data-product-stage="diagnose">
-              <span>Free</span>
-              <h3>开源 Skill</h3>
-              <p>自己诊断、自己改站、自己复测，报告留在本地。</p>
+              <span>免费自助</span>
+              <h3>用开源工具自己修</h3>
+              <p>让你的 Agent 按诊断证据改站和复测，报告保存在你的电脑。</p>
               <ul class="boundary-list">
-                <li>公开站三轴诊断与完整证据包</li>
-                <li>开源 Skill 指导 Agent 本地改站</li>
-                <li>同一浏览会话内保存基线并复测</li>
+                <li>公开网站的三项诊断与完整证据包</li>
+                <li>开源修复指南帮助 Agent 本地改站</li>
+                <li>同一浏览会话内保存首次结果并复测</li>
               </ul>
               <div id="skill-routes" class="route-list"></div>
               <div class="offer-actions">
-                <a class="button button-secondary" href="/skills/bflabs-agent-readiness">读取根 Skill <span aria-hidden="true">→</span></a>
-                <a class="text-link text-link-dark" href="https://skills.bflabs.cn/catalog.html#geo">在 SkillHub 查看</a>
+                <a class="button button-secondary" href="/skills/bflabs-agent-readiness">交给 Agent 使用 <span aria-hidden="true">→</span></a>
+                <a class="text-link text-link-dark" href="https://skills.bflabs.cn/catalog.html#geo">查看工具详情</a>
                 <a class="text-link text-link-dark" href="https://github.com/Sunnyender-org/bflabs-agent-readiness">查看源码</a>
               </div>
             </article>
 
             <article class="offer-card offer-card-paid" data-product-stage="deliver">
-              <span>Paid</span>
+              <span>专业交付</span>
               <h3>BFLabs 交付</h3>
               <p>由 BFLabs 跨系统实施，并把准备度变化连接到外部可见度与业务结果证据。</p>
               <ul class="boundary-list">
-                <li>客户仓库、CMS 与基础设施实施</li>
+                <li>客户仓库、网站后台（CMS）与基础设施实施</li>
                 <li>多平台重复抽样、持续监测与趋势报告</li>
                 <li>客户授权的转化与收入归因</li>
               </ul>
               <div class="compact-columns">
-                <div><h4>证据缺口</h4><div id="evidence-gaps" class="compact-list"></div></div>
-                <div><h4>机会入口</h4><div id="opportunities" class="compact-list"></div></div>
+                <div><h4>缺少的证据</h4><div id="evidence-gaps" class="compact-list"></div></div>
+                <div><h4>可改进项</h4><div id="opportunities" class="compact-list"></div></div>
               </div>
               <div class="offer-actions">
                 <button id="show-delivery" class="button button-accent" type="button">看交付示例 <span aria-hidden="true">→</span></button>
@@ -184,8 +203,8 @@
             </article>
 
             <div class="artifact-actions">
-              <button id="download-report" class="button button-secondary" type="button">下载完整证据包</button>
-              <span>高级选项：保存完整证据与校验清单。</span>
+              <button id="download-report" class="button button-secondary" type="button">下载证据包</button>
+              <span>交给 Agent 修复，或保存为本次诊断记录。</span>
             </div>
           </section>
         </section>
@@ -195,12 +214,12 @@
             <div>
               <span class="status status-progress">验收中</span>
               <h2 id="delivery-origin" class="result-host"></h2>
-              <p id="delivery-context" class="result-fine">付费示例：阶段清楚，变化可见</p>
+              <p id="delivery-context" class="result-fine">示例：从首次检查到改完复测</p>
             </div>
           </header>
 
           <ol class="delivery-steps" aria-label="交付阶段">
-            <li class="is-complete"><span>01</span><strong>基线</strong><small>锁定接手前证据</small></li>
+            <li class="is-complete"><span>01</span><strong>首次检查</strong><small>保存改动前结果</small></li>
             <li class="is-complete"><span>02</span><strong>修复</strong><small>落地可验证改动</small></li>
             <li class="is-active"><span>03</span><strong>验收</strong><small>复测与抽样回执</small></li>
             <li><span>04</span><strong>趋势</strong><small>周期对比与续修</small></li>
@@ -208,9 +227,9 @@
 
           <div class="delivery-grid">
             <article class="delta-card">
-              <span id="delta-label">示例 Δ</span>
+              <span id="delta-label">示例变化</span>
               <strong id="delta-value">33<i>→</i>78</strong>
-              <p id="delta-summary">示例：可理解 +45 · 关闭 4/7 缺口</p>
+              <p id="delta-summary">示例：可理解 +45 · 解决 4/7 个问题</p>
               <div class="progress-bar"><i id="delta-progress" style="width:78%"></i></div>
             </article>
             <article class="before-card"><span>修复前</span><strong id="before-value">几乎<br>读不到</strong><p id="before-summary">页面正文过少 · 没有稳定答案页</p></article>
@@ -224,7 +243,7 @@
 
     <footer class="site-footer">
       <span>BFLabs Agent Readiness</span>
-      <nav aria-label="法律与边界"><a href="https://wb.bflabs.app/geo-academy/">GEO 学院</a><a href="/leaderboard">公开榜单</a><a href="https://skills.bflabs.cn/catalog.html#geo">SkillHub</a><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
+      <nav aria-label="法律与边界"><a href="https://wb.bflabs.app/geo-academy/">GEO 学院</a><a href="/leaderboard">公开榜单</a><a href="https://skills.bflabs.cn/catalog.html#geo">修复工具</a><a href="/privacy">隐私边界</a><a href="/terms">使用边界</a></nav>
     </footer>
 
     <script type="module" src="/app.js"></script>

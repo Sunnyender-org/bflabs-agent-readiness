@@ -54,6 +54,9 @@ export function memoryLeaderboardStore(map = new Map()) {
 
 export async function publishToLeaderboard(store, report) {
   if (!store) return { status: 'unavailable', reason: 'leaderboard-storage-not-configured' };
+  if (report?.scan?.status !== 'complete') {
+    return { status: 'not_published', reason: 'scan-not-complete' };
+  }
   const entry = buildLeaderboardEntry(report);
   try {
     await store.put(`${ENTRY_PREFIX}${entry.host}`, JSON.stringify(entry), {

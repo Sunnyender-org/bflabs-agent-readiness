@@ -47,5 +47,5 @@ test('privacy copy discloses the short-lived bounded handoff without changing le
   const worker = read('src/worker-entry.mjs');
   assert.match(worker, /15 分钟/);
   assert.match(worker, /继续到 WorkBuddy/);
-  assert.match(worker, /只有用户主动勾选公开榜单/);
+  assert.match(worker, /只有用户主动选择加入公开榜单/);
 });

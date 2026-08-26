@@ -138,22 +138,22 @@ export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) 
 
   return [
     axis('discoverable', '可发现', [
-      { id: 'D-HTML', label: '原始 HTML 含有可用正文', state: observedState(home, hasUsefulHome), paths: ['/'] },
+      { id: 'D-HTML', label: '无需运行脚本也能读取首页正文', state: observedState(home, hasUsefulHome), paths: ['/'] },
       { id: 'D-ROBOTS', label: '公开扫描未被 robots 阻止', state: !robots ? 'unknown' : robots.robots_blocked ? 'blocked' : 'pass', paths: ['/robots.txt'] },
-      { id: 'D-CANONICAL', label: '首页声明 canonical', state: observedState(home, home?.signals.includes('has_canonical')), paths: ['/'] },
-      { id: 'D-INDEX', label: '存在 sitemap 或 llms 入口', state: !sitemap && !llms ? 'unknown' : sitemap?.status_code === 200 || llms?.status_code === 200 ? 'pass' : 'fail', paths: ['/sitemap.xml', '/llms.txt'] },
+      { id: 'D-CANONICAL', label: '首页标明唯一标准网址', state: observedState(home, home?.signals.includes('has_canonical')), paths: ['/'] },
+      { id: 'D-INDEX', label: '存在站点地图或 AI 阅读入口', state: !sitemap && !llms ? 'unknown' : sitemap?.status_code === 200 || llms?.status_code === 200 ? 'pass' : 'fail', paths: ['/sitemap.xml', '/llms.txt'] },
     ], byPath),
     axis('understandable', '可理解', [
       { id: 'U-DEFINITION', label: '产品定义可直接提取', state: observedState(home, hasDirectDefinition), paths: ['/'] },
-      { id: 'U-INTENTS', label: '关键意图有稳定答案入口', state: observedState(home, hasIntentAnswers), paths: ['/'] },
+      { id: 'U-INTENTS', label: '常见问题有稳定答案入口', state: observedState(home, hasIntentAnswers), paths: ['/'] },
       { id: 'U-STRUCTURED', label: '结构化数据与公开事实入口存在', state: !home && !pricing ? 'unknown' : home?.signals.includes('has_json_ld') || pricing?.status_code === 200 ? 'pass' : 'fail', paths: ['/', '/pricing.json'] },
       { id: 'U-FRESHNESS', label: '易变事实包含新鲜度或版本', state: !pricing ? 'unknown' : pricing.status_code !== 200 ? 'not_applicable' : hasFreshness ? 'pass' : 'fail', paths: ['/pricing.json'] },
     ], byPath),
     axis('actionable', '可操作', [
-      { id: 'A-FALLBACK', label: '存在稳定的人类操作入口', state: observedState(home, hasFallbackAction), paths: ['/'] },
-      { id: 'A-MCP-CARD', label: 'MCP 发现文档可解析', state: observedState(card, card?.status_code === 200 && mcp.advertised), paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-TOOLS', label: '公开工具具有名称、描述和输入 schema', state: !card ? 'unknown' : toolsAreTyped ? 'pass' : mcp.error ? 'blocked' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-WEBMCP', label: 'WebMCP bridge 或原生注册可见', state: observedState(home, hasWebMcpBridge || hasNativeWebMcp), paths: ['/'] },
+      { id: 'A-FALLBACK', label: '访客能找到稳定的下一步入口', state: observedState(home, hasFallbackAction), paths: ['/'] },
+      { id: 'A-MCP-CARD', label: 'Agent 工具入口说明可以读取', state: observedState(card, card?.status_code === 200 && mcp.advertised), paths: ['/.well-known/mcp/server-card.json'] },
+      { id: 'A-TOOLS', label: '公开工具的名称、用途和输入说明完整', state: !card ? 'unknown' : toolsAreTyped ? 'pass' : mcp.error ? 'blocked' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
+      { id: 'A-WEBMCP', label: '网页提供 Agent 可发现的工具入口', state: observedState(home, hasWebMcpBridge || hasNativeWebMcp), paths: ['/'] },
     ], byPath, ['真实浏览器任务尚未执行时，Actionable 只能视为准备度证据，不能视为任务成功。']),
   ];
 }

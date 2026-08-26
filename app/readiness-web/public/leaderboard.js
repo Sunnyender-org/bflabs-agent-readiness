@@ -11,7 +11,7 @@ function score(axis) {
 
 function render(entries) {
   if (!entries.length) {
-    list.innerHTML = '<li class="leaderboard-empty">还没有用户选择公开结果。你可以成为第一个。</li>';
+    list.innerHTML = '<li class="leaderboard-empty">榜单还没有公开结果。诊断你的网站并选择公开，就能加入这里。</li>';
     return;
   }
   list.innerHTML = entries.map((entry) => {
@@ -33,7 +33,7 @@ try {
   const body = await response.json();
   if (!response.ok) throw new Error(body.detail || '榜单读取失败');
   render(body.entries || []);
-  note.textContent = body.storage === 'ready' ? '榜单仅保存公开摘要，不保存证据正文、IP 或 Agent 提示词。' : '榜单存储尚未配置，当前不会公开任何结果。';
+  note.textContent = body.storage === 'ready' ? '榜单只保存域名、三项得分、检查时间和结果指纹。' : '榜单暂未开放，本次诊断仍可正常使用。';
 } catch (error) {
   list.innerHTML = '<li class="leaderboard-empty">榜单暂时不可用。</li>';
   note.textContent = error.message;
