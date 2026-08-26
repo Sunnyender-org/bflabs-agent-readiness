@@ -36,7 +36,9 @@ test('diagnostic page connects learning, diagnosis, and delivery in order', () =
   const diagnose = page.indexOf('data-product-stage="diagnose"');
   const deliver = page.indexOf('data-product-stage="deliver"');
   assert.equal(learn >= 0 && learn < diagnose && diagnose < deliver, true);
-  assert.match(page, /https:\/\/wb\.bflabs\.app\/workbuddy\//);
+  assert.match(page, /https:\/\/wb\.bflabs\.app\/geo-academy\//);
+  assert.doesNotMatch(page, /https:\/\/wb\.bflabs\.app\/workbuddy\//);
+  assert.match(page, /随 BF Labs 定制版 WorkBuddy 开通/);
   assert.match(page, /mailto:hello@bflabs\.cn/);
   assert.match(page, /先看懂，再动手/);
 });
