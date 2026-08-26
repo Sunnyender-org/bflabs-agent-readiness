@@ -14,6 +14,7 @@ Quiet, precise, product-first. The first screen contains the BFLabs lockup, one 
 - Report keeps Discoverable, Understandable, and Actionable as independent axes.
 - Failed predicates stay above growth suggestions.
 - Detailed evidence, Artifact Pack actions, child Skill routing, and the BFLabs service path stay behind secondary disclosure.
+- The secondary improvement disclosure orders the product path as WorkBuddy learning, free diagnosis and self-service repair, then separately authorized BFLabs delivery.
 - AI visibility and business outcome remain visibly unmeasured.
 - Delivery is explicitly an example and uses the baseline, repair, verify, trend lifecycle.
 

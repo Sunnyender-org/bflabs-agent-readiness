@@ -28,6 +28,7 @@ Last live readback: 2026-08-23
 - [x] A report can be saved as an in-page baseline and compared with a same-site retest.
 - [x] The UI keeps readiness, AI visibility, and business outcome separate during comparison.
 - [x] Free self-service and paid BFLabs delivery boundaries are explicit.
+- [ ] The WorkBuddy GEO Academy release linked from the diagnostic page is live, its marketplace checksum is read back, and the independent BF Labs GEO Connector is available before the public link is deployed.
 - [x] The BFLabs inquiry action uses the public `hello@bflabs.cn` route and includes the target, fingerprint, and readiness snapshot.
 - [x] The local post-release Agent handoff selects one evidence-backed repair Skill and does not require BFLabs to prove that a customer deployed a proposed change.
 - [x] A local private delivery prototype separates portable engagement truth from its WorkBuddy command host and rejects unsupported measured states in synthetic contract tests.
@@ -68,6 +69,7 @@ Last live readback: 2026-08-23
 - [x] `hello@bflabs.cn` routes to the email Worker; the owner destination is verified and a real smoke message was received.
 - [ ] Lucas's destination is verified and a real dual-inbox delivery is confirmed; Cloudflare sent a fresh verification email on 2026-08-23 and the current state is `pending`.
 - [x] Prompt-first UI, Agent Journey, versioned API/Markdown/CLI/MCP, Agent Skills index, and leaderboard are deployed and read back from production.
+- [ ] The production page presents the ordered learning, free diagnosis and professional delivery path, and both WorkBuddy and inquiry links are verified from a fresh browser session.
 - [x] Production Worker version `f626760b-73c3-4332-9b9e-1a48381ed44e` binds `LEADERBOARD`; default-private and explicit opt-in behavior, share page, remote key, and 30-day expiration were read back.
 - [x] Current Worker version `5ffad7ec-b38c-4227-a01b-4e7896db14e6` serves the 0.4.5 user-first root Skill while preserving the verified KV and rate-limit bindings.
 - [x] `bflabs-skills` PR #3 merged as `b46ec827d47b0da880053b98230b155b87442ed1`; Worker `ea9d6bb1-9724-43a0-bb4b-163cf2d6b12e` serves the updated GEO entry and four public catalog pages.
@@ -84,6 +86,7 @@ Last live readback: 2026-08-23
 - [x] Ender approved provisioning the leaderboard storage binding and deploying the 2026-08-22/23 productization worktree.
 - [x] Ender approved deploying the local BF Labs Skills catalog changes.
 - [x] Ender approved the external SkillHub submission under the target platform account, including the BFLabs logo.
+- [ ] Ender approves publishing the cross-product WorkBuddy Academy link and the updated diagnostic journey after the WorkBuddy 0.3 release is live.
 
 ## Public diagnostic safety gate
 
