@@ -33,6 +33,7 @@ const scenarios = JSON.parse(fs.readFileSync(path.join(root, 'tests/fixtures/pro
 
 test('diagnostic page connects learning, diagnosis, and delivery in order', () => {
   const page = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  const styles = fs.readFileSync(path.join(root, 'public/styles.css'), 'utf8');
   const learn = page.indexOf('data-product-stage="learn"');
   const diagnose = page.indexOf('data-product-stage="diagnose"');
   const deliver = page.indexOf('data-product-stage="deliver"');
@@ -43,6 +44,7 @@ test('diagnostic page connects learning, diagnosis, and delivery in order', () =
   assert.match(page, /mailto:hello@bflabs\.cn/);
   assert.match(page, /从零开始/);
   assert.match(page, /不了解 GEO？先从 GEO 学院开始学习！/);
+  assert.match(styles, /\.site-nav a\s*\{[\s\S]*?white-space:\s*nowrap;/);
 });
 
 test('public methodology explains optional WebMCP without double-counting it', () => {
