@@ -23,21 +23,100 @@ const evidence = [
 test('reports three independent readiness axes', () => {
   const axes = scoreEvidence(evidence, {
     advertised: true,
-    tools: [{ name: 'get_model_pricing', description: 'Get price', inputSchema: { type: 'object' } }],
+    tools: [{ name: 'get_model_pricing', description: 'Get price', inputSchema: { type: 'object', properties: { model: { type: 'string' } }, additionalProperties: false } }],
   });
   assert.deepEqual(axes.map((axis) => axis.id), ['discoverable', 'understandable', 'actionable']);
   assert.equal(axes.every((axis) => axis.status === 'pass'), true);
 });
 
-test('missing WebMCP affects only Actionable', () => {
+test('missing optional WebMCP does not reduce Actionable when MCP provides the typed task path', () => {
   const withoutBridge = evidence.map((item) => item.path === '/' ? { ...item, signals: ['has_canonical', 'has_json_ld'], raw_text: item.raw_text.replace('/.webmcp/bridge.js', '/app.js') } : item);
-  const axes = scoreEvidence(withoutBridge, { advertised: true, tools: [{ name: 'search', description: 'Search', inputSchema: {} }] });
+  const axes = scoreEvidence(withoutBridge, { advertised: true, tools: [{ name: 'search', description: 'Search', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, additionalProperties: false } }] });
   assert.equal(axes.find((axis) => axis.id === 'discoverable').status, 'pass');
   assert.equal(axes.find((axis) => axis.id === 'understandable').status, 'pass');
-  assert.equal(axes.find((axis) => axis.id === 'actionable').status, 'partial');
+  assert.equal(axes.find((axis) => axis.id === 'actionable').status, 'pass');
+  assert.equal(axes.find((axis) => axis.id === 'actionable').score, 100);
+  assert.equal(axes.find((axis) => axis.id === 'actionable').checks.find((check) => check.id === 'A-WEBMCP').affects_score, false);
   const report = buildReadinessReport('https://beefapi.com', axes, [], { advertised: true });
   assert.equal(report.axes.actionable.webmcp_status, 'not_present');
-  assert.deepEqual(report.external_gates, ['compatible-browser-task-verification']);
+  assert.deepEqual(report.external_gates, []);
+});
+
+test('static WebMCP signal is present_unverified and never changes the Actionable score', () => {
+  const withSignal = scoreEvidence(evidence, {
+    advertised: true,
+    tools: [{ name: 'search', description: 'Search', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, additionalProperties: false } }],
+  });
+  const withoutSignalEvidence = evidence.map((item) => item.path === '/' ? {
+    ...item,
+    signals: item.signals.filter((signal) => signal !== 'has_cloudflare_webmcp_bridge'),
+    raw_text: item.raw_text.replace('/.webmcp/bridge.js', '/app.js'),
+  } : item);
+  const withoutSignal = scoreEvidence(withoutSignalEvidence, {
+    advertised: true,
+    tools: [{ name: 'search', description: 'Search', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, additionalProperties: false } }],
+  });
+  const withActionable = withSignal.find((axis) => axis.id === 'actionable');
+  const withoutActionable = withoutSignal.find((axis) => axis.id === 'actionable');
+  assert.equal(withActionable.score, withoutActionable.score);
+  assert.equal(withActionable.webmcp_status, 'present_unverified');
+  assert.equal(withActionable.checks.find((check) => check.id === 'A-WEBMCP').state, 'unverified');
+});
+
+test('verified WebMCP can satisfy the typed task path without MCP and is not double-counted', () => {
+  const withoutMcp = evidence.filter((item) => item.path !== '/.well-known/mcp/server-card.json');
+  const axes = scoreEvidence(withoutMcp, { advertised: false, tools: [] }, {
+    status: 'verified',
+    verification_kind: 'compatible-browser-task',
+    task_id: 'task_checkout_quote',
+    evidence_ids: ['ev_browser_task'],
+  });
+  const actionable = axes.find((axis) => axis.id === 'actionable');
+  assert.equal(actionable.status, 'pass');
+  assert.equal(actionable.score, 100);
+  assert.equal(actionable.webmcp_status, 'verified');
+  assert.deepEqual(actionable.checks.find((check) => check.id === 'A-TASK-PATH').evidence_ids, ['ev_browser_task']);
+  const report = buildReadinessReport('https://beefapi.com', axes, [], { advertised: false });
+  assert.equal(report.axes.actionable.webmcp_status, 'verified');
+  assert.deepEqual(report.external_gates, []);
+});
+
+test('WebMCP cannot become verified without a typed browser-task evidence receipt', () => {
+  const axes = scoreEvidence(evidence, { advertised: false, tools: [] }, { status: 'verified', evidence_ids: ['ev_home'] });
+  const actionable = axes.find((axis) => axis.id === 'actionable');
+  assert.equal(actionable.webmcp_status, 'present_unverified');
+  assert.equal(actionable.checks.find((check) => check.id === 'A-TASK-PATH').state, 'fail');
+});
+
+test('an empty MCP input schema is not treated as a typed task contract', () => {
+  const axes = scoreEvidence(evidence, {
+    advertised: true,
+    tools: [{ name: 'search', description: 'Search', inputSchema: {} }],
+  });
+  assert.equal(axes.find((axis) => axis.id === 'actionable').checks.find((check) => check.id === 'A-TASK-PATH').state, 'fail');
+});
+
+test('omitted MCP-card evidence keeps the task path unknown even when the home page exists', () => {
+  const withoutCard = evidence.filter((item) => item.path !== '/.well-known/mcp/server-card.json');
+  const actionable = scoreEvidence(withoutCard, { advertised: false, tools: [] })
+    .find((axis) => axis.id === 'actionable');
+  assert.equal(actionable.checks.find((check) => check.id === 'A-TASK-PATH').state, 'unknown');
+  assert.equal(actionable.score, null);
+});
+
+test('WebMCP can be not_applicable without becoming a scoring failure', () => {
+  const informationalEvidence = evidence
+    .filter((item) => item.path !== '/.well-known/mcp/server-card.json')
+    .map((item) => item.path === '/' ? {
+      ...item,
+      signals: ['has_canonical', 'has_json_ld'],
+      raw_text: '<link rel="canonical" href="https://example.com"><script type="application/ld+json">Article</script><h1>研究说明</h1><p>这是一篇只提供公开事实的研究说明。</p>',
+    } : item);
+  const actionable = scoreEvidence(informationalEvidence, { advertised: false, tools: [] })
+    .find((axis) => axis.id === 'actionable');
+  assert.equal(actionable.webmcp_status, 'not_applicable');
+  assert.equal(actionable.checks.find((check) => check.id === 'A-WEBMCP').state, 'not_applicable');
+  assert.equal(actionable.score, null);
 });
 
 test('missing fetch evidence remains unknown instead of becoming a failed finding', () => {
@@ -52,13 +131,13 @@ test('missing fetch evidence remains unknown instead of becoming a failed findin
 test('web scanner canonical report matches the shared readiness schema topology', () => {
   const axes = scoreEvidence(evidence, {
     advertised: true,
-    tools: [{ name: 'get_model_pricing', description: 'Get price', inputSchema: { type: 'object' } }],
+    tools: [{ name: 'get_model_pricing', description: 'Get price', inputSchema: { type: 'object', properties: {}, additionalProperties: false } }],
   });
   const report = buildReadinessReport('https://beefapi.com', axes, [], { advertised: true });
   assert.deepEqual(Object.keys(report).sort(), [
     'ai_visibility', 'axes', 'business_outcome', 'external_gates', 'findings', 'mode', 'schema_version', 'target', 'verification',
   ]);
-  assert.equal(report.schema_version, '1.0.0');
+  assert.equal(report.schema_version, '1.1.0');
   assert.deepEqual(Object.keys(report.axes), ['discoverable', 'understandable', 'actionable']);
   assert.equal(report.ai_visibility, 'not_measured');
   assert.equal(report.business_outcome, 'not_measured');
@@ -68,7 +147,7 @@ test('web scanner canonical report matches the shared readiness schema topology'
 test('downloadable artifact pack hashes every shared protocol file', () => {
   const completedAt = '2026-08-11T07:10:00.000Z';
   const readinessReport = {
-    schema_version: '1.0.0', target: { origin: 'https://example.com' }, mode: 'audit',
+    schema_version: '1.1.0', target: { origin: 'https://example.com' }, mode: 'audit',
     axes: {
       discoverable: { status: 'unknown', evidence_ids: [], limitations: [] },
       understandable: { status: 'unknown', evidence_ids: [], limitations: [] },

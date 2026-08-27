@@ -87,12 +87,19 @@ export function wantsMarkdown(request) {
 export function methodology() {
   return {
     schema_version: '1.0.0',
+    ruleset_version: '1.1.0',
     product: 'BFLabs Agent Readiness',
     axes: [
       { id: 'discoverable', label: '可发现', meaning: '公开入口是否能被 Agent 找到和读取' },
       { id: 'understandable', label: '可理解', meaning: '产品、事实和关键意图是否能被稳定提取' },
-      { id: 'actionable', label: '可操作', meaning: '是否存在稳定的人类或 Agent 操作入口' },
+      { id: 'actionable', label: '可操作', meaning: '是否有稳定人工入口，以及至少一条可验证的结构化 Agent 任务路径' },
     ],
+    actionable_scoring: {
+      human_fallback: '50%',
+      structured_agent_task_path: '50%',
+      webmcp: '可选实现；公开固定路径扫描只能标记静态信号，必须由独立浏览器任务凭证标记 verified，之后才可满足结构化任务路径。',
+      mcp: '具有名称、描述和输入 schema 的 typed MCP 可满足结构化任务路径；与 WebMCP 不重复计分。',
+    },
     ranking: '公开榜单按通过轴数、最弱轴得分、三轴平均分依次排序；不生成隐藏总分。',
     boundaries: {
       ai_visibility: 'not_measured by readiness scan',

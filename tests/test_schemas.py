@@ -22,6 +22,13 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaises(SchemaValidationError):
             validate_instance(fixture, "geo-optimize-run-input.schema.json")
 
+    def test_readiness_report_accepts_every_evidence_bounded_webmcp_state(self) -> None:
+        pack = json.loads((repository_root() / "examples/beefapi-deidentified-artifact-pack.json").read_text("utf-8"))
+        report = pack["files"]["outputs/readiness-report.json"]
+        for state in ("unknown", "not_applicable", "not_present", "present_unverified", "verified", "blocked"):
+            report["axes"]["actionable"]["webmcp_status"] = state
+            validate_instance(report, "readiness-report.schema.json")
+
 
 if __name__ == "__main__":
     unittest.main()

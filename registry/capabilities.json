@@ -17,7 +17,7 @@
     },
     {
       "id": "geo-optimize",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "status": "active",
       "intents": ["audit", "optimize", "verify", "brand-diagnosis", "site-diagnosis", "page-diagnosis"],
       "languages": ["zh-CN", "en"],

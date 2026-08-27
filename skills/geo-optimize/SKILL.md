@@ -7,7 +7,7 @@ description: Audit and safely improve product-website GEO readiness inside an ex
 
 Improve the public fact layer of a product website inside its own repository. Keep the core loop small: diagnose from evidence, make only authorized local changes, and verify every repair.
 
-Contract version: `0.2.0`.
+Contract version: `0.2.1`.
 
 ## Report Three Readiness Axes
 
@@ -78,7 +78,7 @@ Return:
 
 1. `Mode` and inspected scope.
 2. `Confirmed product truth` and unresolved business facts.
-3. Separate `discoverable`, `understandable`, and `actionable` axis results with state, evidence, limitations, and recheck. The Actionable result must state whether WebMCP was absent, present but unverified, or verified.
+3. Separate `discoverable`, `understandable`, and `actionable` axis results with state, evidence, limitations, and recheck. The Actionable result must state whether WebMCP was unknown, not applicable, absent, present but unverified, verified, or blocked.
 4. Findings with priority, state, evidence, proposed or executed repair, and recheck.
 5. Files changed, if any.
 6. Commands/checks run with outcomes and exact verification gaps.

@@ -41,7 +41,7 @@ def run_geo_optimize(request: Dict[str, Any]) -> Dict[str, Any]:
 
     target = {"repo_root": receipt["scope"].get("repo_root", "UNRESOLVED")}
     readiness_report = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "target": target,
         "mode": receipt["mode"],
         "axes": axes,

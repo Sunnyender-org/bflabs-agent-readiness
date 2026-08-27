@@ -2,6 +2,13 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.4.6 - 2026-08-27
+
+- Reworked Actionable scoring around two capabilities: a stable human fallback and at least one structured Agent task path.
+- Made verified WebMCP and typed MCP alternative implementations of the same task-path capability so they cannot be double-counted.
+- Kept static WebMCP signals as `present_unverified`; absence or non-applicability no longer imposes a universal 25-point penalty.
+- Added `not_applicable` and `blocked` WebMCP evidence states while preserving `unknown` for missing evidence.
+
 ## 0.4.5 - 2026-08-23
 
 - Rewrote the rendered SkillHub body around the user workflow: diagnose, copy to an Agent, authorize changes, deploy, and retest.

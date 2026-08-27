@@ -14,10 +14,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["rank", "schema_version", "host", "canonical_origin", "axes", "scan_fingerprint", "scanned_at", "ranking_basis"],
+        "required": ["rank", "schema_version", "ruleset_version", "host", "canonical_origin", "axes", "scan_fingerprint", "scanned_at", "ranking_basis"],
         "properties": {
           "rank": {"type": "integer", "minimum": 1},
           "schema_version": {"const": "1.0.0"},
+          "ruleset_version": {"const": "1.1.0"},
           "host": {"type": "string", "minLength": 1},
           "canonical_origin": {"type": "string", "format": "uri"},
           "axes": {

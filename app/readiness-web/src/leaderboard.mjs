@@ -1,4 +1,5 @@
 const ENTRY_PREFIX = 'entry:';
+export const LEADERBOARD_RULESET_VERSION = '1.1.0';
 export const LEADERBOARD_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
 function numericScores(entry) {
@@ -9,6 +10,7 @@ export function buildLeaderboardEntry(report) {
   const origin = new URL(report.target.canonical_origin);
   return {
     schema_version: '1.0.0',
+    ruleset_version: report.ruleset_version || LEADERBOARD_RULESET_VERSION,
     host: origin.hostname,
     canonical_origin: origin.origin,
     axes: report.axes.map(({ id, label, score, status }) => ({ id, label, score, status })),
@@ -86,7 +88,7 @@ export async function readLeaderboard(store, limit = 100) {
     storage: 'ready',
     generated_at: new Date().toISOString(),
     ranking_method: 'passed_axes > weakest_axis_score > average_axis_score > scanned_at',
-    entries: rankLeaderboard(values.filter(Boolean)),
+    entries: rankLeaderboard(values.filter((entry) => entry?.ruleset_version === LEADERBOARD_RULESET_VERSION)),
   };
 }
 
@@ -95,7 +97,8 @@ export async function readLeaderboardEntry(store, host) {
   if (!store || !/^[a-z0-9.-]+$/.test(normalized) || normalized.startsWith('.') || normalized.endsWith('.')) return null;
   try {
     const value = await store.get(`${ENTRY_PREFIX}${normalized}`);
-    return value ? JSON.parse(value) : null;
+    const entry = value ? JSON.parse(value) : null;
+    return entry?.ruleset_version === LEADERBOARD_RULESET_VERSION ? entry : null;
   } catch {
     return null;
   }

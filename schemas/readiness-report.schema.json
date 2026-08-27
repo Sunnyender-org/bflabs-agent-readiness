@@ -5,7 +5,7 @@
   "required": ["schema_version", "target", "mode", "axes", "findings", "verification", "ai_visibility", "business_outcome", "external_gates"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "const": "1.1.0" },
     "target": { "type": "object" },
     "mode": { "enum": ["audit", "optimize", "verify"] },
     "axes": {
@@ -31,7 +31,7 @@
       "additionalProperties": false,
       "properties": {
         "status": { "enum": ["pass", "partial", "fail", "unknown", "blocked", "unverified"] },
-        "webmcp_status": { "enum": ["unknown", "not_present", "present_unverified", "verified"] },
+        "webmcp_status": { "enum": ["unknown", "not_applicable", "not_present", "present_unverified", "verified", "blocked"] },
         "evidence_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
         "limitations": { "type": "array", "items": { "type": "string" } }
       }

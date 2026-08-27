@@ -32,7 +32,7 @@
       "required": ["status", "evidence", "limitations"],
       "properties": {
         "status": { "enum": ["pass", "partial", "fail", "unknown", "blocked", "unverified"] },
-        "webmcp_status": { "enum": ["not_present", "present_unverified", "verified"] },
+        "webmcp_status": { "enum": ["unknown", "not_applicable", "not_present", "present_unverified", "verified", "blocked"] },
         "evidence": { "type": "array", "items": { "type": "string" } },
         "limitations": { "type": "array", "items": { "type": "string" } }
       }

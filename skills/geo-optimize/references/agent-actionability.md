@@ -15,6 +15,8 @@ Classify the axis as:
 
 `not_present` is not a GEO failure and must not reduce Discoverable or Understandable results.
 
+WebMCP is an optional implementation of a structured Agent task path, not a universal scoring requirement. A static bridge or registration signal is `present_unverified` and does not add readiness points. Only a reproducible compatible-browser task may set `verified`; a verified remote MCP/API task can satisfy the same Actionable capability without WebMCP, and the two paths must not be double-counted.
+
 ## Audit Order
 
 1. Identify one useful public task such as model search, price lookup, documentation lookup, booking start, product search, or service-status check.

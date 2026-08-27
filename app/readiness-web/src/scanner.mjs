@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { assertTargetAllowsScan, normalizeTarget, safeFetchText } from './safety.mjs';
 
-export const RULESET_VERSION = '1.0.0';
+export const RULESET_VERSION = '1.1.0';
 export const ARTIFACT_PROTOCOL_VERSION = '1.0.0';
 export const PUBLIC_SKILL_BASE = 'https://readiness.bflabs.cn';
 
@@ -57,19 +57,19 @@ function parseRobotsBlocked(text) {
 }
 
 function axis(id, label, checks, evidenceByPath, limitations = []) {
-  const applicable = checks.filter((check) => check.state !== 'not_applicable');
-  const passed = applicable.filter((check) => check.state === 'pass').length;
-  const hasUnresolvedEvidence = applicable.some((check) => ['unknown', 'blocked'].includes(check.state));
-  const score = applicable.length && !hasUnresolvedEvidence
-    ? Math.round((passed / applicable.length) * 100)
+  const scoredChecks = checks.filter((check) => check.affects_score !== false && check.state !== 'not_applicable');
+  const passed = scoredChecks.filter((check) => check.state === 'pass').length;
+  const hasUnresolvedEvidence = scoredChecks.some((check) => ['unknown', 'blocked'].includes(check.state));
+  const score = scoredChecks.length && !hasUnresolvedEvidence
+    ? Math.round((passed / scoredChecks.length) * 100)
     : null;
-  const status = applicable.some((check) => check.state === 'blocked')
+  const status = scoredChecks.some((check) => check.state === 'blocked')
     ? 'blocked'
-    : passed === applicable.length
+    : passed === scoredChecks.length
       ? 'pass'
       : passed > 0
         ? 'partial'
-        : applicable.some((check) => check.state === 'fail')
+        : scoredChecks.some((check) => check.state === 'fail')
           ? 'fail'
           : 'unknown';
   return {
@@ -79,7 +79,10 @@ function axis(id, label, checks, evidenceByPath, limitations = []) {
     score,
     checks: checks.map((check) => ({
       ...check,
-      evidence_ids: (check.paths || []).map((path) => evidenceByPath.get(path)?.id).filter(Boolean),
+      evidence_ids: [...new Set([
+        ...(check.evidence_ids || []),
+        ...(check.paths || []).map((path) => evidenceByPath.get(path)?.id).filter(Boolean),
+      ])],
     })),
     limitations,
   };
@@ -89,6 +92,15 @@ const observedState = (evidence, passed) => {
   if (!evidence) return 'unknown';
   return passed ? 'pass' : 'fail';
 };
+
+const hasTypedInputSchema = (schema) => {
+  if (!schema || schema.type !== 'object' || !schema.properties || Array.isArray(schema.properties)) return false;
+  const propertyCount = Object.keys(schema.properties).length;
+  return propertyCount > 0 || schema.additionalProperties === false;
+};
+
+const toolsAreTyped = (tools = []) => tools.length > 0
+  && tools.every((tool) => tool.name && tool.description && hasTypedInputSchema(tool.inputSchema));
 
 async function inspectMcp(origin, cardEvidence, fetchOptions) {
   const result = { advertised: false, endpoint: null, tools: [], error: null };
@@ -117,7 +129,7 @@ async function inspectMcp(origin, cardEvidence, fetchOptions) {
   return result;
 }
 
-export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) {
+export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }, webmcp = {}) {
   const byPath = new Map(evidence.map((item) => [item.path, item]));
   const home = byPath.get('/');
   const robots = byPath.get('/robots.txt');
@@ -134,7 +146,65 @@ export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) 
   const hasFallbackAction = /href=["'][^"']*(chat|login|register|signup|pricing|docs|contact|start)/i.test(rawHome);
   const hasWebMcpBridge = home?.signals.includes('has_cloudflare_webmcp_bridge') || false;
   const hasNativeWebMcp = home?.signals.includes('has_native_webmcp_signal') || false;
-  const toolsAreTyped = mcp.tools.length > 0 && mcp.tools.every((tool) => tool.name && tool.description && tool.inputSchema);
+  const hasTypedMcpTools = toolsAreTyped(mcp.tools);
+  const hasWebMcpSignal = hasWebMcpBridge || hasNativeWebMcp;
+  const declaredWebMcpStatus = ['not_applicable', 'not_present', 'present_unverified', 'verified', 'blocked']
+    .includes(webmcp.status) ? webmcp.status : null;
+  const verifiedWebMcp = declaredWebMcpStatus === 'verified'
+    && webmcp.verification_kind === 'compatible-browser-task'
+    && typeof webmcp.task_id === 'string'
+    && webmcp.task_id.trim().length > 0
+    && (webmcp.evidence_ids || []).length > 0;
+  const webmcpStatus = declaredWebMcpStatus === 'verified' && !verifiedWebMcp
+    ? 'present_unverified'
+    : declaredWebMcpStatus
+    || (!home
+      ? 'unknown'
+      : hasWebMcpSignal
+        ? 'present_unverified'
+        : hasFallbackAction || mcp.advertised
+          ? 'not_present'
+          : 'not_applicable');
+  const webmcpCheckState = verifiedWebMcp
+    ? 'pass'
+    : webmcpStatus === 'present_unverified'
+      ? 'unverified'
+      : webmcpStatus === 'blocked'
+        ? 'blocked'
+        : webmcpStatus === 'unknown'
+          ? 'unknown'
+          : 'not_applicable';
+  const webmcpLabel = {
+    not_applicable: '当前页面没有需要浏览器 Agent 完成的公开任务',
+    not_present: '当前页面未提供浏览器 Agent 专用工具',
+    present_unverified: '已发现浏览器 Agent 工具，尚未完成真实任务验证',
+    verified: '浏览器 Agent 已完成代表性任务',
+    blocked: '浏览器或权限条件阻止了任务验证',
+    unknown: '暂时无法判断浏览器 Agent 工具状态',
+  }[webmcpStatus];
+  const typedTaskPathState = hasTypedMcpTools || verifiedWebMcp
+    ? 'pass'
+    : !card
+      ? 'unknown'
+      : mcp.error || webmcpStatus === 'blocked'
+      ? 'blocked'
+      : 'fail';
+  const mcpCardState = !card
+    ? 'unknown'
+    : card.status_code !== 200
+      ? 'not_applicable'
+      : mcp.advertised
+        ? 'pass'
+        : 'fail';
+  const mcpToolsState = !card
+    ? 'unknown'
+    : card.status_code !== 200
+      ? 'not_applicable'
+      : hasTypedMcpTools
+        ? 'pass'
+        : mcp.error
+          ? 'blocked'
+          : 'fail';
 
   return [
     axis('discoverable', '可发现', [
@@ -149,12 +219,23 @@ export function scoreEvidence(evidence, mcp = { advertised: false, tools: [] }) 
       { id: 'U-STRUCTURED', label: '结构化数据与公开事实入口存在', state: !home && !pricing ? 'unknown' : home?.signals.includes('has_json_ld') || pricing?.status_code === 200 ? 'pass' : 'fail', paths: ['/', '/pricing.json'] },
       { id: 'U-FRESHNESS', label: '易变事实包含新鲜度或版本', state: !pricing ? 'unknown' : pricing.status_code !== 200 ? 'not_applicable' : hasFreshness ? 'pass' : 'fail', paths: ['/pricing.json'] },
     ], byPath),
-    axis('actionable', '可操作', [
-      { id: 'A-FALLBACK', label: '访客能找到稳定的下一步入口', state: observedState(home, hasFallbackAction), paths: ['/'] },
-      { id: 'A-MCP-CARD', label: 'Agent 工具入口说明可以读取', state: observedState(card, card?.status_code === 200 && mcp.advertised), paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-TOOLS', label: '公开工具的名称、用途和输入说明完整', state: !card ? 'unknown' : toolsAreTyped ? 'pass' : mcp.error ? 'blocked' : 'fail', paths: ['/.well-known/mcp/server-card.json'] },
-      { id: 'A-WEBMCP', label: '网页提供 Agent 可发现的工具入口', state: observedState(home, hasWebMcpBridge || hasNativeWebMcp), paths: ['/'] },
-    ], byPath, ['真实浏览器任务尚未执行时，Actionable 只能视为准备度证据，不能视为任务成功。']),
+    (() => {
+      const actionable = axis('actionable', '可操作', [
+        { id: 'A-FALLBACK', label: '访客能找到稳定的下一步入口', state: observedState(home, hasFallbackAction), paths: ['/'] },
+        {
+          id: 'A-TASK-PATH',
+          label: '至少一条结构化 Agent 任务路径可用',
+          state: typedTaskPathState,
+          paths: ['/.well-known/mcp/server-card.json'],
+          evidence_ids: webmcp.evidence_ids || [],
+        },
+        { id: 'A-MCP-CARD', label: 'Agent 工具入口说明可以读取', state: mcpCardState, paths: ['/.well-known/mcp/server-card.json'], affects_score: false, report_as_finding: false },
+        { id: 'A-TOOLS', label: '公开工具的名称、用途和输入说明完整', state: mcpToolsState, paths: ['/.well-known/mcp/server-card.json'], affects_score: false, report_as_finding: false },
+        { id: 'A-WEBMCP', label: webmcpLabel, state: webmcpCheckState, evidence_state: webmcpStatus, paths: ['/'], evidence_ids: webmcp.evidence_ids || [], affects_score: false, report_as_finding: false },
+      ], byPath, ['WebMCP 是可选增强；只有真实兼容浏览器任务才能标记 verified。静态信号不加分，也不证明任务成功。']);
+      actionable.webmcp_status = webmcpStatus;
+      return actionable;
+    })(),
   ];
 }
 
@@ -275,7 +356,7 @@ export async function runAgentJourney(origin, evidence, mcp, fetchOptions = {}) 
 }
 
 const unique = (values) => [...new Set(values)];
-const ownerRouteForCheck = (ruleId) => ['A-MCP-CARD', 'A-TOOLS', 'A-WEBMCP'].includes(ruleId)
+const ownerRouteForCheck = (ruleId) => ['A-TASK-PATH', 'A-MCP-CARD', 'A-TOOLS', 'A-WEBMCP'].includes(ruleId)
   ? 'webmcp-enable'
   : 'geo-optimize';
 
@@ -317,17 +398,12 @@ export function buildReadinessReport(origin, axes, findings, mcp) {
       limitations: source.limitations,
     };
     if (axisId === 'actionable') {
-      const webmcp = source.checks.find((check) => check.id === 'A-WEBMCP');
-      value.webmcp_status = webmcp?.state === 'pass'
-        ? 'present_unverified'
-        : webmcp?.state === 'fail'
-          ? 'not_present'
-          : 'unknown';
+      value.webmcp_status = source.webmcp_status || 'unknown';
     }
     return value;
   };
   return {
-    schema_version: '1.0.0',
+    schema_version: '1.1.0',
     target: { origin },
     mode: 'audit',
     axes: {
@@ -339,12 +415,12 @@ export function buildReadinessReport(origin, axes, findings, mcp) {
     verification: axes.flatMap((axisItem) => axisItem.checks.map((check) => ({
       axis: axisItem.id,
       rule_id: check.id,
-      state: check.state,
+      state: check.evidence_state || check.state,
       evidence_ids: check.evidence_ids,
     }))),
     ai_visibility: 'not_measured',
     business_outcome: 'not_measured',
-    external_gates: axisValue('actionable').webmcp_status === 'present_unverified' || mcp.advertised
+    external_gates: ['present_unverified', 'blocked'].includes(axisValue('actionable').webmcp_status) && !toolsAreTyped(mcp.tools)
       ? ['compatible-browser-task-verification']
       : [],
   };
@@ -471,7 +547,7 @@ export async function scanSite(input, options = {}) {
   const journey = await runAgentJourney(origin, evidence, mcp, options.fetchOptions);
   const axes = scoreEvidence(evidence, mcp);
   const findings = axes.flatMap((item) => item.checks
-    .filter((check) => ['fail', 'blocked'].includes(check.state))
+    .filter((check) => check.report_as_finding !== false && ['fail', 'blocked'].includes(check.state))
     .map((check) => ({
       id: `finding_${check.id.toLowerCase()}`,
       axis: item.id,
@@ -483,15 +559,19 @@ export async function scanSite(input, options = {}) {
       owner_route: ownerRouteForCheck(check.id),
     })));
   const evidenceGaps = axes.flatMap((item) => item.checks
-    .filter((check) => check.state === 'unknown')
+    .filter((check) => check.state === 'unknown'
+      || check.state === 'unverified'
+      || (check.affects_score === false && check.state === 'blocked'))
     .map((check) => ({
       id: `gap_${check.id.toLowerCase()}`,
       axis: item.id,
       rule_id: check.id,
       title: check.label,
-      state: 'unknown',
+      state: check.evidence_state || check.state,
       owner_route: ownerRouteForCheck(check.id),
     })));
+  const missingEvidenceGaps = evidenceGaps.filter((item) => item.state === 'unknown');
+  const taskVerificationGaps = evidenceGaps.filter((item) => item.state !== 'unknown');
 
   const publicEvidence = evidence.map(({ raw_text: _rawText, ...item }) => item);
   const fingerprint = hash(JSON.stringify({ origin: origin.origin, ruleset: RULESET_VERSION, hashes: publicEvidence.map((item) => item.response_hash) }));
@@ -520,7 +600,8 @@ export async function scanSite(input, options = {}) {
   const unversionedDynamic = ledgerItems.filter((item) => item.dynamic_fact && !item.fact_version);
   const warnings = [];
   if (errors.length) warnings.push(`${errors.length} fixed public paths could not be fetched.`);
-  if (evidenceGaps.length) warnings.push(`${evidenceGaps.length} predicates remain unknown because evidence is missing.`);
+  if (missingEvidenceGaps.length) warnings.push(`${missingEvidenceGaps.length} predicates remain unknown because evidence is missing.`);
+  if (taskVerificationGaps.length) warnings.push(`${taskVerificationGaps.length} browser-task predicates still require verification.`);
   if (unversionedDynamic.length) warnings.push('Dynamic public facts were found without a fact_version.');
   const qualityReport = {
     schema_version: '1.0.0',
@@ -533,8 +614,13 @@ export async function scanSite(input, options = {}) {
       },
       {
         id: 'unknown-preservation',
-        status: evidenceGaps.length ? 'warning' : 'pass',
-        message: evidenceGaps.length ? 'missing evidence remains unknown' : 'no predicate was inferred from missing evidence',
+        status: missingEvidenceGaps.length ? 'warning' : 'pass',
+        message: missingEvidenceGaps.length ? 'missing evidence remains unknown' : 'no predicate was inferred from missing evidence',
+      },
+      {
+        id: 'browser-task-verification',
+        status: taskVerificationGaps.length ? 'warning' : 'pass',
+        message: taskVerificationGaps.length ? 'browser-task evidence remains unverified or blocked' : 'no browser-task verification gap remains',
       },
       {
         id: 'dynamic-fact-freshness',

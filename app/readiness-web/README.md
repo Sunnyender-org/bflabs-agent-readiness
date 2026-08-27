@@ -10,6 +10,8 @@ It reports three independent axes:
 - Understandable: product facts and volatile facts are explicit, current, and consistent.
 - Actionable: an Agent has a discoverable task path through links, WebMCP, MCP, or typed public tools.
 
+Actionable scores two capabilities: a stable human fallback and at least one structured Agent task path. Typed MCP and browser-verified WebMCP are alternative ways to satisfy the task-path capability and are never double-counted. Static WebMCP markup is reported as `present_unverified`; `not_present` and `not_applicable` do not create a universal WebMCP penalty.
+
 It does not measure AI visibility, ranking, citation, recommendation, conversion, or revenue. Missing evidence stays `unknown`; it is never converted into a failed check or a numeric score.
 
 ## Run

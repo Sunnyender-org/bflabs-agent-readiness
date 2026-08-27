@@ -24,7 +24,7 @@ const defaultHelp = '约 30 秒 · 只读取公开页面 · 默认不公开结�
 const axisDescriptions = {
   discoverable: '公开页面与机器入口是否能被找到。',
   understandable: '产品事实是否清晰、稳定、可核对。',
-  actionable: 'Agent 是否拥有可发现的任务路径。',
+  actionable: '是否有清楚的人工入口，以及至少一条可验证的 Agent 任务路径。',
 };
 
 const statusLabels = {
@@ -34,6 +34,7 @@ const statusLabels = {
   unknown: '证据不足',
   blocked: '无法检查',
   not_applicable: '不适用',
+  unverified: '待验证',
 };
 
 const evidenceSignals = {

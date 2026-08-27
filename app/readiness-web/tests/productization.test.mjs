@@ -5,9 +5,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { handleMcp, MCP_TOOLS } from '../src/mcp-server.mjs';
 import { buildLeaderboardEntry, LEADERBOARD_RETENTION_SECONDS, memoryLeaderboardStore, publishToLeaderboard, rankLeaderboard, readLeaderboard, readLeaderboardEntry } from '../src/leaderboard.mjs';
-import { leaderboardIndexPage, leaderboardSharePage, problemDetails, reportToMarkdown } from '../src/product-contract.mjs';
+import { leaderboardIndexPage, leaderboardSharePage, methodology, problemDetails, reportToMarkdown } from '../src/product-contract.mjs';
 
 const report = {
+  ruleset_version: '1.1.0',
   target: { canonical_origin: 'https://example.com' },
   scan_fingerprint: `sha256:${'a'.repeat(64)}`,
   scan: { status: 'complete', completed_at: '2026-08-22T10:00:00.000Z' },
@@ -16,7 +17,7 @@ const report = {
     { id: 'understandable', label: '可理解', score: 75, status: 'partial' },
     { id: 'actionable', label: '可操作', score: 50, status: 'partial' },
   ],
-  findings: [{ rule_id: 'A-WEBMCP', state: 'fail', title: 'WebMCP 可见' }],
+  findings: [{ rule_id: 'A-TASK-PATH', state: 'fail', title: '缺少结构化 Agent 任务路径' }],
   skill_routes: [{ id: 'webmcp-enable', href: '/skills/webmcp-enable' }],
   agent_journey: {
     task: '进入并找到下一步。', status: 'partial',
@@ -44,9 +45,18 @@ test('diagnostic page connects learning, diagnosis, and delivery in order', () =
   assert.match(page, /不了解 GEO？先从 GEO 学院开始学习！/);
 });
 
+test('public methodology explains optional WebMCP without double-counting it', () => {
+  const ruleset = methodology();
+  assert.equal(ruleset.ruleset_version, '1.1.0');
+  assert.equal(ruleset.actionable_scoring.human_fallback, '50%');
+  assert.equal(ruleset.actionable_scoring.structured_agent_task_path, '50%');
+  assert.match(ruleset.actionable_scoring.webmcp, /可选实现/);
+  assert.match(ruleset.actionable_scoring.mcp, /不重复计分/);
+});
+
 test('leaderboard stores only the public summary and ranks without a hidden total', async () => {
   const entry = buildLeaderboardEntry(report);
-  assert.deepEqual(Object.keys(entry).sort(), ['axes', 'canonical_origin', 'host', 'scan_fingerprint', 'scanned_at', 'schema_version']);
+  assert.deepEqual(Object.keys(entry).sort(), ['axes', 'canonical_origin', 'host', 'ruleset_version', 'scan_fingerprint', 'scanned_at', 'schema_version']);
   assert.equal('evidence' in entry, false);
   const store = memoryLeaderboardStore();
   assert.equal((await publishToLeaderboard(store, report)).status, 'published');
@@ -118,6 +128,16 @@ test('leaderboard ordering uses the disclosed three-axis method', () => {
   const stronger = { ...buildLeaderboardEntry(report), host: 'strong.example', axes: report.axes.map((axis) => ({ ...axis, status: 'pass', score: 80 })) };
   const weaker = { ...buildLeaderboardEntry(report), host: 'weak.example' };
   assert.deepEqual(rankLeaderboard([weaker, stronger]).map((entry) => entry.host), ['strong.example', 'weak.example']);
+});
+
+test('leaderboard preserves historical rows in storage but only ranks the current ruleset', async () => {
+  const store = memoryLeaderboardStore(new Map([
+    ['entry:legacy.example', JSON.stringify({ ...buildLeaderboardEntry(report), host: 'legacy.example', ruleset_version: '1.0.0' })],
+  ]));
+  await publishToLeaderboard(store, report);
+  const board = await readLeaderboard(store);
+  assert.deepEqual(board.entries.map((entry) => entry.host), ['example.com']);
+  assert.equal(await readLeaderboardEntry(store, 'legacy.example'), null);
 });
 
 test('markdown report is agent-readable and preserves measurement boundaries', () => {

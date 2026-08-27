@@ -91,3 +91,5 @@ Check only that a useful next action exists and works: register, start, view pri
 Report Agent Actionability separately from GEO readiness scoring. Inspect stable human fallbacks, WebMCP registration, MCP discovery, typed schemas, tool annotations, representative execution, confirmation boundaries, and result consistency using [agent-actionability.md](agent-actionability.md).
 
 Protocol presence earns no Actionability result by itself. A bridge tag, MCP server card, or `tools/list` response is evidence of discovery, not proof that a useful task completes correctly.
+
+The public Actionable score uses a stable human fallback plus one structured Agent task path. A typed MCP path or a browser-verified WebMCP path can satisfy that second capability; exposing both does not earn duplicate points. Static WebMCP signals remain `present_unverified`, while `not_present` and `not_applicable` do not lower the score by themselves.

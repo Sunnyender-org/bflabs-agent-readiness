@@ -10,9 +10,7 @@
     "input_hash": "sha256:3b994d8df20aca42e441d9e1380bd76b6fe3d68671f90f12b298800650adaf07",
     "status": "pass",
     "degradation": null,
-    "external_gates": [
-      "compatible-browser-task-verification"
-    ],
+    "external_gates": [],
     "artifacts": [
       {
         "path": "evidence-ledger.json",
@@ -28,7 +26,7 @@
       },
       {
         "path": "outputs/readiness-report.json",
-        "sha256": "82206d3f4b8960cd3cbd5678b333dd8a2accc76cd4af8e5ab6e7fc7a31ac0b5c",
+        "sha256": "c77de10e3fcc8b8a7ea42cf25c6bbe43f18a9d92a8143ad1262bf3f5ee160d3e",
         "media_type": "application/json",
         "schema": "readiness-report.schema.json"
       },
@@ -148,7 +146,7 @@
       "blockers": []
     },
     "outputs/readiness-report.json": {
-      "schema_version": "1.0.0",
+      "schema_version": "1.1.0",
       "target": {
         "origin": "https://gateway.example"
       },
@@ -170,31 +168,16 @@
           "limitations": []
         },
         "actionable": {
-          "status": "partial",
+          "status": "pass",
           "webmcp_status": "not_present",
           "evidence_ids": [
             "ev_home",
             "ev_mcp"
           ],
-          "limitations": [
-            "Compatible-browser task verification was not run."
-          ]
+          "limitations": []
         }
       },
-      "findings": [
-        {
-          "id": "finding_a-webmcp",
-          "axis": "actionable",
-          "rule_id": "A-WEBMCP",
-          "severity": "medium",
-          "title": "WebMCP bridge or native registration is not present",
-          "state": "fail",
-          "evidence_ids": [
-            "ev_home"
-          ],
-          "owner_route": "webmcp-enable"
-        }
-      ],
+      "findings": [],
       "verification": [
         {
           "axis": "discoverable",
@@ -214,6 +197,14 @@
         },
         {
           "axis": "actionable",
+          "rule_id": "A-TASK-PATH",
+          "state": "pass",
+          "evidence_ids": [
+            "ev_mcp"
+          ]
+        },
+        {
+          "axis": "actionable",
           "rule_id": "A-TOOLS",
           "state": "pass",
           "evidence_ids": [
@@ -223,7 +214,7 @@
         {
           "axis": "actionable",
           "rule_id": "A-WEBMCP",
-          "state": "fail",
+          "state": "not_present",
           "evidence_ids": [
             "ev_home"
           ]
@@ -231,9 +222,7 @@
       ],
       "ai_visibility": "not_measured",
       "business_outcome": "not_measured",
-      "external_gates": [
-        "compatible-browser-task-verification"
-      ]
+      "external_gates": []
     }
   }
 }
