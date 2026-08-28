@@ -68,8 +68,15 @@ test('exposes a real BFLabs inquiry route and an in-session retest contract', ()
   assert.match(html, /href="\/leaderboard"/);
   assert.match(html, /skills\.bflabs\.cn\/catalog\.html#geo/);
   assert.match(html, /我确认有权公开，将本次诊断结果加入榜单/);
+  assert.match(html, /这里说明交付步骤，不是这次检查的分数/);
+  assert.doesNotMatch(html, /33<i>→<\/i>78/);
+  assert.doesNotMatch(html, />验收中</);
+  assert.doesNotMatch(app, /#delivery-origin'\)\.textContent = host/);
+  assert.match(app, /#delivery-origin'\)\.textContent = '专业交付'/);
   assert.doesNotMatch(html, /唯一对应 Skill|读取根 Skill|Agent Journey|SkillHub/);
   assert.doesNotMatch(app, /finding\.rule_id|finding\.owner_route|item\.route|report\.skill_routes\[0\]\.id/);
   assert.match(server, /const SKILL_IDS = new Set/);
   assert.match(server, /text\/plain; charset=utf-8/);
+  assert.match(server, /await completeScan/);
+  assert.doesNotMatch(server, /sendJson\(response, 202/);
 });

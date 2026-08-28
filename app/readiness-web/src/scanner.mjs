@@ -296,8 +296,8 @@ export function buildAgentJourney(originInput, evidence, mcp = { tools: [] }, pr
       label: '理解页面用途',
       status: understood ? 'pass' : entered ? 'partial' : 'blocked',
       observation: understood
-        ? `原始 HTML 提供标题、H1 和 ${home.visible_text_length} 个可见字符。`
-        : entered ? '页面可进入，但标题、H1 或无需 JavaScript 的正文仍不完整。' : '首页不可进入，无法继续理解。',
+        ? `首页能直接读到标题和正文（约 ${home.visible_text_length} 字）。`
+        : entered ? '页面能打开，但首页还读不到完整的标题和正文。' : '首页打不开，无法继续理解。',
       evidence_ids: home ? [home.id] : [],
     },
     {

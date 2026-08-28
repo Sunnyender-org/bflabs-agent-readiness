@@ -91,19 +91,16 @@ async function buildAgentSkillIndex() {
   };
 }
 
-function startScan(url, options = {}) {
+async function completeScan(url, options = {}) {
   const id = `rpt_${crypto.randomUUID()}`;
-  reports.set(id, { report_id: id, status: 'scanning', stage: '验证公开目标' });
-  scanSite(url)
-    .then(async (report) => {
-      const publication = options.publishToLeaderboard
-        ? await publishToLeaderboard(leaderboard, report)
-        : { status: 'not_requested' };
-      const withHandoff = await attachGeoHandoff(report, geoHandoffs, options.prepareWorkBuddyHandoff);
-      reports.set(id, { ...withHandoff, leaderboard_publication: publication, report_id: id, status: report.scan.status });
-    })
-    .catch((error) => reports.set(id, { report_id: id, status: 'failed', error: error.message }));
-  return id;
+  const report = await scanSite(url);
+  const publication = options.publishToLeaderboard
+    ? await publishToLeaderboard(leaderboard, report)
+    : { status: 'not_requested' };
+  const withHandoff = await attachGeoHandoff(report, geoHandoffs, options.prepareWorkBuddyHandoff);
+  const stored = { ...withHandoff, leaderboard_publication: publication, report_id: id, status: report.scan.status };
+  reports.set(id, stored);
+  return stored;
 }
 
 async function sendFetchResponse(response, fetchResponse) {
@@ -141,11 +138,11 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'POST' && ['/api/scans', '/api/v1/scans'].includes(url.pathname)) {
       const body = await readJson(request);
       const target = normalizeTarget(body.url);
-      const reportId = startScan(target.toString(), {
+      const report = await completeScan(target.toString(), {
         publishToLeaderboard: body.publish_to_leaderboard === true,
         prepareWorkBuddyHandoff: body.prepare_workbuddy_handoff === true,
       });
-      return sendJson(response, 202, { report_id: reportId, status_url: `/api/v1/scans/${reportId}` });
+      return sendReport(request, response, 200, report);
     }
     if (request.method === 'GET' && /^\/api\/(?:v1\/)?scans\//.test(url.pathname)) {
       const artifactMatch = url.pathname.match(/^\/api\/(?:v1\/)?scans\/([^/]+)\/artifact-pack$/);
@@ -224,7 +221,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });
       return response.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>BFLabs Agent Readiness</title><body><main><a href="/">返回诊断</a><h1>${url.pathname === '/privacy' ? '隐私边界' : '使用边界'}</h1><p>${url.pathname === '/privacy'
-        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有你主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。'
+        ? '只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有你主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。站点所有者可以在网站根目录放置 /.well-known/bflabs-agent-readiness-opt-out 停止诊断。'
         : '仅可诊断你有权测试的公开网站。公开榜单默认关闭。网站准备度检查和 Agent 任务试跑不等于外部 AI 平台表现，也不构成流量、转化或收入承诺。'}</p></main></body></html>`);
     }
     if (url.pathname.startsWith('/api/')) {

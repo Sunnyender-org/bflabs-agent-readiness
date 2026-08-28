@@ -42,6 +42,20 @@ class RemoteScanTests(unittest.TestCase):
         self.assertEqual(requests[1].get_header("Accept"), "text/markdown")
         self.assertEqual(requests[0].get_header("User-agent"), "bflabs-readiness-cli/{}".format(__version__))
 
+    def test_returns_sync_200_report_without_polling(self):
+        requests = []
+
+        def opener(request, timeout):
+            requests.append(request)
+            return Response(200, json.dumps({"scan_fingerprint": "sha256:test", "status": "complete"}))
+
+        content_type, text = scan_public_site(
+            "https://example.com", "http://127.0.0.1:4177", opener=opener, sleeper=lambda _seconds: None,
+        )
+        self.assertEqual(content_type, "application/json")
+        self.assertIn("sha256:test", text)
+        self.assertEqual(len(requests), 1)
+
     def test_publish_flag_is_explicit(self):
         captured = []
 

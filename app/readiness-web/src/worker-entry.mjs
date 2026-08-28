@@ -130,7 +130,7 @@ export default {
         return body ? new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-content-type-options': 'nosniff' } }) : json({ error: '未知子 Skill' }, 404);
       }
       if (request.method === 'GET' && url.pathname === '/privacy') {
-        return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。基础设施服务商仍可能按其政策处理必要的安全与运行日志。</p><p>站点所有者可以通过公开的拒绝扫描文件停止诊断。具体设置方法见使用文档。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
+        return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。基础设施服务商仍可能按其政策处理必要的安全与运行日志。</p><p>站点所有者可以在网站根目录放置 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 停止诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
       }
       if (request.method === 'GET' && url.pathname === '/terms') {
         return html('公开测试版使用边界', '<p>仅可诊断你有权测试的公开网站。公开榜单默认关闭。网站准备度检查和 Agent 任务试跑不等于外部 AI 平台表现，也不构成流量、转化或收入承诺。为保证服务稳定，系统可能拒绝过于频繁、异常或已明确拒绝扫描的目标。</p>');

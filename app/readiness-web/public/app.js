@@ -197,6 +197,9 @@ function renderComparison(report) {
     ? Math.round(comparableScores.reduce((sum, score) => sum + score, 0) / comparableScores.length)
     : 0;
 
+  document.querySelector('#delivery-status').textContent = '已复测';
+  document.querySelector('#delivery-status').className = 'status';
+  document.querySelector('#delivery-origin').textContent = displayHost(report.target.canonical_origin);
   document.querySelector('#delivery-context').textContent = `${report.target.canonical_origin} 的两次诊断结果对比`;
   document.querySelector('#delta-label').textContent = '本次变化';
   document.querySelector('#delta-value').textContent = '改动前 → 改动后';
@@ -212,17 +215,20 @@ function renderComparison(report) {
 }
 
 function resetComparisonExample() {
-  document.querySelector('#delivery-context').textContent = '示例：从首次检查到改完复测';
-  document.querySelector('#delta-label').textContent = '示例变化';
-  document.querySelector('#delta-value').innerHTML = '33<i>→</i>78';
-  document.querySelector('#delta-summary').textContent = '示例：可理解 +45 · 解决 4/7 个问题';
-  document.querySelector('#delta-progress').style.width = '78%';
-  document.querySelector('#before-value').innerHTML = '几乎<br>读不到';
-  document.querySelector('#before-summary').textContent = '页面正文过少 · 没有稳定答案页';
-  document.querySelector('#after-value').innerHTML = '事实<br>可核对';
-  document.querySelector('#after-summary').textContent = '正文可直接读取 · 答案页 · 接入路径';
+  document.querySelector('#delivery-status').textContent = '说明';
+  document.querySelector('#delivery-status').className = 'status';
+  document.querySelector('#delivery-origin').textContent = '专业交付';
+  document.querySelector('#delivery-context').textContent = '改完后再检查一次，才能证明这一阶段做完了。';
+  document.querySelector('#delta-label').textContent = '交付怎么做';
+  document.querySelector('#delta-value').textContent = '先查，再改，再查';
+  document.querySelector('#delta-summary').textContent = '这里说明交付步骤，不是这次检查的分数。';
+  document.querySelector('#delta-progress').style.width = '0%';
+  document.querySelector('#before-value').innerHTML = '保存<br>首次结果';
+  document.querySelector('#before-summary').textContent = '先记下改动前的公开网站准备度。';
+  document.querySelector('#after-value').innerHTML = '同一网站<br>再检查';
+  document.querySelector('#after-summary').textContent = '改完后对同一网站复测，才能对比前后变化。';
   document.querySelector('#delivery-notice-title').textContent = '没有修复前后的复测对比，就不算完成本阶段';
-  document.querySelector('#delivery-notice-copy').textContent = '下一阶段只修仍开放的项。';
+  document.querySelector('#delivery-notice-copy').textContent = '下一阶段只修仍开放的项。外部 AI 是否看见你、业务有没有变化，仍要另外测量。';
 }
 
 function updateContactLink(report) {
@@ -287,7 +293,6 @@ function renderReport(report) {
   showMoreButton.setAttribute('aria-expanded', 'false');
 
   document.querySelector('#report-origin').textContent = host;
-  document.querySelector('#delivery-origin').textContent = host;
   document.querySelector('#report-status').textContent = report.scan.status === 'complete' ? '完成' : '报告不完整';
   document.querySelector('#report-fingerprint').textContent = report.scan_fingerprint;
   renderAxes(report.axes);

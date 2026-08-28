@@ -5,7 +5,7 @@ const PROBLEM_MAP = [
   [/方法不允许|method not allowed/i, ['method_not_allowed', 405, '请求方法不允许', '读取 OpenAPI 后改用支持的方法。']],
   [/报告不存在|report not found/i, ['report_not_found', 404, '报告不存在', '重新运行诊断以生成当前公开状态。']],
   [/榜单记录不存在|leaderboard entry not found/i, ['leaderboard_entry_not_found', 404, '榜单记录不存在', '返回公开榜单查看当前仍在展示的域名。']],
-  [/拒绝扫描|opt-out/i, ['target_opted_out', 403, '目标已拒绝扫描', '尊重目标站点的选择；如你是站点所有者，请先移除拒绝扫描文件后重试。']],
+  [/拒绝扫描|opt-out/i, ['target_opted_out', 403, '目标已拒绝扫描', '尊重目标站点的选择；如你是站点所有者，请先移除拒绝扫描文件 /.well-known/bflabs-agent-readiness-opt-out 后重试。']],
   [/请求过于频繁|rate.?limit/i, ['rate_limit_exceeded', 429, '请求过于频繁', '等待限流窗口结束后重试。']],
   [/正文超过|too large/i, ['request_too_large', 413, '请求正文过大', '只提交目标 URL 和必要的布尔选项。']],
   [/超时|timeout|AbortError/i, ['scan_timeout', 504, '目标响应超时', '稍后重试，或先确认目标公开页面可以稳定访问。']],
