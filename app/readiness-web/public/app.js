@@ -230,7 +230,7 @@ function resetComparisonExample() {
   document.querySelector('#delivery-status').textContent = '说明';
   document.querySelector('#delivery-status').className = 'status';
   document.querySelector('#delivery-origin').textContent = '专业交付';
-  document.querySelector('#delivery-context').textContent = '改完后再检查一次，才能证明这一阶段做完了。';
+  document.querySelector('#delivery-context').textContent = '¥1688 起，按诊断评估范围后报价 · 改完后再检查一次，才能证明这一阶段做完了。';
   document.querySelector('#delta-label').textContent = '交付怎么做';
   document.querySelector('#delta-value').textContent = '先查，再改，再查';
   document.querySelector('#delta-summary').textContent = '每一步都有可核对的检查结果。';
