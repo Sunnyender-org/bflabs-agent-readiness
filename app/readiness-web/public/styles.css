@@ -1,3 +1,21 @@
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   color-scheme: light;
   --charcoal: #111417;
@@ -13,7 +31,7 @@
   --signal-blue: #4c7faf;
   --radius-control: 2px;
   --radius-surface: 4px;
-  --font-display: "Avenir Next", "Helvetica Neue", sans-serif;
+  --font-display: "Space Grotesk", "Avenir Next", "Helvetica Neue", sans-serif;
   --font-body: Inter, "Helvetica Neue", Arial, "PingFang SC", sans-serif;
   --font-cjk: "PingFang SC", "Noto Sans SC", sans-serif;
   --content: 720px;
@@ -533,12 +551,27 @@ summary:focus-visible {
 
 .finding-list li {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 6.5rem minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: baseline;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--divider);
   font-size: 0.9rem;
+}
+
+.finding-list code {
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.finding-list small {
+  color: var(--silver);
+  font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .finding-empty {
@@ -715,6 +748,14 @@ td code { overflow-wrap: anywhere; }
 .offer-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; }
 .text-link { color: var(--warm-white); font-size: 0.75rem; }
 .text-link-dark { color: var(--charcoal); }
+.text-link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.offer-fine { margin: 0.6rem 0 0; color: rgba(250, 248, 245, 0.55); font-size: 0.7rem; }
 
 .artifact-actions {
   grid-column: 1 / -1;

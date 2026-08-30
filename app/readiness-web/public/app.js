@@ -27,6 +27,18 @@ const axisDescriptions = {
   actionable: '是否有清楚的人工入口，以及至少一条可验证的 Agent 任务路径。',
 };
 
+const axisLabels = {
+  discoverable: '可发现',
+  understandable: '可理解',
+  actionable: '可操作',
+};
+
+const severityLabels = {
+  high: '需优先处理',
+  medium: '建议处理',
+  low: '可选',
+};
+
 const statusLabels = {
   pass: '通过',
   partial: '部分通过',
@@ -221,7 +233,7 @@ function resetComparisonExample() {
   document.querySelector('#delivery-context').textContent = '改完后再检查一次，才能证明这一阶段做完了。';
   document.querySelector('#delta-label').textContent = '交付怎么做';
   document.querySelector('#delta-value').textContent = '先查，再改，再查';
-  document.querySelector('#delta-summary').textContent = '这里说明交付步骤，不是这次检查的分数。';
+  document.querySelector('#delta-summary').textContent = '每一步都有可核对的检查结果。';
   document.querySelector('#delta-progress').style.width = '0%';
   document.querySelector('#before-value').innerHTML = '保存<br>首次结果';
   document.querySelector('#before-summary').textContent = '先记下改动前的公开网站准备度。';
@@ -288,9 +300,9 @@ function renderReport(report) {
   progress.hidden = true;
   form.setAttribute('aria-busy', 'false');
   activatePanel('report');
-  improvementPanel.hidden = true;
-  showMoreButton.textContent = '查看改进方案';
-  showMoreButton.setAttribute('aria-expanded', 'false');
+  improvementPanel.hidden = false;
+  showMoreButton.textContent = '收起改进方案';
+  showMoreButton.setAttribute('aria-expanded', 'true');
 
   document.querySelector('#report-origin').textContent = host;
   document.querySelector('#report-status').textContent = report.scan.status === 'complete' ? '完成' : '报告不完整';
@@ -303,8 +315,10 @@ function renderReport(report) {
   const findings = document.querySelector('#findings');
   findings.innerHTML = report.findings.length
     ? report.findings.map((finding) => `
-      <li>
+      <li data-severity="${escapeHtml(finding.severity || '')}">
+        <code>${escapeHtml(finding.rule_id || '')}</code>
         <span>${escapeHtml(finding.title)}</span>
+        <small>${escapeHtml(axisLabels[finding.axis] || '')}${finding.severity ? ` · ${severityLabels[finding.severity] || finding.severity}` : ''}</small>
       </li>
     `).join('')
     : evidenceIncomplete
@@ -394,7 +408,8 @@ form.addEventListener('submit', async (event) => {
   } catch (error) {
     progress.hidden = true;
     form.setAttribute('aria-busy', 'false');
-    errorNode.textContent = error.message;
+    errorNode.textContent = `${error.message}——确认域名可公开访问后，可直接重试。`;
+    input.focus();
   } finally {
     submitButton.disabled = false;
   }

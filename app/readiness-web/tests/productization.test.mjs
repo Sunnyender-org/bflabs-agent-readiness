@@ -43,7 +43,7 @@ test('diagnostic page connects learning, diagnosis, and delivery in order', () =
   assert.match(page, /随 BF Labs 定制版 WorkBuddy 开通/);
   assert.match(page, /mailto:hello@bflabs\.cn/);
   assert.match(page, /从零开始/);
-  assert.match(page, /不了解 GEO？先从 GEO 学院开始学习！/);
+  assert.match(page, /不了解 GEO？先从 GEO 学院开始/);
   assert.match(styles, /\.site-nav a\s*\{[\s\S]*?white-space:\s*nowrap;/);
 });
 

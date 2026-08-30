@@ -6,6 +6,8 @@
     <meta name="description" content="免费检查网站的 GEO 与 Agent 准备度：是否可发现、可理解、可操作。只给可核对的公开证据。">
     <title>BFLabs Agent Readiness</title>
     <link rel="icon" href="/bf-mark.svg" type="image/svg+xml">
+    <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
@@ -160,7 +162,7 @@
             <article class="learning-bridge" data-product-stage="learn">
               <div>
                 <span>从零开始</span>
-                <h3>不了解 GEO？先从 GEO 学院开始学习！</h3>
+                <h3>不了解 GEO？先从 GEO 学院开始</h3>
                 <p>从基础概念、可靠来源到网站诊断，学会看懂报告和下一步怎么做。GEO 学院随 BF Labs 定制版 WorkBuddy 开通。</p>
               </div>
               <a class="button button-secondary" href="https://wb.bflabs.app/geo-academy/">去 GEO 学院学习 <span aria-hidden="true">→</span></a>
@@ -197,9 +199,10 @@
                 <div><h4>可改进项</h4><div id="opportunities" class="compact-list"></div></div>
               </div>
               <div class="offer-actions">
-                <button id="show-delivery" class="button button-accent" type="button">看交付示例 <span aria-hidden="true">→</span></button>
-                <a id="contact-bflabs" class="text-link" href="mailto:hello@bflabs.cn?subject=BFLabs%20Agent%20Readiness%20%E8%AF%A2%E8%AF%A2">联系 BFLabs</a>
+                <a id="contact-bflabs" class="button button-accent" href="mailto:hello@bflabs.cn?subject=BFLabs%20Agent%20Readiness%20%E8%AF%A2%E8%AF%A2">邮件咨询交付 <span aria-hidden="true">→</span></a>
+                <button id="show-delivery" class="text-link text-link-button" type="button">看交付示例</button>
               </div>
+              <p class="offer-fine">邮件会自动带上本次诊断记录，便于直接评估。</p>
             </article>
 
             <div class="artifact-actions">
@@ -229,7 +232,7 @@
             <article class="delta-card">
               <span id="delta-label">交付怎么做</span>
               <strong id="delta-value">先查，再改，再查</strong>
-              <p id="delta-summary">这里说明交付步骤，不是这次检查的分数。</p>
+              <p id="delta-summary">每一步都有可核对的检查结果。</p>
               <div class="progress-bar"><i id="delta-progress" style="width:0%"></i></div>
             </article>
             <article class="before-card"><span>修复前</span><strong id="before-value">保存<br>首次结果</strong><p id="before-summary">先记下改动前的公开网站准备度。</p></article>
