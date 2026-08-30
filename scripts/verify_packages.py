@@ -50,7 +50,7 @@ def verify(output: Path) -> dict[str, object]:
 
     with tempfile.TemporaryDirectory(prefix="bflabs-install-") as temp:
         environment = Path(temp) / "venv"
-        venv.EnvBuilder(with_pip=True, clear=True).create(environment)
+        venv.EnvBuilder(with_pip=True, clear=True, symlinks=(os.name != "nt")).create(environment)
         environment = environment.resolve()
         python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         cli = environment / ("Scripts/bflabs-readiness.exe" if os.name == "nt" else "bin/bflabs-readiness")
@@ -81,7 +81,7 @@ def verify(output: Path) -> dict[str, object]:
             raise RuntimeError("installed unified package did not publish both workflow runs")
 
         source_environment = Path(temp) / "source-venv"
-        venv.EnvBuilder(with_pip=True, clear=True).create(source_environment)
+        venv.EnvBuilder(with_pip=True, clear=True, symlinks=(os.name != "nt")).create(source_environment)
         source_environment = source_environment.resolve()
         source_python = source_environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         source_cli = source_environment / ("Scripts/bflabs-readiness.exe" if os.name == "nt" else "bin/bflabs-readiness")
