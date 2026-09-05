@@ -74,73 +74,33 @@ async function readRequestJson(request) {
   return JSON.parse(await readRequestText(request) || '{}');
 }
 
+const SECURITY_HEADERS = {
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+};
+
+function withSecurityHeaders(response) {
+  const secured = new Response(response.body, response);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!secured.headers.has(name)) secured.headers.set(name, value);
+  }
+  return secured;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
     try {
-      if (url.pathname === '/api/v1/geo-handoffs/redeem') {
-        return handleGeoHandoffRequest(request, createD1GeoHandoffStore(env.GEO_HANDOFFS));
-      }
-      if (request.method === 'POST' && ['/api/scans', '/api/v1/scans'].includes(url.pathname)) {
-        const body = await readRequestJson(request);
-        const target = normalizeTarget(body.url);
-        await enforceRateLimits(request, env, target);
-        const report = await scanSite(target.toString(), { delayMs: 100, fetchOptions: { timeoutMs: 8_000, maxBytes: 1024 * 1024 } });
-        report.leaderboard_publication = body.publish_to_leaderboard === true
-          ? await publishToLeaderboard(env.LEADERBOARD, report)
-          : { status: 'not_requested' };
-        const withHandoff = await attachGeoHandoff(report, createD1GeoHandoffStore(env.GEO_HANDOFFS), body.prepare_workbuddy_handoff === true);
-        return reportResponse(request, withHandoff);
-      }
-      if (request.method === 'GET' && ['/api/rulesets/current', '/api/v1/rulesets/current'].includes(url.pathname)) {
-        return json({ version: RULESET_VERSION, axes: ['discoverable', 'understandable', 'actionable'], visibility: 'not_measured', business_outcome: 'not_measured' });
-      }
-      if (request.method === 'GET' && url.pathname === '/api/v1/leaderboard') return json(await readLeaderboard(env.LEADERBOARD));
-      if (request.method === 'GET' && url.pathname === '/leaderboard') {
-        return new Response(leaderboardIndexPage(await readLeaderboard(env.LEADERBOARD)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=120' } });
-      }
-      if (request.method === 'GET' && url.pathname.startsWith('/leaderboard/')) {
-        const entry = await readLeaderboardEntry(env.LEADERBOARD, decodeURIComponent(url.pathname.slice('/leaderboard/'.length)));
-        if (!entry) return problem(problemDetails(Object.assign(new Error('榜单记录不存在'), { code: 'leaderboard_entry_not_found', status: 404 }), url.pathname));
-        return new Response(leaderboardSharePage(entry), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
-      }
-      if (request.method === 'GET' && url.pathname === '/.well-known/agent-skills/index.json') {
-        return json(SKILL_INDEX, 200, { 'cache-control': 'public, max-age=300' });
-      }
-      if (request.method === 'GET' && ['/.well-known/mcp/server-card.json', '/mcp/server-card', '/server.json'].includes(url.pathname)) {
-        return json(serverCard(), 200, { 'cache-control': 'public, max-age=300' });
-      }
-      if (request.method === 'GET' && url.pathname === '/methodology') return json(methodology(), 200, { 'cache-control': 'public, max-age=300' });
-      if (url.pathname === '/mcp') {
-        const body = request.method === 'POST' ? await readRequestText(request) : undefined;
-        const boundedRequest = new Request(request.url, { method: request.method, headers: request.headers, ...(body !== undefined ? { body } : {}) });
-        return handleMcp(boundedRequest, {
-          scan: async (input) => {
-            const target = normalizeTarget(input);
-            await enforceRateLimits(request, env, target);
-            return scanSite(target.toString(), { delayMs: 100, fetchOptions: { timeoutMs: 8_000, maxBytes: 1024 * 1024 } });
-          },
-          leaderboard: () => readLeaderboard(env.LEADERBOARD),
-          skills: SKILL_TEXT,
-        });
-      }
-      if (request.method === 'GET' && url.pathname.startsWith('/skills/')) {
-        const skillId = decodeURIComponent(url.pathname.slice('/skills/'.length));
-        const body = SKILL_TEXT[skillId];
-        return body ? new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-content-type-options': 'nosniff' } }) : json({ error: '未知子 Skill' }, 404);
-      }
-      if (request.method === 'GET' && url.pathname === '/privacy') {
-        return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。基础设施服务商仍可能按其政策处理必要的安全与运行日志。</p><p>站点所有者可以在网站根目录放置 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 停止诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
-      }
-      if (request.method === 'GET' && url.pathname === '/terms') {
-        return html('公开测试版使用边界', '<p>仅可诊断你有权测试的公开网站。公开榜单默认关闭。网站准备度检查和 Agent 任务试跑不等于外部 AI 平台表现，也不构成流量、转化或收入承诺。为保证服务稳定，系统可能拒绝过于频繁、异常或已明确拒绝扫描的目标。</p>');
-      }
-      if (url.pathname.startsWith('/api/')) return problem(problemDetails(Object.assign(new Error('API 路径不存在'), { status: 404 }), url.pathname));
-      if (request.method === 'GET' || request.method === 'HEAD') return env.ASSETS.fetch(request);
-      return problem(problemDetails(Object.assign(new Error('方法不允许'), { status: 405 }), url.pathname));
+      return withSecurityHeaders(await route(request, env, url));
     } catch (error) {
       console.error('readiness_request_failed', { path: url.pathname, name: error.name, message: error.message });
-      return problem(problemDetails(error, url.pathname));
+      return withSecurityHeaders(problem(problemDetails(error, url.pathname)));
     }
   },
   async email(message, env) {
@@ -150,3 +110,66 @@ export default {
     await createD1GeoHandoffStore(env.GEO_HANDOFFS)?.purgeExpired(Date.now());
   },
 };
+
+async function route(request, env, url) {
+  if (url.pathname === '/api/v1/geo-handoffs/redeem') {
+    return handleGeoHandoffRequest(request, createD1GeoHandoffStore(env.GEO_HANDOFFS));
+  }
+  if (request.method === 'POST' && ['/api/scans', '/api/v1/scans'].includes(url.pathname)) {
+    const body = await readRequestJson(request);
+    const target = normalizeTarget(body.url);
+    await enforceRateLimits(request, env, target);
+    const report = await scanSite(target.toString(), { delayMs: 100, fetchOptions: { timeoutMs: 8_000, maxBytes: 1024 * 1024 } });
+    report.leaderboard_publication = body.publish_to_leaderboard === true
+      ? await publishToLeaderboard(env.LEADERBOARD, report)
+      : { status: 'not_requested' };
+    const withHandoff = await attachGeoHandoff(report, createD1GeoHandoffStore(env.GEO_HANDOFFS), body.prepare_workbuddy_handoff === true);
+    return reportResponse(request, withHandoff);
+  }
+  if (request.method === 'GET' && ['/api/rulesets/current', '/api/v1/rulesets/current'].includes(url.pathname)) {
+    return json({ version: RULESET_VERSION, axes: ['discoverable', 'understandable', 'actionable'], visibility: 'not_measured', business_outcome: 'not_measured' });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/v1/leaderboard') return json(await readLeaderboard(env.LEADERBOARD));
+  if (request.method === 'GET' && url.pathname === '/leaderboard') {
+    return new Response(leaderboardIndexPage(await readLeaderboard(env.LEADERBOARD)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=120' } });
+  }
+  if (request.method === 'GET' && url.pathname.startsWith('/leaderboard/')) {
+    const entry = await readLeaderboardEntry(env.LEADERBOARD, decodeURIComponent(url.pathname.slice('/leaderboard/'.length)));
+    if (!entry) return problem(problemDetails(Object.assign(new Error('榜单记录不存在'), { code: 'leaderboard_entry_not_found', status: 404 }), url.pathname));
+    return new Response(leaderboardSharePage(entry), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
+  }
+  if (request.method === 'GET' && url.pathname === '/.well-known/agent-skills/index.json') {
+    return json(SKILL_INDEX, 200, { 'cache-control': 'public, max-age=300' });
+  }
+  if (request.method === 'GET' && ['/.well-known/mcp/server-card.json', '/mcp/server-card', '/server.json'].includes(url.pathname)) {
+    return json(serverCard(), 200, { 'cache-control': 'public, max-age=300' });
+  }
+  if (request.method === 'GET' && url.pathname === '/methodology') return json(methodology(), 200, { 'cache-control': 'public, max-age=300' });
+  if (url.pathname === '/mcp') {
+    const body = request.method === 'POST' ? await readRequestText(request) : undefined;
+    const boundedRequest = new Request(request.url, { method: request.method, headers: request.headers, ...(body !== undefined ? { body } : {}) });
+    return handleMcp(boundedRequest, {
+      scan: async (input) => {
+        const target = normalizeTarget(input);
+        await enforceRateLimits(request, env, target);
+        return scanSite(target.toString(), { delayMs: 100, fetchOptions: { timeoutMs: 8_000, maxBytes: 1024 * 1024 } });
+      },
+      leaderboard: () => readLeaderboard(env.LEADERBOARD),
+      skills: SKILL_TEXT,
+    });
+  }
+  if (request.method === 'GET' && url.pathname.startsWith('/skills/')) {
+    const skillId = decodeURIComponent(url.pathname.slice('/skills/'.length));
+    const body = SKILL_TEXT[skillId];
+    return body ? new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-content-type-options': 'nosniff' } }) : json({ error: '未知子 Skill' }, 404);
+  }
+  if (request.method === 'GET' && url.pathname === '/privacy') {
+    return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。基础设施服务商仍可能按其政策处理必要的安全与运行日志。</p><p>站点所有者可以在网站根目录放置 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 停止诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');
+  }
+  if (request.method === 'GET' && url.pathname === '/terms') {
+    return html('公开测试版使用边界', '<p>仅可诊断你有权测试的公开网站。公开榜单默认关闭。网站准备度检查和 Agent 任务试跑不等于外部 AI 平台表现，也不构成流量、转化或收入承诺。为保证服务稳定，系统可能拒绝过于频繁、异常或已明确拒绝扫描的目标。</p>');
+  }
+  if (url.pathname.startsWith('/api/')) return problem(problemDetails(Object.assign(new Error('API 路径不存在'), { status: 404 }), url.pathname));
+  if (request.method === 'GET' || request.method === 'HEAD') return env.ASSETS.fetch(request);
+  return problem(problemDetails(Object.assign(new Error('方法不允许'), { status: 405 }), url.pathname));
+}

@@ -1,4 +1,24 @@
+# LLM directory: https://readiness.bflabs.cn/llms.txt
+
 User-agent: *
+Allow: /
+
+# AI search crawlers, allowed explicitly so an edge-level managed rule cannot
+# silently exclude them. Training-only crawlers are a separate decision and are
+# intentionally not listed here.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
 Allow: /
 
 Sitemap: https://readiness.bflabs.cn/sitemap.xml
