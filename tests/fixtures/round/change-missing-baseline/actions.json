@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "actions": [
+    {
+      "action_id": "act_home_name",
+      "page_url": "https://example.com/",
+      "question_ids": ["q_brand"],
+      "fact_ids": ["fact_name"],
+      "issue_type": "fact",
+      "summary": "Put the public brand name on the homepage.",
+      "deliverable": null,
+      "status": "planned",
+      "released_at": null,
+      "release_evidence": null,
+      "public_recheck": null
+    }
+  ]
+}

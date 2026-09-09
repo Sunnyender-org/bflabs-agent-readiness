@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "experiment_id": "exp_valid",
+  "site_domain": "example.com",
+  "site_url": "https://example.com",
+  "target_market": {
+    "language": "en",
+    "region": "US"
+  },
+  "brand": {
+    "canonical_name": "Example",
+    "aliases": ["Example Co"],
+    "official_domains": ["example.com"]
+  },
+  "facts_version": "1",
+  "questions_version": "1",
+  "rubric_version": "1",
+  "representative_pages": [
+    {
+      "url": "https://example.com/",
+      "purpose": "homepage",
+      "selection_reason": "Public entry page.",
+      "fetch_status": "ok"
+    },
+    {
+      "url": "https://example.com/pricing",
+      "purpose": "pricing",
+      "selection_reason": "Pricing is a frequent comparison question.",
+      "fetch_status": "ok"
+    }
+  ],
+  "baseline": {
+    "round_id": "rnd_baseline",
+    "observation_file": "observations.jsonl",
+    "captured_window": {
+      "start": "2026-01-01T00:00:00Z",
+      "end": "2026-01-08T00:00:00Z"
+    }
+  },
+  "rounds": [
+    {
+      "round_id": "rnd_baseline",
+      "phase": "baseline",
+      "window": {
+        "start": "2026-01-01T00:00:00Z",
+        "end": "2026-01-08T00:00:00Z"
+      },
+      "compared_action_ids": []
+    },
+    {
+      "round_id": "rnd_after",
+      "phase": "after_release",
+      "window": {
+        "start": "2026-01-09T00:00:00Z",
+        "end": "2026-01-16T00:00:00Z"
+      },
+      "compared_action_ids": ["act_home_name"]
+    }
+  ],
+  "current_phase": "business_review",
+  "next_step": "核对公开页上的品牌全称是否已被答对。",
+  "updated_at": "2026-01-16T12:00:00Z"
+}

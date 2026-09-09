@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "experiment_id": "exp_example",
+  "site_domain": "example.com",
+  "site_url": "https://example.com",
+  "target_market": {
+    "language": "en",
+    "region": "US"
+  },
+  "brand": {
+    "canonical_name": "Example",
+    "aliases": ["Example Co"],
+    "official_domains": ["example.com"]
+  },
+  "facts_version": "1",
+  "questions_version": "1",
+  "rubric_version": "1",
+  "representative_pages": [
+    {
+      "url": "https://example.com/",
+      "purpose": "homepage",
+      "selection_reason": "Public entry page for the example site.",
+      "fetch_status": "unknown"
+    }
+  ],
+  "baseline": null,
+  "rounds": [],
+  "current_phase": "setup",
+  "next_step": "Write the facts this site should get right, then freeze the question list.",
+  "updated_at": "2026-01-01T00:00:00Z"
+}
