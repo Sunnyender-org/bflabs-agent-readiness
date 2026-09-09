@@ -32,6 +32,13 @@ class RouterTests(unittest.TestCase):
         for prompt in ["诊断网站", "发现问题机会", "生成价格页面蓝图"]:
             self.assertNotEqual(route(prompt)["kind"], "workflow")
 
+    def test_full_round_routes_to_root_capability(self) -> None:
+        decision = route("帮我完整做一轮 GEO 优化，从改前基线到复测")
+        self.assertEqual(decision["kind"], "capability")
+        self.assertEqual(decision["selected"]["id"], "bflabs-agent-readiness")
+        self.assertTrue(decision["executable"])
+        self.assertNotEqual(decision["kind"], "workflow")
+
 
 if __name__ == "__main__":
     unittest.main()

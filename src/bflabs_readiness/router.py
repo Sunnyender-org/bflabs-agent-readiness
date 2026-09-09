@@ -35,6 +35,16 @@ AMBIGUOUS: PatternGroup = _patterns(
     r"^(?:help|do|improve)\s+(?:geo|seo|website)\s*[.!]?$",
 )
 
+FULL_ROUND_PATTERNS: PatternGroup = _patterns(
+    r"(?:完整|整轮).{0,24}一轮.{0,16}(?:GEO|geo).{0,48}(?:基线|改前|复测|闭环)",
+    r"(?:GEO|geo).{0,20}(?:完整|整轮).{0,12}一轮.{0,40}(?:基线|改前|复测)",
+    r"(?:从).{0,6}(?:改前)?基线.{0,10}(?:到|至).{0,6}复测",
+    r"(?:继续|接着).{0,12}(?:上次|上一次|上轮).{0,10}(?:GEO|geo).{0,8}(?:轮次|整轮|闭环)",
+    r"(?:继续|接着).{0,8}(?:我的|这个)?(?:GEO|geo)\s*(?:轮次|整轮|闭环)",
+    r"(?:full|complete|entire).{0,20}geo.{0,20}(?:round|loop|cycle)",
+    r"(?:continue|resume).{0,28}(?:my|the|this|our)?\s*geo.{0,16}(?:round|loop|cycle)",
+)
+
 WORKFLOW_PATTERNS: List[Tuple[str, PatternGroup]] = [
     (
         "discover-diagnose",
@@ -70,6 +80,7 @@ CAPABILITY_PATTERNS: List[Tuple[str, PatternGroup]] = [
         "geo-measure",
         _patterns(
             r"(?:导入|聚合|统计|复算).{0,15}(?:样本|观测|回答|引用)",
+            r"(?:回答|样本|观测).{0,16}(?:导入|聚合|统计)",
             r"(?:联网率|引用率|吸收率|品牌出现率|推荐率|价格正确率)",
             r"(?:aggregate|import|measure|recalculate).{0,60}(?:observations|samples|answers|citations)",
         ),
@@ -115,7 +126,7 @@ CAPABILITY_PATTERNS: List[Tuple[str, PatternGroup]] = [
         _patterns(
             r"(?:诊断|审计|检查|评估).{0,20}(?:品牌|网站|官网|页面|geo|准备度)",
             r"(?:品牌|网站|官网|页面|geo).{0,20}(?:诊断|审计|检查|评估)",
-            r"(?:修复|优化|更新).{0,20}(?:价格页|答案页|llms\.txt|sitemap|schema|公开事实)",
+            r"(?:只修|修一下|修复|优化|更新).{0,20}(?:价格页|答案页|llms\.txt|sitemap|schema|公开事实)",
             r"(?:diagnose|audit|assess|check).{0,20}(?:brand|site|website|page|geo|readiness)",
             r"(?:fix|optimize|update).{0,20}(?:pricing page|answer page|llms\.txt|sitemap|schema|public facts)",
         ),
@@ -246,6 +257,9 @@ def route(text: str, registry: Optional[CapabilityRegistry] = None) -> Dict[str,
         return _decision_for_capability(original, normalized, registry, explicit_ids[0], explicit=True)
     if len(explicit_ids) > 1:
         return _terminal_decision(original, normalized, rejected=False)
+
+    if _matches(normalized, FULL_ROUND_PATTERNS):
+        return _decision_for_capability(original, normalized, registry, "bflabs-agent-readiness")
 
     for capability_id, patterns in CAPABILITY_PATTERNS:
         if _matches(normalized, patterns):
