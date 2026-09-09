@@ -369,6 +369,10 @@ class GeoRoundTests(unittest.TestCase):
         self.assertNotIn("changed_local", body)
         self.assertNotIn("measured_zero", body)
         self.assertIn("facts.json", footer)
+        # amount_minor 1000 USD is ten dollars, and rates always show their counts
+        self.assertIn("10.00 美元", body)
+        self.assertNotIn("美元 1000", body)
+        self.assertIn("注册率为 100.0%（1 / 1）", body)
 
     def test_report_embeds_measurement_stage_table(self) -> None:
         measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))

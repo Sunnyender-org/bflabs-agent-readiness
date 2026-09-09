@@ -56,7 +56,7 @@
           "baseline": { "type": "string" },
           "after": { "type": "string" },
           "basis": { "type": "string" },
-          "result": { "enum": ["improved", "regressed", "unchanged", "insufficient", "not_comparable"] }
+          "result": { "enum": ["改善", "回退", "持平", "样本不足", "不可比"] }
         }
       }
     }

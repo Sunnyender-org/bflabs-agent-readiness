@@ -2,6 +2,16 @@
 
 All notable changes to the public release candidate are documented here.
 
+## 0.5.0 - 2026-09-09
+
+- Described the free single-website GEO round in the root Skill (facts and goals, baseline before any change, issues and pages, change, public retest, answer comparison, business review, report, next round) and added a fixed start prompt that only points to the root Skill URL.
+- Added the Agent-only round contract: request classification, per-phase precondition checks, a mandatory real-baseline gate before answer-affecting changes, resume-from-record rules, and the resource URL scheme. Full-round and continuation requests route to the root capability; the two CLI workflows remain the only automatic multi-capability executions.
+- Served every Skill's companion files online at `/skills/<id>/<path>` with a versioned, SHA-256 manifest at `/skills/<id>/manifest.json`, ETag/304 support, traversal rejection, and honest 404s; a test proves the whole reference graph resolves from the root Skill and that served files are a subset of the Skill Hub package.
+- Extended geo-measure with rounds, sample slots, technical-failure replacements, duplicate-import exclusion, four observation lines, collection method, answer verdicts, before/after pairing with comparability reasons, and a readable stage table. Legacy single-batch input produces the same six metrics.
+- Added the portable single-site round record (experiment, facts, questions, actions, business events) with schemas, flat templates, cross-file validation, business-window analysis that never turns unknown coverage into zero, a Chinese stage report, and `bflabs-readiness round validate|status|report`.
+- Added the per-page fact checklist, three content layers, schema-must-match-body rule, issue classification, action lifecycle, and the frozen question-set method to geo-optimize, geo-discover, and geo-content; corrected the stale `discover-content` availability note.
+- Reframed the free/service boundary: the complete method is free; BFLabs' service is BFLabs performing implementation, repeated sampling, hosting, monitoring, and ongoing review.
+
 ## 0.4.6 - 2026-08-27
 
 - Reworked Actionable scoring around two capabilities: a stable human fallback and at least one structured Agent task path.

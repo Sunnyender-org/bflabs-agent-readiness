@@ -53,11 +53,24 @@ COMPARE_FIELDS = (
     "personalization_status",
 )
 LINE_LABELS = {
-    "A": "A brand recognition",
-    "B": "B given URL",
-    "C": "C autonomous retrieval",
-    "D": "D category selection",
+    "A": "A 品牌识别",
+    "B": "B 给网址后解释",
+    "C": "C 自主找到官网",
+    "D": "D 无品牌选型",
 }
+TERMINAL_LABELS = {"web": "网页", "app": "应用", "api": "接口"}
+VERDICT_LABELS = {
+    "improved": "改善",
+    "unchanged": "持平",
+    "regressed": "回退",
+    "insufficient": "样本不足",
+    "not_comparable": "不可比",
+}
+STAGE_VERSION_NAMES = (
+    ("question_version", "题目版本"),
+    ("facts_version", "事实版本"),
+    ("rubric_version", "判读版本"),
+)
 EMPTY_PAIR_SIDE = {"correct": 0, "valid_answers": 0, "valid_slots": 0, "planned_slots": 0}
 THREE_REP_LIMITATION = (
     "Three repetitions support process trial and direction only; they do not support statistical significance claims."
@@ -540,16 +553,33 @@ def _stage_side(counts: Optional[Dict[str, int]]) -> str:
     )
 
 
+def _version_label(value: Any) -> str:
+    if value in (None, []):
+        return "未记录"
+    if isinstance(value, list):
+        return "/".join(str(item) for item in value)
+    return str(value)
+
+
 def _stage_basis(baseline_members: Sequence[Dict[str, Any]], after_members: Sequence[Dict[str, Any]]) -> str:
     parts = []
-    for field in ("question_version", "facts_version", "rubric_version"):
+    for field, name in STAGE_VERSION_NAMES:
         left = _field_value(baseline_members, field)
         right = _field_value(after_members, field)
         if left == right:
-            parts.append("{}={}".format(field, left if left not in (None, []) else "unset"))
+            parts.append("{} {}".format(name, _version_label(left)))
         else:
-            parts.append("{}={}/{}".format(field, left if left not in (None, []) else "unset", right if right not in (None, []) else "unset"))
+            parts.append("{} {} → {}".format(name, _version_label(left), _version_label(right)))
     return " · ".join(parts)
+
+
+def _stage_question(pair: Dict[str, Any]) -> str:
+    members = list(pair["_after_members"]) + list(pair["_baseline_members"])
+    text = next((item.get("prompt_text") for item in members if item.get("prompt_text")), None)
+    if not text:
+        return pair["prompt_id"]
+    text = " ".join(str(text).split())
+    return text if len(text) <= 60 else text[:57] + "…"
 
 
 def _build_rounds(
@@ -661,8 +691,8 @@ def _build_stage_table(pairs: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         label = "{} · {} {} · {}".format(
             LINE_LABELS.get(pair["observation_line"], pair["observation_line"]),
             pair["platform"],
-            pair["terminal"],
-            pair["prompt_id"],
+            TERMINAL_LABELS.get(pair["terminal"], pair["terminal"]),
+            _stage_question(pair),
         )
         rows.append(
             {
@@ -670,7 +700,7 @@ def _build_stage_table(pairs: List[Dict[str, Any]]) -> List[Dict[str, str]]:
                 "baseline": _stage_side(pair["_baseline_counts"]),
                 "after": _stage_side(pair["_after_counts"]),
                 "basis": _stage_basis(pair["_baseline_members"], pair["_after_members"]),
-                "result": pair["verdict"],
+                "result": VERDICT_LABELS[pair["verdict"]],
             }
         )
     return rows

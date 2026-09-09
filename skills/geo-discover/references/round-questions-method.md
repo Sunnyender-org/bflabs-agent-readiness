@@ -1,6 +1,6 @@
 # Frozen Question Set For A Round
 
-Build `questions.json` for one website, one language, and one `questions_version`. Freeze the set before any site change. Field names match `references/round-record.md`.
+Build `questions.json` for one website, one language, and one `questions_version`. Freeze the set before any site change. Field names match the root Skill's round-record reference (served at `https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/round-record.md`).
 
 Observation lines are never merged:
 

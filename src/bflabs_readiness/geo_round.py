@@ -41,6 +41,8 @@ CURRENCY_LABELS = {
     "CNY": "人民币",
     "JPY": "日元",
 }
+# amount_minor is stored in the currency's minor unit; most ISO 4217 currencies use two decimals.
+ZERO_DECIMAL_CURRENCIES = {"JPY": 0, "KRW": 0, "VND": 0}
 
 
 def _as_dir(project_dir: Any) -> Path:
@@ -425,9 +427,7 @@ def _pages_and_facts(records: Dict[str, Optional[Dict[str, Any]]]) -> str:
             statements.append(_fact_statement(facts, fact_id))
     page_text = "、".join(pages) if pages else "尚未记下具体页面"
     if statements:
-        fact_text = "更新的事实：" + "；".join(statements)
-        if not fact_text.endswith(("。", ".", "！", "!", "？", "?")):
-            fact_text += "。"
+        fact_text = "更新的事实：" + "；".join(statement.rstrip("。.！!？?") for statement in statements) + "。"
     else:
         fact_text = "没有记下对应的对外事实。"
     local_only = any(item.get("status") == "changed_local" for item in changed)
@@ -511,21 +511,32 @@ def _zh_counts(counts: Dict[str, int]) -> str:
     )
 
 
+def _zh_amount(code: str, amount_minor: int) -> str:
+    decimals = ZERO_DECIMAL_CURRENCIES.get(code, 2)
+    if decimals == 0:
+        return "{:,}".format(amount_minor)
+    major, minor = divmod(amount_minor, 10 ** decimals)
+    return "{:,}.{:0{width}d}".format(major, minor, width=decimals)
+
+
 def _zh_revenue(revenue: Dict[str, int]) -> str:
     if not revenue:
         return "没有计入真实收入的成交金额。"
-    parts = ["{} {}".format(CURRENCY_LABELS.get(code, code), amount) for code, amount in sorted(revenue.items())]
+    parts = [
+        "{} {}".format(_zh_amount(code, amount), CURRENCY_LABELS.get(code, code))
+        for code, amount in sorted(revenue.items())
+    ]
     return "成交金额按币种分开（未换算）：" + "；".join(parts) + "。"
 
 
-def _zh_rate(name: str, rate: Optional[float], reason: Optional[str], numerator: int) -> str:
+def _zh_rate(name: str, rate: Optional[float], reason: Optional[str], numerator: int, denominator: int) -> str:
     if rate is None:
         if reason == "missing visits":
             return "没有访问次数，不能计算{}，只报注册 {} 次。".format(name, numerator)
         if reason == "missing signups":
             return "没有注册次数，不能计算{}，只报成交 {} 笔。".format(name, numerator)
         return "{}未计算。".format(name)
-    return "{}为 {:.1%}。".format(name, rate)
+    return "{}为 {:.1%}（{} / {}）。".format(name, rate, numerator, denominator)
 
 
 def _business_import_lines(item: Dict[str, Any]) -> List[str]:
@@ -592,10 +603,22 @@ def _denominators(analysis: Dict[str, Any]) -> str:
     for item in analysis.get("imports") or []:
         counts = item.get("counts") or {}
         lines.append(
-            _zh_rate("注册率", item.get("signup_rate"), item.get("signup_rate_reason"), counts.get("signup", 0))
+            _zh_rate(
+                "注册率",
+                item.get("signup_rate"),
+                item.get("signup_rate_reason"),
+                counts.get("signup", 0),
+                counts.get("visit", 0),
+            )
         )
         lines.append(
-            _zh_rate("成交率", item.get("purchase_rate"), item.get("purchase_rate_reason"), counts.get("purchase", 0))
+            _zh_rate(
+                "成交率",
+                item.get("purchase_rate"),
+                item.get("purchase_rate_reason"),
+                counts.get("purchase", 0),
+                counts.get("signup", 0),
+            )
         )
         if item.get("status") == "data_incomplete":
             lines.append("覆盖范围不明，这些次数不能当成完整窗口里的零。")

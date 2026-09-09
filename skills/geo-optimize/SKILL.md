@@ -61,7 +61,7 @@ An external diagnosis report is optional. When one is supplied, validate that it
 
 ## Single-Site Round
 
-When the work is one website and one frozen question set, use a project record directory. The record holds `experiment.json`, `facts.json`, `questions.json`, `actions.json`, `observations.jsonl`, `business-events.json`, and `report.md`. Field names and enums match `references/round-record.md`. Read [page-fact-checklist.md](references/page-fact-checklist.md) before scoring a page.
+When the work is one website and one frozen question set, use a project record directory. The record holds `experiment.json`, `facts.json`, `questions.json`, `actions.json`, `observations.jsonl`, `business-events.json`, and `report.md`. Field names and enums match the root Skill's round-record reference (served at `https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/round-record.md`). Read [page-fact-checklist.md](references/page-fact-checklist.md) before scoring a page.
 
 ### Representative pages
 

@@ -417,8 +417,11 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(baseline["counts"]["valid_slots"], 3)
         self.assertEqual(baseline["counts"]["attempts"], 4)
         self.assertEqual(baseline["counts"]["technical_failures"], 1)
-        self.assertEqual(report["stage_table"][0]["result"], "regressed")
+        self.assertEqual(pair["verdict"], "regressed")
+        self.assertEqual(report["stage_table"][0]["result"], "回退")
         self.assertIn("正确 2/3", report["stage_table"][0]["baseline"])
+        self.assertIn("题目版本", report["stage_table"][0]["basis"])
+        self.assertNotIn("question_version", report["stage_table"][0]["basis"])
         self.assertIn("fixture-only: does not demonstrate live platform visibility", report["limitations"])
         self.assertEqual(result["quality_report"]["status"], "pass")
 
