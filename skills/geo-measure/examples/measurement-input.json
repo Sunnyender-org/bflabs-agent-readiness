@@ -3,5 +3,6 @@
   "capability": "geo-measure",
   "captured_at": "2026-08-11T06:30:00Z",
   "site_domain": "beefapi.com",
+  "notes": "zero-valid example; empty observations",
   "observations": []
 }

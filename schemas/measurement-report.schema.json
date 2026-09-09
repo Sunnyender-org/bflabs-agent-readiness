@@ -36,7 +36,30 @@
       }
     },
     "research_rule_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
-    "limitations": { "type": "array", "items": { "type": "string" } }
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "rounds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/roundGroup" }
+    },
+    "pairs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pair" }
+    },
+    "stage_table": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "baseline", "after", "basis", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string" },
+          "baseline": { "type": "string" },
+          "after": { "type": "string" },
+          "basis": { "type": "string" },
+          "result": { "enum": ["improved", "regressed", "unchanged", "insufficient", "not_comparable"] }
+        }
+      }
+    }
   },
   "$defs": {
     "metric": {
@@ -57,6 +80,68 @@
           ]
         },
         "denominator_rule": { "type": "string" }
+      }
+    },
+    "roundCounts": {
+      "type": "object",
+      "required": ["planned_slots", "valid_slots", "attempts", "technical_failures", "valid_answers", "correct", "partially_correct", "no_answer", "brand_mentioned", "recommended", "site_cited"],
+      "additionalProperties": false,
+      "properties": {
+        "planned_slots": { "type": "integer", "minimum": 0 },
+        "valid_slots": { "type": "integer", "minimum": 0 },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "technical_failures": { "type": "integer", "minimum": 0 },
+        "valid_answers": { "type": "integer", "minimum": 0 },
+        "correct": { "type": "integer", "minimum": 0 },
+        "partially_correct": { "type": "integer", "minimum": 0 },
+        "no_answer": { "type": "integer", "minimum": 0 },
+        "brand_mentioned": { "type": "integer", "minimum": 0 },
+        "recommended": { "type": "integer", "minimum": 0 },
+        "site_cited": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "pairSide": {
+      "type": "object",
+      "required": ["correct", "valid_answers", "valid_slots", "planned_slots"],
+      "additionalProperties": false,
+      "properties": {
+        "correct": { "type": "integer", "minimum": 0 },
+        "valid_answers": { "type": "integer", "minimum": 0 },
+        "valid_slots": { "type": "integer", "minimum": 0 },
+        "planned_slots": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "roundGroup": {
+      "type": "object",
+      "required": ["round_id", "phase", "observation_line", "prompt_id", "platform", "terminal", "counts"],
+      "additionalProperties": false,
+      "properties": {
+        "round_id": { "type": "string" },
+        "phase": { "enum": ["baseline", "after_release", "follow_up"] },
+        "observation_line": { "enum": ["A", "B", "C", "D"] },
+        "prompt_id": { "type": "string" },
+        "platform": { "type": "string" },
+        "terminal": { "type": "string" },
+        "counts": { "$ref": "#/$defs/roundCounts" }
+      }
+    },
+    "pair": {
+      "type": "object",
+      "required": ["baseline_round_id", "after_round_id", "phase", "prompt_id", "observation_line", "platform", "terminal", "comparable", "incomparable_reasons", "baseline", "after", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "baseline_round_id": { "type": ["string", "null"] },
+        "after_round_id": { "type": "string" },
+        "phase": { "enum": ["after_release", "follow_up"] },
+        "prompt_id": { "type": "string" },
+        "observation_line": { "enum": ["A", "B", "C", "D"] },
+        "platform": { "type": "string" },
+        "terminal": { "type": "string" },
+        "comparable": { "type": "boolean" },
+        "incomparable_reasons": { "type": "array", "items": { "type": "string" } },
+        "baseline": { "$ref": "#/$defs/pairSide" },
+        "after": { "$ref": "#/$defs/pairSide" },
+        "verdict": { "enum": ["improved", "regressed", "unchanged", "insufficient", "not_comparable"] }
       }
     }
   }

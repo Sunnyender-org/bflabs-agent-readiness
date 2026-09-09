@@ -3,5 +3,52 @@
   "capability": "geo-measure",
   "captured_at": "2026-01-01T00:00:00Z",
   "site_domain": "example.com",
-  "observations": []
+  "experiment_id": "exp_template",
+  "questions_version": "qv_template",
+  "planned_slots_per_question": 3,
+  "notes": "synthetic template; replace the observation before use",
+  "actions": [
+    {
+      "action_id": "act_template_docs",
+      "released_at": "2026-01-01T00:00:00Z",
+      "release_evidence": "https://example.com/changelog"
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs_replace_me",
+      "captured_at": "2026-01-01T00:00:00Z",
+      "platform": "ChatGPT",
+      "terminal": "web",
+      "prompt_id": "prompt-1",
+      "prompt_text": "Replace this prompt",
+      "session_id": "session-1",
+      "answer_text": "Replace this answer",
+      "answer_hash": "sha256:8bb8f9e0522ed1bd91cdbfb47a368b9977edee4233fe89990f5a86efa9cececa",
+      "source_kind": "model-answer",
+      "network_status": "unknown",
+      "network_evidence": null,
+      "cited_urls": [],
+      "content_absorbed": "unknown",
+      "brand_mentioned": "unknown",
+      "recommended": "unknown",
+      "dynamic_fact_correct": "unknown",
+      "evidence_complete": true,
+      "exclusion_reason": null,
+      "experiment_id": "exp_template",
+      "round_id": "round_template",
+      "phase": "baseline",
+      "question_version": "qv_template",
+      "facts_version": "fv_template",
+      "rubric_version": "rv_template",
+      "observation_line": "A",
+      "intent_tag": "brand",
+      "language": "en",
+      "sample_slot_id": "slot_1",
+      "attempt_index": 1,
+      "execution_status": "valid",
+      "collection_method": "manual_export",
+      "answer_verdict": "unknown"
+    }
+  ]
 }
