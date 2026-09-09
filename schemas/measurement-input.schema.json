@@ -11,6 +11,13 @@
     "site_domain": { "type": "string", "minLength": 1 },
     "experiment_id": { "type": "string", "minLength": 1 },
     "questions_version": { "type": "string", "minLength": 1 },
+    "baseline_round_id": { "type": "string", "minLength": 1 },
+    "sample_slot_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
     "planned_slots_per_question": { "type": "integer", "minimum": 1, "default": 3 },
     "actions": {
       "type": "array",

@@ -15,11 +15,11 @@ Read [references/measurement-boundary.md](references/measurement-boundary.md) be
 ## Workflow
 
 1. Preserve platform, terminal, prompt, session, captured time, raw answer text/hash, network evidence, citations, and exclusion reason. Keep optional round fields when present: sample slot, observation line, versions, verdict, collection method, and replacement links.
-2. Exclude ordinary web search results, incomplete evidence, technical failures, duplicate imports, and a second valid answer in the same sample slot from valid model-answer denominators.
-3. Report input, valid, excluded, and missing counts. A zero denominator produces `null`, never a fake `0%`. Unmeasured is not zero.
+2. Exclude ordinary web search results, incomplete evidence, technical failures, duplicate imports, unplanned slots, missing slots, shared sessions, and a second valid answer in the same sample slot from valid model-answer denominators.
+3. Report input, valid, excluded, and missing counts. A zero denominator produces `null`, never a fake `0%`. Unmeasured is not zero. Unjudged answers are not wrong.
 4. Compute six separate metrics: network, site citation, content absorption, brand mention, recommendation, and dynamic fact accuracy. Never merge observation lines A, B, C, and D into one score.
 5. Add 95% Wilson intervals and platform/terminal strata.
-6. When `round_id` is present, group by round, phase, observation line, question, platform, and terminal. Report planned slots, valid slots, attempts, technical failures, and answer verdicts together. Pair each after-release or follow-up group to the matching baseline only when conditions are comparable.
+6. When `round_id` is present, bind the baseline with `baseline_round_id` (or the only baseline round in the file). Group by round, phase, observation line, question, platform, and terminal. Report planned slots, valid slots, judged answers, attempts, technical failures, and answer verdicts together. Pair each after-release or follow-up group to that bound baseline only when conditions are known and comparable.
 7. Emit a measurement report, research context, evidence ledger, and quality report through Artifact Protocol 1.0. A readable `stage_table` is for rendering; it is not a ranking.
 
 Observation lines stay separate:

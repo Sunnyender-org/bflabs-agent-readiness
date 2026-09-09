@@ -6,9 +6,10 @@ import csv
 import hashlib
 import json
 import math
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from urllib.parse import urlparse
 
 from ..evidence import stable_claim_id
@@ -44,14 +45,15 @@ OPTIONAL_CSV_SCALARS = (
     "answer_verdict",
 )
 OPTIONAL_CSV_JSON = ("fact_judgement", "compared_action_ids", "evidence_refs")
-COMPARE_FIELDS = (
+COMPARE_KNOWN_FIELDS = (
     "question_version",
     "facts_version",
     "rubric_version",
     "language",
     "region",
-    "personalization_status",
 )
+JUDGED_VERDICTS = {"correct", "partially_correct", "wrong", "no_answer"}
+KNOWN_PERSONALIZATION = {"off", "on"}
 LINE_LABELS = {
     "A": "A 品牌识别",
     "B": "B 给网址后解释",
@@ -72,6 +74,7 @@ STAGE_VERSION_NAMES = (
     ("rubric_version", "判读版本"),
 )
 EMPTY_PAIR_SIDE = {"correct": 0, "valid_answers": 0, "valid_slots": 0, "planned_slots": 0}
+AMBIGUOUS_BASELINE_WARNING = "multiple baseline rounds without baseline_round_id"
 THREE_REP_LIMITATION = (
     "Three repetitions support process trial and direction only; they do not support statistical significance claims."
 )
@@ -84,6 +87,50 @@ DEFAULT_LIMITATIONS = [
 
 def _answer_hash(text: str) -> str:
     return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _normalize_prompt(text: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", text).split()).strip().casefold()
+
+
+def _prompt_fingerprint(text: str) -> str:
+    return hashlib.sha256(_normalize_prompt(text).encode("utf-8")).hexdigest()
+
+
+def _is_judged(observation: Dict[str, Any]) -> bool:
+    return observation.get("answer_verdict") in JUDGED_VERDICTS
+
+
+def _has_release_evidence(action: Dict[str, Any]) -> bool:
+    evidence = action.get("release_evidence")
+    return evidence is not None and str(evidence).strip() != ""
+
+
+def _planned_slot_ids(request: Dict[str, Any]) -> List[str]:
+    specified = request.get("sample_slot_ids")
+    if specified:
+        return list(specified)
+    planned = request.get("planned_slots_per_question", 3)
+    return ["slot_{}".format(index) for index in range(1, planned + 1)]
+
+
+def _empty_counts(planned_slots: int) -> Dict[str, int]:
+    return {
+        "planned_slots": planned_slots,
+        "valid_slots": 0,
+        "attempts": 0,
+        "technical_failures": 0,
+        "valid_answers": 0,
+        "judged_answers": 0,
+        "unjudged_answers": 0,
+        "exploratory_answers": 0,
+        "correct": 0,
+        "partially_correct": 0,
+        "no_answer": 0,
+        "brand_mentioned": 0,
+        "recommended": 0,
+        "site_cited": 0,
+    }
 
 
 def _parse_tri_state(value: Any) -> Any:
@@ -396,6 +443,100 @@ def _apply_duplicate_slots(observations: List[Dict[str, Any]]) -> None:
         first_valid[key] = item["id"]
 
 
+def _apply_slot_plan(observations: List[Dict[str, Any]], planned_slot_ids: Sequence[str]) -> None:
+    planned = set(planned_slot_ids)
+    for item in observations:
+        if not item.get("round_id") or item.get("exclusion_reason"):
+            continue
+        slot = item.get("sample_slot_id")
+        if not slot:
+            if _is_valid(item):
+                item["exclusion_reason"] = "missing_slot"
+            continue
+        if slot not in planned:
+            item["exclusion_reason"] = "unplanned_slot"
+
+
+def _session_group(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str, str]]:
+    if not observation.get("round_id"):
+        return None
+    return (
+        observation["round_id"],
+        observation["prompt_id"],
+        observation["platform"],
+        observation["terminal"],
+    )
+
+
+def _apply_shared_sessions(observations: List[Dict[str, Any]]) -> None:
+    seen: Dict[Tuple[str, str, str, str], Set[str]] = {}
+    ordered = sorted(observations, key=lambda item: (_parse_dt(item["captured_at"]), item["id"]))
+    for item in ordered:
+        key = _session_group(item)
+        if key is None or not _is_valid(item):
+            continue
+        used = seen.setdefault(key, set())
+        session_id = item["session_id"]
+        if session_id in used:
+            item["exclusion_reason"] = "shared_session"
+            continue
+        used.add(session_id)
+
+
+def _prompt_consistency_blockers(observations: List[Dict[str, Any]]) -> List[str]:
+    grouped: Dict[Tuple[str, str, str, str, str, str], List[Dict[str, Any]]] = {}
+    for item in observations:
+        key = _group_identity(item)
+        if key is None or not _is_valid(item):
+            continue
+        grouped.setdefault(key, []).append(item)
+    blockers: List[str] = []
+    for members in grouped.values():
+        fingerprints = {_prompt_fingerprint(item["prompt_text"]) for item in members}
+        if len(fingerprints) > 1:
+            ids = ", ".join(item["id"] for item in members)
+            blockers.append("prompt text differs within round group {}".format(ids))
+    return blockers
+
+
+def _group_fingerprint(members: Sequence[Dict[str, Any]]) -> Optional[str]:
+    preferred = [item for item in members if _is_valid(item)] or list(members)
+    fingerprints = _unique(_prompt_fingerprint(item["prompt_text"]) for item in preferred if item.get("prompt_text"))
+    if len(fingerprints) == 1:
+        return fingerprints[0]
+    return None
+
+
+def _valid_field_states(members: Sequence[Dict[str, Any]], field: str) -> Tuple[bool, List[Any]]:
+    valid = [item for item in members if _is_valid(item)]
+    missing = any(item.get(field) in (None, "") for item in valid)
+    values = _unique(item.get(field) for item in valid if item.get(field) not in (None, ""))
+    return missing, values
+
+
+def _baseline_round_ids(observations: Sequence[Dict[str, Any]]) -> List[str]:
+    return _unique(
+        item["round_id"]
+        for item in observations
+        if item.get("phase") == "baseline" and item.get("round_id")
+    )
+
+
+def _resolve_bound_baseline(
+    request: Dict[str, Any],
+    observations: Sequence[Dict[str, Any]],
+) -> Tuple[Optional[str], bool]:
+    specified = request.get("baseline_round_id")
+    if specified:
+        return specified, False
+    ids = _baseline_round_ids(observations)
+    if len(ids) == 1:
+        return ids[0], False
+    if len(ids) > 1:
+        return None, True
+    return None, False
+
+
 def _group_identity(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str, str, str, str]]:
     required = ("round_id", "phase", "observation_line", "prompt_id", "platform", "terminal")
     if any(not observation.get(field) for field in required):
@@ -426,16 +567,20 @@ def _round_counts(
 ) -> Dict[str, int]:
     attempt_members = [item for item in members if item.get("exclusion_reason") != "duplicate_import"]
     valid = [item for item in attempt_members if _is_valid(item)]
+    judged = [item for item in valid if _is_judged(item)]
     valid_slots = {item["sample_slot_id"] for item in valid if item.get("sample_slot_id")}
     return {
         "planned_slots": planned_slots,
-        "valid_slots": len(valid_slots),
+        "valid_slots": min(len(valid_slots), planned_slots),
         "attempts": len(attempt_members),
         "technical_failures": sum(_is_technical_failure(item) for item in attempt_members),
         "valid_answers": len(valid),
-        "correct": sum(item.get("answer_verdict") == "correct" for item in valid),
-        "partially_correct": sum(item.get("answer_verdict") == "partially_correct" for item in valid),
-        "no_answer": sum(item.get("answer_verdict") == "no_answer" for item in valid),
+        "judged_answers": len(judged),
+        "unjudged_answers": len(valid) - len(judged),
+        "exploratory_answers": sum(item.get("exclusion_reason") == "unplanned_slot" for item in attempt_members),
+        "correct": sum(item.get("answer_verdict") == "correct" for item in judged),
+        "partially_correct": sum(item.get("answer_verdict") == "partially_correct" for item in judged),
+        "no_answer": sum(item.get("answer_verdict") == "no_answer" for item in judged),
         "brand_mentioned": sum(item.get("brand_mentioned") is True for item in valid),
         "recommended": sum(item.get("recommended") is True for item in valid),
         "site_cited": sum(_site_cited(item, site_domain) for item in valid),
@@ -471,9 +616,25 @@ def _comparability_reasons(
     observation_line: str,
 ) -> List[str]:
     reasons: List[str] = []
-    for field in COMPARE_FIELDS:
-        if _field_value(baseline_members, field) != _field_value(after_members, field):
+    for field in COMPARE_KNOWN_FIELDS:
+        left_missing, left_values = _valid_field_states(baseline_members, field)
+        right_missing, right_values = _valid_field_states(after_members, field)
+        if left_missing or right_missing:
+            reasons.append("{}_missing".format(field))
+        elif left_values != right_values:
             reasons.append("{}_mismatch".format(field))
+
+    baseline_personalization = [item.get("personalization_status") for item in baseline_members if _is_valid(item)]
+    after_personalization = [item.get("personalization_status") for item in after_members if _is_valid(item)]
+    personalization = baseline_personalization + after_personalization
+    if personalization and any(value not in KNOWN_PERSONALIZATION for value in personalization):
+        reasons.append("personalization_unknown")
+    elif baseline_personalization and after_personalization:
+        left = _unique(baseline_personalization)
+        right = _unique(after_personalization)
+        if left != right:
+            reasons.append("personalization_status_mismatch")
+
     baseline_model = _visible_model(baseline_members)
     after_model = _visible_model(after_members)
     if baseline_model == "unknown" or after_model == "unknown":
@@ -485,11 +646,23 @@ def _comparability_reasons(
     after_valid = [item for item in after_members if _is_valid(item)]
     checked = baseline_valid + after_valid
     if checked:
-        if observation_line == "A":
+        if any(item.get("network_status") == "unknown" for item in checked):
+            reasons.append("network_mode_unverified")
+        elif observation_line == "A":
             if any(item["network_status"] != "not-used" for item in checked):
                 reasons.append("network_mode_unverified")
         elif any(item["network_status"] != "verified" for item in checked):
             reasons.append("network_mode_unverified")
+
+    left_fp = _unique(_prompt_fingerprint(item["prompt_text"]) for item in baseline_valid)
+    right_fp = _unique(_prompt_fingerprint(item["prompt_text"]) for item in after_valid)
+    if len(left_fp) > 1 or len(right_fp) > 1 or (left_fp and right_fp and left_fp != right_fp):
+        reasons.append("prompt_text_mismatch")
+
+    baseline_sessions = {item["session_id"] for item in baseline_valid}
+    after_sessions = {item["session_id"] for item in after_valid}
+    if baseline_sessions & after_sessions:
+        reasons.append("session_reused")
 
     if baseline_members and after_members:
         baseline_latest = max(_parse_dt(item["captured_at"]) for item in baseline_members)
@@ -498,7 +671,7 @@ def _comparability_reasons(
             reasons.append("after_not_later_than_baseline")
 
     if after_phase == "after_release":
-        for item in after_valid or list(after_members):
+        for item in after_valid:
             action_ids = item.get("compared_action_ids") or []
             if not action_ids:
                 reasons.append("release_evidence_missing")
@@ -506,33 +679,51 @@ def _comparability_reasons(
             matched_after_release = False
             saw_known_action = False
             sampled_before = False
+            evidence_missing = False
             for action_id in action_ids:
                 action = actions.get(action_id)
                 if action is None:
                     continue
                 saw_known_action = True
-                if _parse_dt(action["released_at"]) < _parse_dt(item["captured_at"]):
+                released_earlier = _parse_dt(action["released_at"]) < _parse_dt(item["captured_at"])
+                if released_earlier and _has_release_evidence(action):
                     matched_after_release = True
+                elif released_earlier:
+                    evidence_missing = True
                 else:
                     sampled_before = True
             if matched_after_release:
                 continue
-            if sampled_before:
-                reasons.append("sampled_before_release")
-            elif not saw_known_action:
+            if evidence_missing or not saw_known_action:
                 reasons.append("release_evidence_missing")
+            elif sampled_before:
+                reasons.append("sampled_before_release")
     return _unique(reasons)
 
 
-def _verdict(comparable: bool, baseline_counts: Dict[str, int], after_counts: Dict[str, int]) -> str:
+def _insufficiency_reasons(baseline_counts: Dict[str, int], after_counts: Dict[str, int]) -> List[str]:
+    if (
+        baseline_counts.get("unjudged_answers", 0) > 0
+        or after_counts.get("unjudged_answers", 0) > 0
+        or baseline_counts.get("judged_answers", 0) == 0
+        or after_counts.get("judged_answers", 0) == 0
+    ):
+        return ["unjudged_answers"]
+    return []
+
+
+def _verdict(
+    comparable: bool,
+    baseline_counts: Dict[str, int],
+    after_counts: Dict[str, int],
+    insufficiency: Sequence[str],
+) -> str:
     if not comparable:
         return "not_comparable"
-    baseline_valid = baseline_counts["valid_answers"]
-    after_valid = after_counts["valid_answers"]
-    if baseline_valid == 0 or after_valid == 0:
+    if insufficiency:
         return "insufficient"
-    baseline_rate = baseline_counts["correct"] / baseline_valid
-    after_rate = after_counts["correct"] / after_valid
+    baseline_rate = baseline_counts["correct"] / baseline_counts["judged_answers"]
+    after_rate = after_counts["correct"] / after_counts["judged_answers"]
     if after_rate > baseline_rate:
         return "improved"
     if after_rate < baseline_rate:
@@ -543,8 +734,10 @@ def _verdict(comparable: bool, baseline_counts: Dict[str, int], after_counts: Di
 def _stage_side(counts: Optional[Dict[str, int]]) -> str:
     if counts is None:
         return "未测"
-    return "正确 {}/{} · 有效样本位 {}/{} · 尝试 {} 次 · 技术失败 {} 次".format(
+    return "正确 {}/{} · 已判读 {}/{} · 有效样本位 {}/{} · 尝试 {} 次 · 技术失败 {} 次".format(
         counts["correct"],
+        counts["judged_answers"],
+        counts["judged_answers"],
         counts["valid_answers"],
         counts["valid_slots"],
         counts["planned_slots"],
@@ -606,6 +799,7 @@ def _build_rounds(
             "platform": key[4],
             "terminal": key[5],
             "counts": counts,
+            "prompt_fingerprint": _group_fingerprint(members),
         }
         rounds.append(record)
         details[key] = {"record": record, "members": members, "counts": counts}
@@ -615,53 +809,51 @@ def _build_rounds(
 def _match_baseline(
     after_key: Tuple[str, str, str, str, str, str],
     details: Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]],
+    bound_round_id: Optional[str],
 ) -> Optional[Tuple[str, str, str, str, str, str]]:
-    candidates = [
-        key
-        for key in details
-        if key[1] == "baseline"
-        and key[2:] == after_key[2:]
-    ]
-    if not candidates:
+    if not bound_round_id:
         return None
-    after_members = details[after_key]["members"]
-    after_earliest = min(_parse_dt(item["captured_at"]) for item in after_members)
-    earlier = []
-    for key in candidates:
-        latest = max(_parse_dt(item["captured_at"]) for item in details[key]["members"])
-        if latest < after_earliest:
-            earlier.append((latest, key))
-    if earlier:
-        earlier.sort()
-        return earlier[-1][1]
-    return sorted(candidates)[0]
+    for key in details:
+        if key[0] == bound_round_id and key[1] == "baseline" and key[2:] == after_key[2:]:
+            return key
+    return None
 
 
 def _build_pairs(
     details: Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]],
     actions: Dict[str, Dict[str, Any]],
+    bound_round_id: Optional[str],
+    ambiguous: bool,
+    planned_slots: int,
 ) -> List[Dict[str, Any]]:
     pairs: List[Dict[str, Any]] = []
     after_keys = [key for key in details if key[1] in {"after_release", "follow_up"}]
+    empty_counts = _empty_counts(planned_slots)
     for after_key in sorted(after_keys):
         after = details[after_key]
-        baseline_key = _match_baseline(after_key, details)
-        baseline = details.get(baseline_key) if baseline_key else None
-        baseline_members = baseline["members"] if baseline else []
-        reasons = []
-        if baseline is None:
-            reasons.append("baseline_missing")
+        reasons: List[str] = []
+        baseline_key = None
+        baseline = None
+        if ambiguous:
+            reasons.append("baseline_ambiguous")
         else:
-            reasons = _comparability_reasons(
-                baseline_members,
-                after["members"],
-                after_key[1],
-                actions,
-                after_key[2],
-            )
+            baseline_key = _match_baseline(after_key, details, bound_round_id)
+            baseline = details.get(baseline_key) if baseline_key else None
+            if baseline is None:
+                reasons.append("baseline_missing")
+            else:
+                reasons = _comparability_reasons(
+                    baseline["members"],
+                    after["members"],
+                    after_key[1],
+                    actions,
+                    after_key[2],
+                )
         comparable = not reasons
-        baseline_counts = baseline["counts"] if baseline else {**EMPTY_PAIR_SIDE, "attempts": 0, "technical_failures": 0}
-        verdict = _verdict(comparable, baseline_counts, after["counts"])
+        baseline_members = baseline["members"] if baseline else []
+        baseline_counts = baseline["counts"] if baseline else empty_counts
+        insufficiency = _insufficiency_reasons(baseline_counts, after["counts"])
+        verdict = _verdict(comparable, baseline_counts, after["counts"], insufficiency)
         pairs.append(
             {
                 "baseline_round_id": baseline_key[0] if baseline_key else None,
@@ -673,6 +865,7 @@ def _build_pairs(
                 "terminal": after_key[5],
                 "comparable": comparable,
                 "incomparable_reasons": reasons,
+                "insufficiency_reasons": insufficiency,
                 "baseline": _pair_side(baseline_counts) if baseline else dict(EMPTY_PAIR_SIDE),
                 "after": _pair_side(after["counts"]),
                 "verdict": verdict,
@@ -738,7 +931,19 @@ def run_geo_measure(request: Dict[str, Any]) -> Dict[str, Any]:
         checks.append({"id": "replacement-discipline", "status": "blocked", "message": "; ".join(replacement_blockers)})
     else:
         checks.append({"id": "replacement-discipline", "status": "pass", "message": "replacements stay in-slot and replace technical failures only"})
+    has_rounds = any(item.get("round_id") for item in observations)
+    planned_slot_ids = _planned_slot_ids(request) if has_rounds else []
+    if has_rounds:
+        _apply_slot_plan(observations, planned_slot_ids)
+        _apply_shared_sessions(observations)
     _apply_duplicate_slots(observations)
+    if has_rounds:
+        prompt_blockers = _prompt_consistency_blockers(observations)
+        if prompt_blockers:
+            blockers.extend(prompt_blockers)
+            checks.append({"id": "prompt-fingerprint", "status": "blocked", "message": "; ".join(prompt_blockers)})
+        else:
+            checks.append({"id": "prompt-fingerprint", "status": "pass", "message": "prompt text is consistent within each round group"})
 
     valid = [item for item in observations if _is_valid(item)]
     search_results = [item for item in observations if item["source_kind"] == "ordinary-web-search-result"]
@@ -781,12 +986,24 @@ def run_geo_measure(request: Dict[str, Any]) -> Dict[str, Any]:
             }
         )
 
-    has_rounds = any(item.get("round_id") for item in observations)
-    planned_slots = request.get("planned_slots_per_question", 3)
+    planned_slots = len(planned_slot_ids) if planned_slot_ids else request.get("planned_slots_per_question", 3)
     actions = {item["action_id"]: item for item in request.get("actions") or []}
+    bound_baseline_id = None
     if has_rounds:
+        bound_baseline_id, ambiguous = _resolve_bound_baseline(request, observations)
+        if ambiguous:
+            warnings.append(AMBIGUOUS_BASELINE_WARNING)
+            checks.append({"id": "baseline-binding", "status": "warning", "message": warnings[-1]})
+        else:
+            checks.append(
+                {
+                    "id": "baseline-binding",
+                    "status": "pass",
+                    "message": "baseline round {}".format(bound_baseline_id) if bound_baseline_id else "no baseline round in input",
+                }
+            )
         rounds, details = _build_rounds(observations, request["site_domain"], planned_slots)
-        pairs = _build_pairs(details, actions)
+        pairs = _build_pairs(details, actions, bound_baseline_id, ambiguous, planned_slots)
         stage_table = _build_stage_table(pairs)
         pairs = _public_pairs(pairs)
     else:
@@ -811,6 +1028,10 @@ def run_geo_measure(request: Dict[str, Any]) -> Dict[str, Any]:
         "pairs": pairs,
         "stage_table": stage_table,
     }
+    if has_rounds:
+        report["experiment_id"] = request.get("experiment_id")
+        report["questions_version"] = request.get("questions_version")
+        report["baseline_round_id"] = bound_baseline_id
     items = [
         {
             "id": "ev_" + item["id"][4:],

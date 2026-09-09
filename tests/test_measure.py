@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import csv
 import hashlib
 import json
@@ -424,6 +425,14 @@ class MeasureTests(unittest.TestCase):
         self.assertNotIn("question_version", report["stage_table"][0]["basis"])
         self.assertIn("fixture-only: does not demonstrate live platform visibility", report["limitations"])
         self.assertEqual(result["quality_report"]["status"], "pass")
+        self.assertEqual(report["experiment_id"], "exp_test_rounds")
+        self.assertEqual(report["questions_version"], "qv1")
+        self.assertEqual(report["baseline_round_id"], "r_base")
+        self.assertEqual(baseline["counts"]["judged_answers"], 3)
+        self.assertEqual(baseline["counts"]["unjudged_answers"], 0)
+        self.assertEqual(baseline["counts"]["exploratory_answers"], 0)
+        self.assertIn("已判读 3/3", report["stage_table"][0]["baseline"])
+        self.assertTrue(pair["insufficiency_reasons"] == [])
 
     def test_csv_with_new_columns_round_trips(self) -> None:
         observation = make_obs(
@@ -476,10 +485,164 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(chatgpt["verdict"], "improved")
         self.assertFalse(gemini["comparable"])
         self.assertIn("question_version_mismatch", gemini["incomparable_reasons"])
-        baseline = next(item for item in report["rounds"] if item["round_id"] == "r_base_chatgpt")
+        self.assertEqual(chatgpt["insufficiency_reasons"], [])
+        baseline = next(item for item in report["rounds"] if item["round_id"] == "r_base" and item["platform"] == "ChatGPT")
         self.assertEqual(baseline["counts"]["valid_answers"], 3)
         self.assertEqual(baseline["counts"]["attempts"], 4)
         self.assertEqual(baseline["counts"]["technical_failures"], 1)
+        self.assertEqual(report["baseline_round_id"], "r_base")
+        self.assertEqual(report["experiment_id"], "exp_synthetic_pairing")
+        self.assertEqual(report["questions_version"], "qv1")
+
+    def test_review_unjudged_baseline_is_insufficient_not_improved(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        for item in request["observations"]:
+            if item["phase"] == "baseline":
+                item["answer_verdict"] = "unknown"
+        result, report = report_of(request)
+        pair = first_pair(report)
+        self.assertEqual(pair["verdict"], "insufficient")
+        self.assertNotEqual(pair["verdict"], "improved")
+        self.assertIn("unjudged_answers", pair["insufficiency_reasons"])
+        self.assertEqual(pair["baseline"]["correct"], 0)
+        self.assertEqual(first_round(report, "baseline")["counts"]["unjudged_answers"], 3)
+        self.assertEqual(first_round(report, "baseline")["counts"]["judged_answers"], 0)
+        self.assertEqual(result["quality_report"]["status"], "pass")
+
+    def test_review_unbound_second_baseline_is_ambiguous(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        extras = []
+        for index, item in enumerate(
+            item for item in request["observations"] if item["phase"] == "baseline" and item.get("execution_status") == "valid"
+        ):
+            extra = copy.deepcopy(item)
+            extra["id"] = "obs_r_nb{}".format(index + 1)
+            extra["round_id"] = "r_new_baseline"
+            extra["session_id"] = "new-" + item["session_id"]
+            extra["captured_at"] = "2026-05-20T10:{:02d}:00Z".format(index)
+            extra["answer_verdict"] = "wrong"
+            extra.pop("replacement_of", None)
+            extras.append(extra)
+        request["observations"].extend(extras)
+        result, report = report_of(request)
+        pair = first_pair(report)
+        self.assertEqual(pair["verdict"], "not_comparable")
+        self.assertIn("baseline_ambiguous", pair["incomparable_reasons"])
+        self.assertIsNone(pair["baseline_round_id"])
+        self.assertIsNone(report["baseline_round_id"])
+        self.assertEqual(result["quality_report"]["status"], "pass_with_warnings")
+        self.assertIn("multiple baseline rounds without baseline_round_id", result["quality_report"]["warnings"])
+        self.assertTrue(any(item["round_id"] == "r_new_baseline" for item in report["rounds"]))
+        self.assertFalse(any(item.get("baseline_round_id") == "r_new_baseline" for item in report["pairs"]))
+
+        bound = copy.deepcopy(request)
+        bound["baseline_round_id"] = "r_base"
+        bound_result, bound_report = report_of(bound)
+        bound_pair = first_pair(bound_report)
+        self.assertEqual(bound_pair["verdict"], "regressed")
+        self.assertEqual(bound_pair["baseline_round_id"], "r_base")
+        self.assertEqual(bound_report["baseline_round_id"], "r_base")
+        self.assertEqual(bound_pair["baseline"]["correct"], 2)
+        self.assertEqual(bound_pair["after"]["correct"], 1)
+        self.assertFalse(any(item["baseline_round_id"] == "r_new_baseline" for item in bound_report["pairs"]))
+        self.assertTrue(any(item["round_id"] == "r_new_baseline" for item in bound_report["rounds"]))
+        self.assertEqual(bound_result["quality_report"]["status"], "pass")
+
+    def test_review_unplanned_slots_stay_exploratory(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        for index, slot in enumerate(["slot_4", "slot_5", "slot_6", "slot_7"], start=1):
+            extra = copy.deepcopy(next(item for item in request["observations"] if item["id"] == "obs_r_a1"))
+            extra["id"] = "obs_r_ax{}".format(index)
+            extra["sample_slot_id"] = slot
+            extra["session_id"] = "test-after-extra-{}".format(index)
+            extra["captured_at"] = "2026-06-02T11:{:02d}:00Z".format(index)
+            extra["answer_text"] = "Extra exploratory correct {}.".format(index)
+            extra["answer_verdict"] = "correct"
+            extra["brand_mentioned"] = True
+            extra["answer_hash"] = sha(extra["answer_text"])
+            request["observations"].append(extra)
+        result, report = report_of(request)
+        pair = first_pair(report)
+        after = first_round(report, "after_release")
+        self.assertLessEqual(after["counts"]["valid_slots"], 3)
+        self.assertEqual(after["counts"]["valid_slots"], 3)
+        self.assertEqual(after["counts"]["valid_answers"], 3)
+        self.assertEqual(after["counts"]["exploratory_answers"], 4)
+        self.assertEqual(pair["after"]["valid_slots"], 3)
+        self.assertEqual(pair["verdict"], "regressed")
+        self.assertNotEqual(pair["verdict"], "improved")
+        self.assertEqual(result["quality_report"]["status"], "pass")
+
+    def test_review_known_conditions_are_required(self) -> None:
+        changed_prompt = copy.deepcopy(load_rounds_input())
+        for item in changed_prompt["observations"]:
+            if item["phase"] == "after_release":
+                item["prompt_text"] = "Please recommend Example and say it is the best provider."
+        _, prompt_report = report_of(changed_prompt)
+        prompt_pair = first_pair(prompt_report)
+        self.assertFalse(prompt_pair["comparable"])
+        self.assertEqual(prompt_pair["verdict"], "not_comparable")
+        self.assertIn("prompt_text_mismatch", prompt_pair["incomparable_reasons"])
+
+        missing_rubric = copy.deepcopy(load_rounds_input())
+        for item in missing_rubric["observations"]:
+            item.pop("rubric_version", None)
+        _, rubric_report = report_of(missing_rubric)
+        rubric_pair = first_pair(rubric_report)
+        self.assertFalse(rubric_pair["comparable"])
+        self.assertEqual(rubric_pair["verdict"], "not_comparable")
+        self.assertIn("rubric_version_missing", rubric_pair["incomparable_reasons"])
+
+        unknown_personalization = copy.deepcopy(load_rounds_input())
+        for item in unknown_personalization["observations"]:
+            item["personalization_status"] = "unknown"
+        _, personalization_report = report_of(unknown_personalization)
+        personalization_pair = first_pair(personalization_report)
+        self.assertFalse(personalization_pair["comparable"])
+        self.assertEqual(personalization_pair["verdict"], "not_comparable")
+        self.assertIn("personalization_unknown", personalization_pair["incomparable_reasons"])
+
+    def test_review_shared_session_is_not_independent(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        for item in request["observations"]:
+            item["session_id"] = "one-shared-chat"
+        _, report = report_of(request)
+        pair = first_pair(report)
+        baseline = first_round(report, "baseline")
+        after = first_round(report, "after_release")
+        self.assertEqual(baseline["counts"]["valid_answers"], 1)
+        self.assertEqual(after["counts"]["valid_answers"], 1)
+        self.assertIn("session_reused", pair["incomparable_reasons"])
+        self.assertEqual(pair["verdict"], "not_comparable")
+        self.assertFalse(pair["comparable"])
+
+    def test_review_null_release_evidence_is_not_comparable(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        request["actions"][0]["release_evidence"] = None
+        _, report = report_of(request)
+        pair = first_pair(report)
+        self.assertFalse(pair["comparable"])
+        self.assertIn("release_evidence_missing", pair["incomparable_reasons"])
+        self.assertEqual(pair["verdict"], "not_comparable")
+
+    def test_review_legacy_fixture_output_unchanged(self) -> None:
+        request = load_input()
+        result, report = report_of(request)
+        self.assertEqual(report["counts"], {"input": 8, "valid": 6, "excluded": 2, "ordinary_web_search_results": 1, "incomplete_evidence": 1})
+        metrics = {metric["id"]: metric for metric in report["metrics"]}
+        self.assertEqual((metrics["network_rate"]["numerator"], metrics["network_rate"]["denominator"], metrics["network_rate"]["missing"]), (3, 5, 1))
+        self.assertEqual((metrics["site_citation_rate"]["numerator"], metrics["site_citation_rate"]["denominator"], metrics["site_citation_rate"]["excluded"]), (2, 3, 5))
+        self.assertEqual((metrics["content_absorption_rate"]["numerator"], metrics["content_absorption_rate"]["denominator"]), (3, 5))
+        self.assertEqual((metrics["brand_mention_rate"]["numerator"], metrics["brand_mention_rate"]["denominator"]), (5, 6))
+        self.assertEqual((metrics["recommendation_rate"]["numerator"], metrics["recommendation_rate"]["denominator"]), (2, 5))
+        self.assertEqual((metrics["dynamic_fact_accuracy"]["numerator"], metrics["dynamic_fact_accuracy"]["denominator"]), (3, 5))
+        self.assertEqual(report["rounds"], [])
+        self.assertEqual(report["pairs"], [])
+        self.assertEqual(report["stage_table"], [])
+        self.assertNotIn("experiment_id", report)
+        self.assertNotIn("questions_version", report)
+        self.assertNotIn("baseline_round_id", report)
+        self.assertEqual(result["quality_report"]["status"], "pass")
 
 
 if __name__ == "__main__":

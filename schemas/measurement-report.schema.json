@@ -8,6 +8,9 @@
     "schema_version": { "const": "1.0.0" },
     "site_domain": { "type": "string" },
     "captured_at": { "type": "string", "format": "date-time" },
+    "experiment_id": { "type": ["string", "null"], "minLength": 1 },
+    "questions_version": { "type": ["string", "null"], "minLength": 1 },
+    "baseline_round_id": { "type": ["string", "null"], "minLength": 1 },
     "counts": {
       "type": "object",
       "required": ["input", "valid", "excluded", "ordinary_web_search_results", "incomplete_evidence"],
@@ -84,7 +87,7 @@
     },
     "roundCounts": {
       "type": "object",
-      "required": ["planned_slots", "valid_slots", "attempts", "technical_failures", "valid_answers", "correct", "partially_correct", "no_answer", "brand_mentioned", "recommended", "site_cited"],
+      "required": ["planned_slots", "valid_slots", "attempts", "technical_failures", "valid_answers", "judged_answers", "unjudged_answers", "exploratory_answers", "correct", "partially_correct", "no_answer", "brand_mentioned", "recommended", "site_cited"],
       "additionalProperties": false,
       "properties": {
         "planned_slots": { "type": "integer", "minimum": 0 },
@@ -92,6 +95,9 @@
         "attempts": { "type": "integer", "minimum": 0 },
         "technical_failures": { "type": "integer", "minimum": 0 },
         "valid_answers": { "type": "integer", "minimum": 0 },
+        "judged_answers": { "type": "integer", "minimum": 0 },
+        "unjudged_answers": { "type": "integer", "minimum": 0 },
+        "exploratory_answers": { "type": "integer", "minimum": 0 },
         "correct": { "type": "integer", "minimum": 0 },
         "partially_correct": { "type": "integer", "minimum": 0 },
         "no_answer": { "type": "integer", "minimum": 0 },
@@ -113,7 +119,7 @@
     },
     "roundGroup": {
       "type": "object",
-      "required": ["round_id", "phase", "observation_line", "prompt_id", "platform", "terminal", "counts"],
+      "required": ["round_id", "phase", "observation_line", "prompt_id", "platform", "terminal", "counts", "prompt_fingerprint"],
       "additionalProperties": false,
       "properties": {
         "round_id": { "type": "string" },
@@ -122,12 +128,13 @@
         "prompt_id": { "type": "string" },
         "platform": { "type": "string" },
         "terminal": { "type": "string" },
-        "counts": { "$ref": "#/$defs/roundCounts" }
+        "counts": { "$ref": "#/$defs/roundCounts" },
+        "prompt_fingerprint": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
       }
     },
     "pair": {
       "type": "object",
-      "required": ["baseline_round_id", "after_round_id", "phase", "prompt_id", "observation_line", "platform", "terminal", "comparable", "incomparable_reasons", "baseline", "after", "verdict"],
+      "required": ["baseline_round_id", "after_round_id", "phase", "prompt_id", "observation_line", "platform", "terminal", "comparable", "incomparable_reasons", "insufficiency_reasons", "baseline", "after", "verdict"],
       "additionalProperties": false,
       "properties": {
         "baseline_round_id": { "type": ["string", "null"] },
@@ -139,6 +146,7 @@
         "terminal": { "type": "string" },
         "comparable": { "type": "boolean" },
         "incomparable_reasons": { "type": "array", "items": { "type": "string" } },
+        "insufficiency_reasons": { "type": "array", "items": { "type": "string" } },
         "baseline": { "$ref": "#/$defs/pairSide" },
         "after": { "$ref": "#/$defs/pairSide" },
         "verdict": { "enum": ["improved", "regressed", "unchanged", "insufficient", "not_comparable"] }

@@ -5,6 +5,8 @@
   "site_domain": "example.com",
   "experiment_id": "exp_template",
   "questions_version": "qv_template",
+  "baseline_round_id": "round_template",
+  "sample_slot_ids": ["slot_1", "slot_2", "slot_3"],
   "planned_slots_per_question": 3,
   "notes": "synthetic template; replace the observation before use",
   "actions": [

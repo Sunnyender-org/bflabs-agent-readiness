@@ -25,11 +25,17 @@ Record platform, terminal, visible model, account alias (never credentials), lan
 
 ## Slots, attempts, and replacements
 
-Each `(round_id, prompt_id, platform, terminal)` has planned sample slots (default 3). Each slot contributes at most one valid answer. A second valid observation in the same slot is excluded as `duplicate_slot_answer` and retained in counts.
+Each `(round_id, prompt_id, platform, terminal)` has a frozen sample-slot set. Default is `slot_1` … `slot_N` where `N` is `planned_slots_per_question` (default 3). Set `sample_slot_ids` to name the set explicitly. Each planned slot contributes at most one valid answer. A second valid observation in the same slot is excluded as `duplicate_slot_answer` and retained in counts.
+
+An observation whose `sample_slot_id` is outside the frozen set is excluded as `unplanned_slot`. It stays in the file and in `attempts`, and is counted as `exploratory_answers`. It never enters a valid denominator. `valid_slots` cannot exceed `planned_slots`. A valid observation that has `round_id` but no `sample_slot_id` is excluded as `missing_slot`. Replacement still only fills the original planned slot.
+
+A second valid observation that reuses a `session_id` already used in the same `(round_id, prompt_id, platform, terminal)` group is excluded as `shared_session`. Across a pair, a session that appears on both sides makes the pair `session_reused`.
 
 Technical failures stay in the file. Count them in `attempts` and `technical_failures`, not in valid denominators. At most one replacement per slot per round, and only for a technical failure in that same slot. `replacement_of` must point at that failed observation. Failed attempts are never deleted.
 
-Report these together: `correct/valid`, `valid slots/planned slots`, and `attempts` with `technical failures`. Unmeasured is not zero. A valid answer with no recommendation may be a legitimate zero.
+Judged answers have `answer_verdict` of `correct`, `partially_correct`, `wrong`, or `no_answer`. `unknown` or a missing verdict is unjudged, not wrong. Pair rates use `correct/judged`. If either side has unjudged answers or zero judged answers, the pair verdict is `insufficient` with reason `unjudged_answers`.
+
+Report these together: `correct/judged`, `judged/valid`, `valid slots/planned slots`, and `attempts` with `technical failures`. Unmeasured is not zero. A valid answer with no recommendation may be a legitimate zero.
 
 ## What to retain
 
@@ -49,16 +55,18 @@ Reject any material obtained by bypassing login, CAPTCHA, anti-automation, or re
 
 ## Input formats and pairing
 
-JSON is the pairing format. Put `actions`, `planned_slots_per_question`, `experiment_id`, `questions_version`, and `notes` on the JSON object. JSONL and CSV load observations; JSONL does not carry `actions` or `planned_slots_per_question`. Use JSON when you need before/after pairing or release evidence.
+JSON is the pairing format. Put `actions`, `baseline_round_id`, `sample_slot_ids`, `planned_slots_per_question`, `experiment_id`, `questions_version`, and `notes` on the JSON object. Bind the frozen baseline with `baseline_round_id`. If that field is omitted and the file has exactly one baseline round, that round is used. If more than one baseline round is present and none is bound, every pair is `baseline_ambiguous`. JSONL and CSV load observations; JSONL does not carry `actions` or `planned_slots_per_question`. Use JSON when you need before/after pairing or release evidence.
 
 CSV may include the optional columns. An absent column means the field is absent, not `null`.
 
 ## Comparability and after-release evidence
 
-A later round is comparable to baseline only when `question_version`, `facts_version`, `rubric_version`, `language`, `region`, and `personalization_status` match, and `visible_model` matches when both sides are known. Unknown model on either side is `visible_model_unknown`.
+A later round is comparable to baseline only when required conditions are present and then equal. If any valid member is missing `question_version`, `facts_version`, `rubric_version`, `language`, or `region`, the pair records `<field>_missing`. After both sides are known, unequal values are `<field>_mismatch`. `personalization_status` must be `off` or `on` on every valid member of both sides; `unknown` or missing is `personalization_unknown`. `visible_model` must match when both sides are known. Unknown model on either side is `visible_model_unknown`.
 
-Lines B, C, and D need `network_status=verified` on both sides. Line A needs `network_status=not-used` on both sides. The after window's earliest `captured_at` must be strictly later than the baseline window's latest `captured_at`.
+Normalize `prompt_text` (NFKC, collapse whitespace, strip, casefold) and fingerprint it. Every valid member of a round group must share one fingerprint; a difference inside the group is a quality blocker. Baseline and after fingerprints must match, or the pair is `prompt_text_mismatch`.
 
-For `after_release`, every after observation must list at least one `compared_action_ids` entry whose action exists in input `actions` with `released_at` earlier than that observation's `captured_at`. Otherwise the pair is `release_evidence_missing` or `sampled_before_release`.
+Lines B, C, and D need `network_status=verified` on both sides. Line A needs `network_status=not-used` on both sides. `network_status=unknown` on any valid member is `network_mode_unverified`. The after window's earliest `captured_at` must be strictly later than the baseline window's latest `captured_at`.
 
-Verdicts are `improved`, `regressed`, `unchanged`, `insufficient`, or `not_comparable`. They compare `correct/valid` only. They are not significance tests. Three repetitions support process trial and direction, not statistics.
+For `after_release`, an action counts only when it exists in input `actions`, `released_at` is earlier than that observation's `captured_at`, and `release_evidence` is non-empty. A known action with empty `release_evidence` is `release_evidence_missing` even if the timestamp is earlier. Otherwise the pair is `release_evidence_missing` or `sampled_before_release`.
+
+Verdicts are `improved`, `regressed`, `unchanged`, `insufficient`, or `not_comparable`. They compare `correct/judged` only. They are not significance tests. Three repetitions support process trial and direction, not statistics.
