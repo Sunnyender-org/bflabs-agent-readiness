@@ -11,16 +11,26 @@ from pathlib import Path
 from bflabs_readiness.cli import main
 from bflabs_readiness.geo_round import (
     ERR_AI_EVENT_EVIDENCE,
+    ERR_BASELINE_OBSERVATION_FORMAT,
     ERR_BASELINE_ROUND_ID,
+    ERR_DUPLICATE_EVENT_ID,
     ERR_FACTS_VERSION,
+    ERR_MEASUREMENT_NO_EXPERIMENT_ID,
+    ERR_MEASUREMENT_SITE_DOMAIN,
     ERR_MONEY_ONLY_ON_PURCHASE,
     ERR_QUESTIONS_VERSION,
     ERR_RELEASED_REQUIRES_RELEASED_AT,
     ERR_UNKNOWN_ACTION_ID,
     ERR_UNKNOWN_FACT_ID,
     ERR_UNKNOWN_QUESTION_ID,
+    ERR_VERIFIED_PUBLIC_REQUIRES_DELIVERABLE,
+    ERR_VERIFIED_PUBLIC_REQUIRES_NOTE,
     ERR_VERIFIED_PUBLIC_REQUIRES_PASS,
+    ERR_VERIFIED_PUBLIC_REQUIRES_RELEASE_EVIDENCE,
+    ERR_VERIFIED_PUBLIC_REQUIRES_RELEASED_AT,
+    ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE,
     MISSING_BASELINE_BEFORE_CHANGE,
+    MeasurementReportError,
     analyze_business,
     load_project,
     project_status,
@@ -435,6 +445,272 @@ class GeoRoundTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn("current_phase: change", output)
         self.assertIn(MISSING_BASELINE_BEFORE_CHANGE, output)
+
+    def test_valid_fixture_has_comparable_imported_baseline(self) -> None:
+        analysis = analyze_business(load_project(FIXTURES / "valid"))
+        comparison = analysis["comparison"]
+        self.assertIsNotNone(comparison)
+        self.assertTrue(comparison["comparable"])
+        self.assertIsNone(comparison["reason"])
+        self.assertEqual(comparison["before"]["import_id"], "imp_baseline")
+        self.assertEqual(comparison["after"]["import_id"], "imp_after")
+        self.assertEqual(comparison["before"]["coverage"], "complete")
+        self.assertEqual(comparison["after"]["coverage"], "complete")
+        self.assertEqual(comparison["before"]["counts"]["visit"], 1)
+        self.assertEqual(comparison["after"]["counts"]["visit"], 1)
+
+    def test_review_item_6_verified_public_without_release_evidence_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            actions = json.loads((project / "actions.json").read_text("utf-8"))
+            for action in actions["actions"]:
+                action["status"] = "verified_public"
+                action["released_at"] = None
+                action["release_evidence"] = None
+                action["deliverable"] = None
+                action["public_recheck"] = {
+                    "checked_at": "2020-01-01T00:00:00Z",
+                    "result": "pass",
+                    "note": "",
+                }
+            _write_json(project / "actions.json", actions)
+            errors = validate_project(project)
+            self.assertTrue(errors)
+            joined = "\n".join(errors)
+            self.assertIn(ERR_VERIFIED_PUBLIC_REQUIRES_RELEASED_AT, joined)
+            self.assertIn(ERR_VERIFIED_PUBLIC_REQUIRES_RELEASE_EVIDENCE, joined)
+            self.assertIn(ERR_VERIFIED_PUBLIC_REQUIRES_DELIVERABLE, joined)
+            self.assertIn(ERR_VERIFIED_PUBLIC_REQUIRES_NOTE, joined)
+            markdown = render_report(project, None)
+            self.assertNotIn("计划中的改动都已经出现在公开页，并完成核对。", markdown)
+            self.assertIn("公开页核对尚未通过", markdown)
+
+    def test_verified_public_recheck_must_be_after_release(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            actions = json.loads((project / "actions.json").read_text("utf-8"))
+            actions["actions"][0]["public_recheck"]["checked_at"] = "2026-01-08T17:00:00Z"
+            _write_json(project / "actions.json", actions)
+            errors = validate_project(project)
+            self.assertTrue(any(ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE in item for item in errors))
+
+    def test_review_item_7_after_only_unknown_coverage_is_not_zero_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            _write_json(
+                project / "business-events.json",
+                {
+                    "schema_version": "1.0.0",
+                    "imports": [
+                        _empty_import(
+                            import_id="imp_after_only",
+                            coverage="unknown",
+                            window={
+                                "start": "2026-01-09T00:00:00Z",
+                                "end": "2026-01-16T00:00:00Z",
+                                "timezone": "UTC",
+                            },
+                            events=[
+                                _event(external_id="v-after", type="visit", occurred_at="2026-01-10T00:00:00Z"),
+                                _event(
+                                    external_id="s-after",
+                                    type="signup",
+                                    source_type="direct",
+                                    occurred_at="2026-01-10T01:00:00Z",
+                                ),
+                                _event(
+                                    external_id="p-after",
+                                    type="purchase",
+                                    source_type="direct",
+                                    occurred_at="2026-01-10T02:00:00Z",
+                                    amount_minor=100,
+                                    currency="USD",
+                                ),
+                            ],
+                        )
+                    ],
+                },
+            )
+            self.assertEqual(validate_project(project), [])
+            analysis = analyze_business(load_project(project))
+            comparison = analysis["comparison"]
+            self.assertIsNotNone(comparison)
+            self.assertFalse(comparison["comparable"])
+            self.assertEqual(comparison["reason"], "no business baseline import")
+            self.assertIsNone(comparison["before"])
+            self.assertEqual(comparison["after"]["status"], "data_incomplete")
+            self.assertEqual(comparison["after"]["counts"]["visit"], 1)
+            markdown = render_report(project, None)
+            self.assertNotIn("两段等长且不重叠", markdown)
+            self.assertNotIn("改前窗口：访问 0", markdown)
+            self.assertNotIn("改前 访问 0", markdown)
+            self.assertIn("改前窗口没有导入数据", markdown)
+            self.assertIn("改后窗口：访问 1 次，注册 1 次", markdown)
+
+    def test_review_item_8_old_and_duplicate_orders_do_not_inflate_revenue(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            old = _event(
+                external_id="order-old",
+                type="purchase",
+                occurred_at="2025-01-01T00:00:00Z",
+                source_type="direct",
+                amount_minor=1000,
+                currency="USD",
+            )
+            _write_json(
+                project / "business-events.json",
+                {"schema_version": "1.0.0", "imports": [_empty_import(import_id="imp_dup", events=[old, dict(old)])]},
+            )
+            errors = validate_project(project)
+            self.assertTrue(any(ERR_DUPLICATE_EVENT_ID in item for item in errors))
+            analysis = analyze_business(load_project(project))
+            item = analysis["imports"][0]
+            self.assertEqual(item["counts"]["purchase"], 0)
+            self.assertEqual(item["revenue_by_currency"], {})
+            self.assertEqual(item["excluded_counts"]["outside_window"], 1)
+            self.assertEqual(item["excluded_events"][0]["reason"], "outside_window")
+            markdown = render_report(project, None)
+            self.assertIn("未计入：窗口外 1 条", markdown)
+            self.assertNotIn("成交金额按币种分开（未换算）：10.00 美元", markdown)
+
+    def test_review_item_8_other_site_and_cross_import_duplicate_are_excluded(self) -> None:
+        experiment = json.loads((FIXTURES / "valid" / "experiment.json").read_text("utf-8"))
+        analysis = analyze_business(
+            _records_with_business(
+                _empty_import(
+                    import_id="imp_one",
+                    events=[
+                        _event(
+                            external_id="shared-order",
+                            type="purchase",
+                            source_type="direct",
+                            amount_minor=100,
+                            currency="USD",
+                        )
+                    ],
+                ),
+                _empty_import(
+                    import_id="imp_two",
+                    window={
+                        "start": "2026-01-09T00:00:00Z",
+                        "end": "2026-01-16T00:00:00Z",
+                        "timezone": "UTC",
+                    },
+                    events=[
+                        _event(
+                            external_id="shared-order",
+                            type="purchase",
+                            occurred_at="2026-01-10T00:00:00Z",
+                            source_type="direct",
+                            amount_minor=100,
+                            currency="USD",
+                        ),
+                        _event(
+                            external_id="other-site",
+                            type="visit",
+                            occurred_at="2026-01-10T00:00:00Z",
+                            page_url="https://unrelated.invalid/",
+                        ),
+                    ],
+                ),
+                experiment=experiment,
+            )
+        )
+        after = analysis["imports"][1]
+        self.assertEqual(after["excluded_counts"]["duplicate_event"], 1)
+        self.assertEqual(after["excluded_counts"]["other_site"], 1)
+        self.assertEqual(after["counts"]["visit"], 0)
+        self.assertEqual(after["counts"]["purchase"], 0)
+        reasons = {item["reason"] for item in after["excluded_events"]}
+        self.assertEqual(reasons, {"duplicate_event", "other_site"})
+
+    def test_review_item_9_unrelated_site_measurement_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))
+            measurement["site_domain"] = "unrelated.invalid"
+            dest = Path(temp) / "bad-measurement.json"
+            _write_json(dest, measurement)
+            with self.assertRaises(MeasurementReportError) as caught:
+                render_report(project, measurement)
+            self.assertIn(ERR_MEASUREMENT_SITE_DOMAIN, caught.exception.errors)
+            self.assertFalse((project / "report.md").exists())
+            with self.assertRaises(MeasurementReportError):
+                write_report(project, dest)
+            self.assertFalse((project / "report.md").exists())
+            output_path = Path(temp) / "out.md"
+            status, output = self.run_cli(
+                [
+                    "round",
+                    "report",
+                    "--project",
+                    str(project),
+                    "--measurement-report",
+                    str(dest),
+                    "--output",
+                    str(output_path),
+                ]
+            )
+            self.assertEqual(status, 1)
+            payload = json.loads(output)
+            self.assertEqual(payload["status"], "failed")
+            self.assertTrue(any(ERR_MEASUREMENT_SITE_DOMAIN in item for item in payload["errors"]))
+            self.assertFalse(output_path.exists())
+
+    def test_review_item_9_unvalidated_stage_table_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            fake = {
+                "site_domain": "unrelated.invalid",
+                "stage_table": [
+                    {
+                        "label": "全部",
+                        "baseline": "0/10",
+                        "after": "10/10",
+                        "basis": "任意",
+                        "result": "改善",
+                    }
+                ],
+            }
+            with self.assertRaises(MeasurementReportError):
+                render_report(project, fake)
+            self.assertFalse((project / "report.md").exists())
+
+    def test_measurement_report_without_experiment_id_is_rejected(self) -> None:
+        measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))
+        measurement.pop("experiment_id", None)
+        with self.assertRaises(MeasurementReportError) as caught:
+            render_report(FIXTURES / "valid", measurement)
+        self.assertIn(ERR_MEASUREMENT_NO_EXPERIMENT_ID, caught.exception.errors)
+
+    def test_review_item_10_facts_file_is_not_baseline_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            experiment = json.loads((project / "experiment.json").read_text("utf-8"))
+            experiment["baseline"]["observation_file"] = "facts.json"
+            experiment["current_phase"] = "change"
+            _write_json(project / "experiment.json", experiment)
+            errors = validate_project(project)
+            self.assertTrue(errors)
+            self.assertTrue(any(ERR_BASELINE_OBSERVATION_FORMAT in item for item in errors))
+            status = project_status(project)
+            self.assertFalse(status["baseline_present"])
+            self.assertTrue(status["missing_preconditions"])
+            self.assertTrue(any(ERR_BASELINE_OBSERVATION_FORMAT in item for item in status["missing_preconditions"]))
+
+    def test_review_item_10_later_phase_still_requires_resolvable_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            experiment = json.loads((project / "experiment.json").read_text("utf-8"))
+            experiment["baseline"]["observation_file"] = "facts.json"
+            _write_json(project / "experiment.json", experiment)
+            self.assertEqual(experiment["current_phase"], "business_review")
+            errors = validate_project(project)
+            self.assertTrue(any(ERR_BASELINE_OBSERVATION_FORMAT in item for item in errors))
+            status = project_status(project)
+            self.assertFalse(status["baseline_present"])
+            self.assertTrue(status["missing_preconditions"])
 
 
 if __name__ == "__main__":

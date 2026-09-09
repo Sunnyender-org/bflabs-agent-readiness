@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Sequence
 from . import __version__
 from .artifacts import publish_run, validate_run
 from .evals import run_router_evals
-from .geo_round import project_status, render_report, validate_project, write_report
+from .geo_round import MeasurementReportError, project_status, render_report, validate_project, write_report
 from .orchestrator import run_discover_content, run_discover_diagnose
 from .packaging import CAPABILITY_IDS, PackageError, package_target, validate_archive
 from .paths import repository_root
@@ -130,19 +130,25 @@ def _run_round_command(args: argparse.Namespace) -> int:
         if errors:
             print(json.dumps({"status": "failed", "errors": errors}, ensure_ascii=False, indent=2))
             return 1
-        output = args.output
-        if output is None:
-            path = write_report(args.project, args.measurement_report)
-        else:
-            measurement = None
-            if args.measurement_report is not None:
-                measurement = _load_json(args.measurement_report)
-            text = render_report(args.project, measurement)
-            if not text.endswith("\n"):
-                text += "\n"
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(text, "utf-8")
-            path = output
+        try:
+            if args.output is None:
+                path = write_report(args.project, args.measurement_report)
+            else:
+                measurement = None
+                if args.measurement_report is not None:
+                    measurement = _load_json(args.measurement_report)
+                text = render_report(args.project, measurement)
+                if not text.endswith("\n"):
+                    text += "\n"
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(text, "utf-8")
+                path = args.output
+        except MeasurementReportError as exc:
+            print(json.dumps({"status": "failed", "errors": exc.errors}, ensure_ascii=False, indent=2))
+            return 1
+        except (OSError, ValueError) as exc:
+            print(json.dumps({"status": "failed", "errors": [str(exc)]}, ensure_ascii=False, indent=2))
+            return 1
         print(json.dumps({"status": "pass", "report": str(path)}, ensure_ascii=False, indent=2))
         return 0
     return 2

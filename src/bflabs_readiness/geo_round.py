@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from urllib.parse import urlparse
 
 from .paths import repository_root
-from .schemas import SchemaValidationError, validate_instance
+from .schemas import SchemaValidationError, load_schema, validate_instance
 
 
 ERR_EXPERIMENT_REQUIRED = "experiment.json is required"
@@ -19,10 +20,41 @@ ERR_UNKNOWN_FACT_ID = "unknown fact_id"
 ERR_UNKNOWN_QUESTION_ID = "unknown question_id"
 ERR_UNKNOWN_ACTION_ID = "unknown action_id in compared_action_ids"
 ERR_RELEASED_REQUIRES_RELEASED_AT = "released status requires released_at"
+ERR_RELEASED_REQUIRES_RELEASE_EVIDENCE = "released status requires non-empty release_evidence"
+ERR_RELEASED_REQUIRES_DELIVERABLE = "released status requires deliverable"
+ERR_VERIFIED_PUBLIC_REQUIRES_RELEASED_AT = "verified_public requires released_at"
+ERR_VERIFIED_PUBLIC_REQUIRES_RELEASE_EVIDENCE = "verified_public requires non-empty release_evidence"
+ERR_VERIFIED_PUBLIC_REQUIRES_DELIVERABLE = "verified_public requires deliverable"
+ERR_VERIFIED_PUBLIC_REQUIRES_RECHECK = "verified_public requires public_recheck"
 ERR_VERIFIED_PUBLIC_REQUIRES_PASS = "verified_public requires public_recheck.result == pass"
+ERR_VERIFIED_PUBLIC_REQUIRES_NOTE = "verified_public requires non-empty public_recheck.note"
+ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE = "verified_public requires checked_at after released_at"
 ERR_AI_EVENT_EVIDENCE = "ai event requires source_evidence_url and known attribution_method"
 ERR_MONEY_ONLY_ON_PURCHASE = "money is only allowed on purchase events"
+ERR_DUPLICATE_EVENT_ID = "duplicate event id within import"
+ERR_BASELINE_OBSERVATION_MISSING = "baseline observation file is missing"
+ERR_BASELINE_OBSERVATION_OUTSIDE_PROJECT = "baseline observation_file must stay inside the project directory"
+ERR_BASELINE_OBSERVATION_UNREADABLE = "baseline observation file could not be read"
+ERR_BASELINE_OBSERVATION_FORMAT = "baseline observations must be JSONL or JSON with observations"
+ERR_BASELINE_OBSERVATION_PARSE = "baseline observation row could not be parsed"
+ERR_BASELINE_OBSERVATION_ROUND_ID = "baseline observation round_id does not match experiment baseline"
+ERR_BASELINE_OBSERVATION_PHASE = "baseline observation phase must be baseline"
+ERR_BASELINE_OBSERVATION_QUESTION_VERSION = "baseline observation question_version does not match experiment"
+ERR_BASELINE_OBSERVATION_EXPERIMENT_ID = "baseline observation experiment_id does not match experiment"
+ERR_MEASUREMENT_NO_EXPERIMENT_ID = "measurement report has no experiment_id"
+ERR_MEASUREMENT_NO_QUESTIONS_VERSION = "measurement report has no questions_version"
+ERR_MEASUREMENT_NO_BASELINE_ROUND_ID = "measurement report has no baseline_round_id"
+ERR_MEASUREMENT_SITE_DOMAIN = "measurement report site_domain does not match experiment"
+ERR_MEASUREMENT_EXPERIMENT_ID = "measurement report experiment_id does not match experiment"
+ERR_MEASUREMENT_QUESTIONS_VERSION = "measurement report questions_version does not match experiment"
+ERR_MEASUREMENT_BASELINE_ROUND = "measurement report pair baseline_round_id does not match experiment baseline"
+ERR_MEASUREMENT_NULL_BASELINE = "measurement report has comparisons but experiment baseline is null"
+ERR_MEASUREMENT_AFTER_ROUND = "measurement report pair after_round_id is not in experiment rounds"
+ERR_MEASUREMENT_STAGE_LENGTH = "measurement report stage_table length does not match pairs"
+ERR_MEASUREMENT_STAGE_RESULT = "measurement report stage_table result does not match pair verdict"
+ERR_MEASUREMENT_INSUFFICIENCY_REASONS = "measurement report pair is missing insufficiency_reasons"
 MISSING_BASELINE_BEFORE_CHANGE = "baseline observations missing before change phase"
+MISSING_BASELINE_QUESTIONS_PREFIX = "baseline observations missing for questions:"
 
 RECORD_SPECS = (
     ("experiment", "experiment.json", "round-experiment.schema.json", True),
@@ -34,6 +66,17 @@ RECORD_SPECS = (
 ACTION_STATUSES = ("planned", "changed_local", "released", "verified_public", "reverted")
 EVENT_TYPES = ("visit", "signup", "lead", "activation", "purchase")
 SOURCE_TYPES = ("ai", "search", "social", "direct", "unknown")
+EXCLUDED_EVENT_REASONS = ("outside_window", "other_site", "duplicate_event")
+BASELINE_REQUIRED_PHASES = ("change", "release", "retest", "business_review", "report", "next_round")
+VERDICT_LABELS = {
+    "improved": "改善",
+    "regressed": "回退",
+    "unchanged": "持平",
+    "insufficient": "样本不足",
+    "not_comparable": "不可比",
+}
+FUTURE_MEASUREMENT_FIELDS = ("experiment_id", "questions_version", "baseline_round_id")
+FUTURE_PAIR_FIELDS = ("insufficiency_reasons",)
 CURRENCY_LABELS = {
     "USD": "美元",
     "EUR": "欧元",
@@ -43,6 +86,14 @@ CURRENCY_LABELS = {
 }
 # amount_minor is stored in the currency's minor unit; most ISO 4217 currencies use two decimals.
 ZERO_DECIMAL_CURRENCIES = {"JPY": 0, "KRW": 0, "VND": 0}
+
+
+class MeasurementReportError(ValueError):
+    """Raised when a supplied measurement report cannot be associated with this experiment."""
+
+    def __init__(self, errors: List[str]) -> None:
+        self.errors = [str(item) for item in errors]
+        super().__init__("; ".join(self.errors))
 
 
 def _as_dir(project_dir: Any) -> Path:
@@ -115,6 +166,83 @@ def _action_ids(actions: Optional[Dict[str, Any]]) -> set:
     return {item["action_id"] for item in actions.get("actions", []) if "action_id" in item}
 
 
+def _nonempty(value: Any) -> bool:
+    return value is not None and str(value).strip() != ""
+
+
+def _has_release_fields(action: Dict[str, Any]) -> bool:
+    return _nonempty(action.get("released_at")) and _nonempty(action.get("release_evidence")) and _nonempty(action.get("deliverable"))
+
+
+def _recheck_is_pass(action: Dict[str, Any]) -> bool:
+    recheck = action.get("public_recheck")
+    if not isinstance(recheck, dict):
+        return False
+    if recheck.get("result") != "pass":
+        return False
+    if not _nonempty(recheck.get("note")):
+        return False
+    checked_at = recheck.get("checked_at")
+    released_at = action.get("released_at")
+    if not checked_at or not released_at:
+        return False
+    try:
+        return parse_datetime(str(checked_at)) > parse_datetime(str(released_at))
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_released(action: Dict[str, Any]) -> bool:
+    return action.get("status") in {"released", "verified_public"} and _has_release_fields(action)
+
+
+def _is_verified_public(action: Dict[str, Any]) -> bool:
+    return action.get("status") == "verified_public" and _has_release_fields(action) and _recheck_is_pass(action)
+
+
+def _action_status_errors(action: Dict[str, Any]) -> List[str]:
+    action_id = action.get("action_id", "?")
+    status = action.get("status")
+    errors: List[str] = []
+    if status == "reverted":
+        return errors
+    if status == "released":
+        if not action.get("released_at"):
+            errors.append("{}: {}".format(ERR_RELEASED_REQUIRES_RELEASED_AT, action_id))
+        if not _nonempty(action.get("release_evidence")):
+            errors.append("{}: {}".format(ERR_RELEASED_REQUIRES_RELEASE_EVIDENCE, action_id))
+        if not _nonempty(action.get("deliverable")):
+            errors.append("{}: {}".format(ERR_RELEASED_REQUIRES_DELIVERABLE, action_id))
+        return errors
+    if status != "verified_public":
+        return errors
+    if not action.get("released_at"):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_RELEASED_AT, action_id))
+    if not _nonempty(action.get("release_evidence")):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_RELEASE_EVIDENCE, action_id))
+    if not _nonempty(action.get("deliverable")):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_DELIVERABLE, action_id))
+    recheck = action.get("public_recheck")
+    if not isinstance(recheck, dict):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_RECHECK, action_id))
+        return errors
+    if recheck.get("result") != "pass":
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_PASS, action_id))
+    if not _nonempty(recheck.get("note")):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_NOTE, action_id))
+    checked_at = recheck.get("checked_at")
+    released_at = action.get("released_at")
+    if checked_at and released_at:
+        try:
+            if parse_datetime(str(checked_at)) <= parse_datetime(str(released_at)):
+                errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE, action_id))
+        except (TypeError, ValueError):
+            errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE, action_id))
+    elif _has_release_fields(action):
+        errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE, action_id))
+    return errors
+
+
 def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str]:
     errors: List[str] = []
     experiment = records.get("experiment") or {}
@@ -147,12 +275,7 @@ def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str
         for question_id in action.get("question_ids") or []:
             if question_id not in known_questions:
                 errors.append("{}: {} -> {}".format(ERR_UNKNOWN_QUESTION_ID, action_id, question_id))
-        if action.get("status") == "released" and not action.get("released_at"):
-            errors.append("{}: {}".format(ERR_RELEASED_REQUIRES_RELEASED_AT, action_id))
-        if action.get("status") == "verified_public":
-            recheck = action.get("public_recheck") or {}
-            if recheck.get("result") != "pass":
-                errors.append("{}: {}".format(ERR_VERIFIED_PUBLIC_REQUIRES_PASS, action_id))
+        errors.extend(_action_status_errors(action))
 
     for item in rounds:
         round_id = item.get("round_id", "?")
@@ -162,8 +285,14 @@ def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str
 
     for batch in (business_events or {}).get("imports") or []:
         import_id = batch.get("import_id", "?")
+        seen_ids: Set[Tuple[Any, Any]] = set()
         for event in batch.get("events") or []:
             external_id = event.get("external_id", "?")
+            key = (batch.get("source"), external_id)
+            if key in seen_ids:
+                errors.append("{}: {} / {}".format(ERR_DUPLICATE_EVENT_ID, import_id, external_id))
+            else:
+                seen_ids.add(key)
             if event.get("source_type") == "ai" and (
                 not event.get("source_evidence_url") or event.get("attribution_method") == "unknown"
             ):
@@ -172,6 +301,103 @@ def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str
                 event.get("amount_minor") is not None or event.get("currency") is not None
             ):
                 errors.append("{}: {} / {}".format(ERR_MONEY_ONLY_ON_PURCHASE, import_id, external_id))
+    return errors
+
+
+def _project_file(root: Path, relative: Any) -> Optional[Path]:
+    text = str(relative or "")
+    if not text.strip():
+        return None
+    rel = Path(text)
+    if not rel.parts or ".." in rel.parts:
+        return None
+    resolved_root = root.resolve()
+    path = rel.resolve() if rel.is_absolute() else (resolved_root / rel).resolve()
+    try:
+        path.relative_to(resolved_root)
+    except ValueError:
+        return None
+    return path
+
+
+def _row_observation(row: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(row, dict):
+        return None
+    inner = row.get("observation")
+    if isinstance(inner, dict):
+        return inner
+    if "prompt_id" in row:
+        return row
+    return None
+
+
+def _load_observation_rows(path: Path) -> Tuple[Optional[List[Any]], Optional[str]]:
+    try:
+        text = path.read_text("utf-8")
+    except OSError:
+        return None, "{}: {}".format(ERR_BASELINE_OBSERVATION_UNREADABLE, path.name)
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError:
+            return None, "{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, path.name)
+        if not isinstance(value, dict) or not isinstance(value.get("observations"), list):
+            return None, ERR_BASELINE_OBSERVATION_FORMAT
+        return value["observations"], None
+    rows: List[Any] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            return None, "{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, path.name)
+        if not isinstance(row, dict):
+            return None, "{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, path.name)
+        rows.append(row)
+    if not rows:
+        return None, ERR_BASELINE_OBSERVATION_FORMAT
+    return rows, None
+
+
+def baseline_evidence_errors(root: Path, experiment: Optional[Dict[str, Any]], questions: Optional[Dict[str, Any]]) -> List[str]:
+    baseline = (experiment or {}).get("baseline")
+    if not isinstance(baseline, dict):
+        return [MISSING_BASELINE_BEFORE_CHANGE]
+    label = str(baseline.get("observation_file") or "")
+    path = _project_file(root, label)
+    if path is None:
+        return ["{}: {}".format(ERR_BASELINE_OBSERVATION_OUTSIDE_PROJECT, label or "(empty)")]
+    if not path.is_file():
+        return ["{}: {}".format(ERR_BASELINE_OBSERVATION_MISSING, label)]
+    rows, read_error = _load_observation_rows(path)
+    if read_error:
+        return [read_error]
+    errors: List[str] = []
+    seen_prompts = set()
+    expected_round = baseline.get("round_id")
+    expected_version = (experiment or {}).get("questions_version")
+    expected_experiment = (experiment or {}).get("experiment_id")
+    for row in rows or []:
+        observation = _row_observation(row)
+        if observation is None:
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, label))
+            continue
+        prompt_id = observation.get("prompt_id")
+        if prompt_id:
+            seen_prompts.add(prompt_id)
+        if observation.get("round_id") != expected_round:
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_ROUND_ID, prompt_id or "?"))
+        if observation.get("phase") != "baseline":
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_PHASE, prompt_id or "?"))
+        if observation.get("question_version") != expected_version:
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_QUESTION_VERSION, prompt_id or "?"))
+        if observation.get("experiment_id") is not None and observation.get("experiment_id") != expected_experiment:
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_EXPERIMENT_ID, prompt_id or "?"))
+    missing_questions = sorted(_question_ids(questions) - seen_prompts)
+    if missing_questions:
+        errors.append("{} {}".format(MISSING_BASELINE_QUESTIONS_PREFIX, ", ".join(missing_questions)))
     return errors
 
 
@@ -185,19 +411,12 @@ def validate_project(project_dir: Any) -> List[str]:
         records[key] = instance
         if instance is not None:
             errors.extend(_schema_errors(filename, schema_name, instance))
-    if records.get("experiment") is not None:
+    experiment = records.get("experiment")
+    if experiment is not None:
         errors.extend(_cross_file_errors(records))
+        if isinstance(experiment.get("baseline"), dict):
+            errors.extend(baseline_evidence_errors(root, experiment, records.get("questions")))
     return errors
-
-
-def _observation_missing(root: Path, baseline: Optional[Dict[str, Any]]) -> bool:
-    if not baseline:
-        return True
-    relative = Path(str(baseline.get("observation_file") or ""))
-    if not relative.parts or ".." in relative.parts:
-        return True
-    path = relative if relative.is_absolute() else root / relative
-    return not path.is_file()
 
 
 def project_status(project_dir: Any) -> Dict[str, Any]:
@@ -210,16 +429,15 @@ def project_status(project_dir: Any) -> Dict[str, Any]:
         status = action.get("status")
         if status in counts:
             counts[status] += 1
-    baseline = experiment.get("baseline")
-    baseline_present = isinstance(baseline, dict)
+    evidence_errors = baseline_evidence_errors(root, experiment, records.get("questions"))
     missing: List[str] = []
-    if experiment.get("current_phase") == "change" and (not baseline_present or _observation_missing(root, baseline)):
-        missing.append(MISSING_BASELINE_BEFORE_CHANGE)
+    if experiment.get("current_phase") in BASELINE_REQUIRED_PHASES:
+        missing.extend(evidence_errors)
     return {
         "current_phase": experiment.get("current_phase"),
         "next_step": experiment.get("next_step"),
         "actions_by_status": counts,
-        "baseline_present": baseline_present,
+        "baseline_present": not evidence_errors,
         "missing_preconditions": missing,
         "last_updated": experiment.get("updated_at"),
     }
@@ -239,6 +457,18 @@ def window_days(window: Dict[str, Any]) -> float:
     return (parse_datetime(window["end"]) - parse_datetime(window["start"])).total_seconds() / 86400.0
 
 
+def window_whole_days(window: Dict[str, Any]) -> int:
+    start = parse_datetime(window["start"]).date()
+    end = parse_datetime(window["end"]).date()
+    return (end - start).days
+
+
+def windows_equal_to_the_day(left: Dict[str, Any], right: Dict[str, Any]) -> bool:
+    return parse_datetime(left["start"]).date() == parse_datetime(right["start"]).date() and parse_datetime(
+        left["end"]
+    ).date() == parse_datetime(right["end"]).date()
+
+
 def windows_overlap(left: Dict[str, Any], right: Dict[str, Any]) -> bool:
     return parse_datetime(left["start"]) <= parse_datetime(right["end"]) and parse_datetime(right["start"]) <= parse_datetime(
         left["end"]
@@ -251,6 +481,29 @@ def _zero_counts() -> Dict[str, int]:
 
 def _zero_sources() -> Dict[str, int]:
     return {key: 0 for key in SOURCE_TYPES}
+
+
+def _zero_excluded() -> Dict[str, int]:
+    return {key: 0 for key in EXCLUDED_EVENT_REASONS}
+
+
+def _page_host_allowed(page_url: Optional[str], site_domain: Optional[str]) -> bool:
+    if not page_url:
+        return True
+    if not site_domain:
+        return True
+    host = (urlparse(str(page_url)).hostname or "").lower().rstrip(".")
+    target = str(site_domain).lower().rstrip(".")
+    if not host or not target:
+        return False
+    return host == target or host.endswith("." + target)
+
+
+def _event_in_window(event: Dict[str, Any], window: Dict[str, Any]) -> bool:
+    if "start" not in window or "end" not in window or not event.get("occurred_at"):
+        return False
+    occurred = parse_datetime(str(event["occurred_at"]))
+    return parse_datetime(window["start"]) <= occurred <= parse_datetime(window["end"])
 
 
 def _summarize_events(events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
@@ -311,16 +564,47 @@ def _import_status(coverage: str, real_counts: Dict[str, int]) -> str:
     return "partial"
 
 
-def _analyze_import(batch: Dict[str, Any]) -> Dict[str, Any]:
-    summary = _summarize_events(batch.get("events") or [])
-    coverage = batch.get("coverage")
+def _analyze_import(
+    batch: Dict[str, Any],
+    site_domain: Optional[str],
+    seen_keys: Set[Tuple[Any, Any]],
+) -> Dict[str, Any]:
     window = batch.get("window") or {}
+    excluded_events: List[Dict[str, str]] = []
+    excluded_counts = _zero_excluded()
+    included: List[Dict[str, Any]] = []
+    local_ids: Set[Any] = set()
+    source = batch.get("source")
+    for event in batch.get("events") or []:
+        external_id = event.get("external_id", "?")
+        if external_id in local_ids:
+            continue
+        local_ids.add(external_id)
+        if not _event_in_window(event, window):
+            excluded_events.append({"external_id": str(external_id), "reason": "outside_window"})
+            excluded_counts["outside_window"] += 1
+            continue
+        if not _page_host_allowed(event.get("page_url"), site_domain):
+            excluded_events.append({"external_id": str(external_id), "reason": "other_site"})
+            excluded_counts["other_site"] += 1
+            continue
+        key = (source, external_id)
+        if key in seen_keys:
+            excluded_events.append({"external_id": str(external_id), "reason": "duplicate_event"})
+            excluded_counts["duplicate_event"] += 1
+            continue
+        seen_keys.add(key)
+        included.append(event)
+    summary = _summarize_events(included)
+    coverage = batch.get("coverage")
     return {
         "import_id": batch.get("import_id"),
         "coverage": coverage,
         "status": _import_status(coverage, summary["counts"]),
         "window": window,
         "window_days": window_days(window) if "start" in window and "end" in window else None,
+        "excluded_events": excluded_events,
+        "excluded_counts": excluded_counts,
         **summary,
     }
 
@@ -334,9 +618,9 @@ def _overlapping_pairs(imports: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     return pairs
 
 
-def _comparison(experiment: Optional[Dict[str, Any]], imports: List[Dict[str, Any]], analyzed: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def _comparison(experiment: Optional[Dict[str, Any]], analyzed: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     baseline = (experiment or {}).get("baseline")
-    if not isinstance(baseline, dict) or not imports:
+    if not isinstance(baseline, dict) or not analyzed:
         return None
     before_window = baseline.get("captured_window")
     if not before_window:
@@ -344,33 +628,43 @@ def _comparison(experiment: Optional[Dict[str, Any]], imports: List[Dict[str, An
     later = [
         item
         for item in analyzed
-        if item.get("window") and parse_datetime(item["window"]["start"]) >= parse_datetime(before_window["end"])
+        if item.get("window") and "start" in item["window"] and parse_datetime(item["window"]["start"]) >= parse_datetime(before_window["end"])
     ]
     if not later:
         return None
     after = sorted(later, key=lambda item: item["window"]["start"])[0]
-    before_match = next((item for item in analyzed if item.get("window") and windows_overlap(item["window"], before_window)), None)
+    before_match = next(
+        (
+            item
+            for item in analyzed
+            if item.get("window") and "start" in item["window"] and windows_equal_to_the_day(item["window"], before_window)
+        ),
+        None,
+    )
     if before_match is None:
-        before = {
-            "import_id": None,
-            "coverage": None,
-            "status": "not_measured",
-            "window": before_window,
-            "window_days": window_days(before_window),
-            **_summarize_events([]),
+        return {
+            "comparable": False,
+            "reason": "no business baseline import",
+            "before": None,
+            "after": after,
         }
-    else:
-        before = before_match
-    length_delta = abs((before.get("window_days") or 0) - (after.get("window_days") or 0))
+    before = before_match
     overlap = windows_overlap(before_window, after["window"])
-    comparable = length_delta <= 1.0 and not overlap
-    reason = None
-    if overlap:
+    equal_length = window_whole_days(before_window) == window_whole_days(after["window"])
+    if before.get("coverage") == "partial":
+        reason: Optional[str] = "baseline import coverage partial"
+    elif before.get("coverage") == "unknown":
+        reason = "baseline import coverage unknown"
+    elif after.get("coverage") == "unknown":
+        reason = "after import coverage unknown"
+    elif overlap:
         reason = "windows overlap"
-    elif length_delta > 1.0:
+    elif not equal_length:
         reason = "unequal window length"
+    else:
+        reason = None
     return {
-        "comparable": comparable,
+        "comparable": reason is None,
         "reason": reason,
         "before": before,
         "after": after,
@@ -387,13 +681,16 @@ def analyze_business(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, 
             "flags": {"overlapping_windows": []},
             "comparison": None,
         }
-    analyzed = [_analyze_import(batch) for batch in imports]
+    experiment = records.get("experiment") or {}
+    site_domain = experiment.get("site_domain")
+    seen_keys: Set[Tuple[Any, Any]] = set()
+    analyzed = [_analyze_import(batch, site_domain, seen_keys) for batch in imports]
     overlap = _overlapping_pairs(imports)
     return {
         "status": "analyzed",
         "imports": analyzed,
         "flags": {"overlapping_windows": overlap},
-        "comparison": _comparison(records.get("experiment"), imports, analyzed),
+        "comparison": _comparison(experiment, analyzed),
     }
 
 
@@ -431,7 +728,7 @@ def _pages_and_facts(records: Dict[str, Optional[Dict[str, Any]]]) -> str:
     else:
         fact_text = "没有记下对应的对外事实。"
     local_only = any(item.get("status") == "changed_local" for item in changed)
-    public = any(item.get("status") in {"released", "verified_public"} for item in changed)
+    public = any(_is_released(item) or _is_verified_public(item) for item in changed)
     reverted = any(item.get("status") == "reverted" for item in changed)
     visibility = []
     if public:
@@ -489,10 +786,12 @@ def _not_yet(records: Dict[str, Optional[Dict[str, Any]]]) -> str:
         elif status == "changed_local":
             lines.append("本地已改、公开页还看不到：{}（{}）。".format(summary, url))
         elif status == "released":
-            lines.append("已经发布，还没有核对公开结果是否符合预期：{}（{}）。".format(summary, url))
+            if not _has_release_fields(item):
+                lines.append("已经写了发布，但还缺发布凭据：{}（{}）。".format(summary, url))
+            else:
+                lines.append("已经发布，还没有核对公开结果是否符合预期：{}（{}）。".format(summary, url))
         elif status == "verified_public":
-            recheck = item.get("public_recheck") or {}
-            if recheck.get("result") != "pass":
+            if not _is_verified_public(item):
                 lines.append("公开页核对尚未通过：{}（{}）。".format(summary, url))
         elif status == "reverted":
             lines.append("曾经改过，后来撤回了：{}（{}）。".format(summary, url))
@@ -539,6 +838,16 @@ def _zh_rate(name: str, rate: Optional[float], reason: Optional[str], numerator:
     return "{}为 {:.1%}（{} / {}）。".format(name, rate, numerator, denominator)
 
 
+def _excluded_text(item: Dict[str, Any]) -> Optional[str]:
+    counts = item.get("excluded_counts") or {}
+    outside = counts.get("outside_window") or 0
+    other = counts.get("other_site") or 0
+    duplicate = counts.get("duplicate_event") or 0
+    if not (outside or other or duplicate):
+        return None
+    return "未计入：窗口外 {} 条，其他站点 {} 条，重复事件 {} 条。".format(outside, other, duplicate)
+
+
 def _business_import_lines(item: Dict[str, Any]) -> List[str]:
     status = item.get("status")
     if status == "data_incomplete":
@@ -550,6 +859,9 @@ def _business_import_lines(item: Dict[str, Any]) -> List[str]:
     else:
         head = "这段窗口按已导入的真实事件统计。"
     lines = [head, "次数：" + _zh_counts(item.get("counts") or {})]
+    excluded = _excluded_text(item)
+    if excluded:
+        lines.append(excluded)
     test_total = item.get("test_event_count") or 0
     if test_total:
         lines.append("另有 {} 条测试事件，不计入真实收入。".format(test_total))
@@ -563,23 +875,38 @@ def _business_import_lines(item: Dict[str, Any]) -> List[str]:
     return lines
 
 
+def _before_is_missing(before: Any) -> bool:
+    return before is None or (isinstance(before, dict) and before.get("status") == "not_measured")
+
+
 def _comparison_text(comparison: Optional[Dict[str, Any]]) -> List[str]:
     if not comparison:
         return []
+    before = comparison.get("before")
+    after = comparison.get("after") or {}
+    reason = comparison.get("reason")
     if comparison.get("comparable"):
         lines = ["有两段等长且不重叠的窗口，数字可以并排看，但不能据此判断是这次改动导致了业务变化。"]
+    elif reason == "no business baseline import":
+        lines = ["改前窗口没有导入数据，只列改后窗口的数字，不做前后增减。"]
+    elif reason == "baseline import coverage partial":
+        lines = ["改前窗口的导入不完整，不能做前后对比。"]
+    elif reason == "baseline import coverage unknown":
+        lines = ["改前窗口的覆盖范围不明，不能做前后对比。"]
+    elif reason == "after import coverage unknown":
+        lines = ["改后窗口的覆盖范围不明，不能做前后对比。"]
+    elif reason == "windows overlap":
+        lines = ["两段窗口不能对比，因为两端窗口有重叠。"]
+    elif reason == "unequal window length":
+        lines = ["两段窗口不能对比，因为两端窗口长度不同。"]
     else:
-        reason = comparison.get("reason")
-        if reason == "unequal window length":
-            why = "两端窗口长度不同"
-        elif reason == "windows overlap":
-            why = "两端窗口有重叠"
-        else:
-            why = "两端窗口不能对齐"
-        lines = ["两段窗口不能对比，因为{}。两边的数字都列在下面。".format(why)]
-    before = comparison.get("before") or {}
-    after = comparison.get("after") or {}
-    lines.append("改前窗口：" + _zh_counts(before.get("counts") or {}))
+        lines = ["两段窗口不能对比，因为两端窗口不能对齐。"]
+    if _before_is_missing(before):
+        if reason != "no business baseline import":
+            lines.append("改前窗口没有导入数据，只列改后窗口的数字，不做前后增减。")
+        lines.append("改后窗口：" + _zh_counts(after.get("counts") or {}))
+        return lines
+    lines.append("改前窗口：" + _zh_counts((before or {}).get("counts") or {}))
     lines.append("改后窗口：" + _zh_counts(after.get("counts") or {}))
     return lines
 
@@ -635,7 +962,9 @@ def _business_limits() -> str:
             "注册率需要访问次数，成交率需要注册次数；缺了这些次数时只报个数。",
             "测试事件不计入真实收入。",
             "不同币种分开统计。",
-            "窗口长度不同或互相重叠时，两边数字可以并列，但不能对比。",
+            "业务改前数字必须来自一段已导入、覆盖完整、且和改前观察同一起止日期的窗口，不能把缺数据当成零。",
+            "窗口长度按整天计算，两端必须一样长且不重叠，才能并排对比。",
+            "窗口外、其他站点或重复导入的事件不计入次数和收入。",
             "这些数字不能证明是这次改动带来了业务变化。",
             "只看这一站点、这一市场，不把其他语言或其他地区的结果加进来。",
         ]
@@ -690,23 +1019,109 @@ def _fill_template(values: Dict[str, str]) -> str:
     return text
 
 
+def _schema_instance_for_measurement(report: Dict[str, Any]) -> Dict[str, Any]:
+    schema = load_schema("measurement-report.schema.json")
+    properties = schema.get("properties") or {}
+    instance: Dict[str, Any] = report
+    if schema.get("additionalProperties") is False:
+        extra = [key for key in FUTURE_MEASUREMENT_FIELDS if key in report and key not in properties]
+        if extra:
+            instance = {key: value for key, value in report.items() if key not in extra}
+    pair_schema = (schema.get("$defs") or {}).get("pair") or {}
+    pair_properties = pair_schema.get("properties") or {}
+    strip_pair = []
+    if pair_schema.get("additionalProperties") is False:
+        strip_pair = [key for key in FUTURE_PAIR_FIELDS if key not in pair_properties]
+    pairs = instance.get("pairs")
+    if strip_pair and isinstance(pairs, list):
+        if instance is report:
+            instance = dict(report)
+        instance["pairs"] = [
+            {key: value for key, value in pair.items() if key not in strip_pair} if isinstance(pair, dict) else pair
+            for pair in pairs
+        ]
+    return instance
+
+
+def _measurement_association_errors(report: Dict[str, Any], experiment: Dict[str, Any]) -> List[str]:
+    errors: List[str] = []
+    schema = load_schema("measurement-report.schema.json")
+    properties = schema.get("properties") or {}
+    pair_schema = (schema.get("$defs") or {}).get("pair") or {}
+    pair_properties = pair_schema.get("properties") or {}
+    if not report.get("experiment_id"):
+        errors.append(ERR_MEASUREMENT_NO_EXPERIMENT_ID)
+    elif report.get("experiment_id") != experiment.get("experiment_id"):
+        errors.append(ERR_MEASUREMENT_EXPERIMENT_ID)
+    if not report.get("questions_version"):
+        errors.append(ERR_MEASUREMENT_NO_QUESTIONS_VERSION)
+    elif report.get("questions_version") != experiment.get("questions_version"):
+        errors.append(ERR_MEASUREMENT_QUESTIONS_VERSION)
+    if report.get("site_domain") != experiment.get("site_domain"):
+        errors.append(ERR_MEASUREMENT_SITE_DOMAIN)
+    if "baseline_round_id" in properties and not report.get("baseline_round_id"):
+        errors.append(ERR_MEASUREMENT_NO_BASELINE_ROUND_ID)
+    pairs = report.get("pairs") if isinstance(report.get("pairs"), list) else []
+    stage_table = report.get("stage_table") if isinstance(report.get("stage_table"), list) else []
+    baseline = experiment.get("baseline")
+    if pairs and not isinstance(baseline, dict):
+        errors.append(ERR_MEASUREMENT_NULL_BASELINE)
+    expected_baseline = baseline.get("round_id") if isinstance(baseline, dict) else None
+    if "baseline_round_id" in properties and report.get("baseline_round_id") and expected_baseline and report.get("baseline_round_id") != expected_baseline:
+        errors.append(ERR_MEASUREMENT_BASELINE_ROUND)
+    round_ids = {item.get("round_id") for item in experiment.get("rounds") or []}
+    if len(stage_table) != len(pairs):
+        errors.append(ERR_MEASUREMENT_STAGE_LENGTH)
+    for index, pair in enumerate(pairs):
+        if not isinstance(pair, dict):
+            errors.append(ERR_MEASUREMENT_STAGE_RESULT)
+            continue
+        if isinstance(baseline, dict) and pair.get("baseline_round_id") != expected_baseline:
+            errors.append(ERR_MEASUREMENT_BASELINE_ROUND)
+        if pair.get("after_round_id") not in round_ids:
+            errors.append("{}: {}".format(ERR_MEASUREMENT_AFTER_ROUND, pair.get("after_round_id")))
+        if "insufficiency_reasons" in pair_properties and "insufficiency_reasons" not in pair:
+            errors.append(ERR_MEASUREMENT_INSUFFICIENCY_REASONS)
+        if index < len(stage_table) and isinstance(stage_table[index], dict):
+            expected_result = VERDICT_LABELS.get(str(pair.get("verdict")))
+            if stage_table[index].get("result") != expected_result:
+                errors.append(ERR_MEASUREMENT_STAGE_RESULT)
+    return list(dict.fromkeys(errors))
+
+
+def accept_measurement_report(report: Dict[str, Any], experiment: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(report, dict):
+        raise MeasurementReportError(["measurement report must be a JSON object"])
+    try:
+        validate_instance(_schema_instance_for_measurement(report), "measurement-report.schema.json")
+    except SchemaValidationError as exc:
+        raise MeasurementReportError([str(exc)]) from exc
+    errors = _measurement_association_errors(report, experiment or {})
+    if errors:
+        raise MeasurementReportError(errors)
+    return report
+
+
 def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]] = None) -> str:
     records = load_project(project_dir)
-    analysis = analyze_business(records)
     experiment = records["experiment"] or {}
+    accepted = None
+    if measurement_report is not None:
+        accepted = accept_measurement_report(measurement_report, experiment)
+    analysis = analyze_business(records)
     next_step = experiment.get("next_step") or "先查看当前进度，再决定下一件要改的事。"
     return _fill_template(
         {
             "pages_and_facts": _pages_and_facts(records),
-            "ai_changes": _ai_changes(measurement_report),
+            "ai_changes": _ai_changes(accepted),
             "not_yet": _not_yet(records),
             "business": _business_section(analysis),
             "next_item": next_step,
-            "stage_table": _stage_table(measurement_report),
+            "stage_table": _stage_table(accepted),
             "denominators": _denominators(analysis),
             "business_limits": _business_limits(),
             "next_step": next_step,
-            "sources_footer": _sources_footer(records, measurement_report),
+            "sources_footer": _sources_footer(records, accepted),
         }
     )
 

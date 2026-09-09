@@ -18,16 +18,16 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 
 `questions.json` is the frozen prompt list for this `questions_version`. Each question names an observation line, intent, text, URL/browsing flags, required and critical fact ids, a partial-credit rule, and `frozen_at`. Versions must match the experiment.
 
-`actions.json` is the only writable change list. Each action points at one page, question ids, fact ids, an issue type, a summary, optional deliverable, and release/recheck fields. `released` requires `released_at`. `verified_public` requires `public_recheck.result` of `pass`. Compared action ids on a round must exist.
+`actions.json` is the only writable change list. Each action points at one page, question ids, fact ids, an issue type, a summary, optional deliverable, and release/recheck fields. `released` requires `released_at`, non-empty `release_evidence`, and a deliverable. `verified_public` requires all of that plus a public recheck that passed, has a non-empty note, and was checked after the release time. `reverted` may omit `released_at` when the change never went public; that case is never counted as public. Compared action ids on a round must exist.
 
-`business-events.json` is owner-supplied imports. Money (`amount_minor`, `currency`) is allowed only on `purchase`. An `ai` source requires a non-null `source_evidence_url` and a known `attribution_method`. `unknown` is never promoted to `ai`. Test events never count toward real revenue.
+`business-events.json` is owner-supplied imports. Money (`amount_minor`, `currency`) is allowed only on `purchase`. An `ai` source requires a non-null `source_evidence_url` and a known `attribution_method`. `unknown` is never promoted to `ai`. Test events never count toward real revenue. The same `(source, external_id)` twice in one import is invalid. The same pair in a later import is kept on the record but excluded as a duplicate.
 
 ## How the files move
 
 1. Setup: copy templates, fill site/market/brand, write facts, freeze questions, leave actions planned.
 2. Baseline: add a baseline round, capture observations with geo-measure, set `baseline` and `current_phase`.
 3. Change: add or update actions; `changed_local` means the public page does not have it yet.
-4. Release: set `released` plus `released_at` and evidence. Do not treat `changed_local` as released.
+4. Release: set `released` plus `released_at`, evidence, and a deliverable. Do not treat `changed_local` as released.
 5. Retest: add an after-release or follow-up round; do not invent AI metrics here.
 6. Business review: import owner data; a stage report is complete even with no business file.
 7. Report: generate `report.md`. Next round: new ids or a new project directory; never rewrite released history.
@@ -37,7 +37,7 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 1. Run `bflabs-readiness round status --project DIR` first.
 2. Do not redo released actions.
 3. `changed_local` is not released and is not a public recheck.
-4. Missing baseline observations before the change phase is a precondition, not a score.
+4. A declared baseline must be resolvable: the observation file exists inside the project, parses as JSONL or as JSON with `observations`, every row matches the baseline round, `phase=baseline`, the frozen question version, and the experiment id when present, and every question id has at least one observation. That check is a precondition for `change`, `release`, `retest`, `business_review`, `report`, and `next_round`. A later phase does not waive it.
 
 ## Business import rules
 
@@ -47,8 +47,13 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 - Signup rate needs visits. Purchase rate needs signups. Otherwise rates stay null and only counts are shown.
 - Separate currencies. Separate test events from real revenue.
 - Overlapping import windows are flagged.
-- Before/after comparison needs the experiment baseline window and a later import window. Comparable only when lengths match within one day and the windows do not overlap. Different lengths: not comparable; still show both.
+- Before/after comparison needs an imported baseline window whose start and end match the experiment baseline window to the day, with coverage `complete`. The after window must have the same length in whole days, must not overlap, and cannot have unknown coverage. Missing baseline import, partial or unknown baseline coverage, unknown after coverage, overlap, or unequal length are not comparable. The before side is the import or null; it is never a fabricated zero.
+- Events outside the import window, or whose page host is not the experiment site or a subdomain of it, are excluded. A missing page URL is allowed. Only included events feed counts, rates, and revenue. Excluded counts are shown when they are not zero.
 - No GEO causation claims. Chinese demo results and English market results are never merged.
+
+## Measurement report association
+
+`round report --measurement-report` accepts a measurement report only when it belongs to this experiment. The file must match `measurement-report.schema.json`, use the same `site_domain`, carry `experiment_id` and `questions_version` that match the experiment, bind every pair to this experiment's baseline round and to a recorded after round, and have a `stage_table` whose length and Chinese results match the pair verdicts (`improved` → 改善, `regressed` → 回退, `unchanged` → 持平, `insufficient` → 样本不足, `not_comparable` → 不可比). A report from another site or an old file that cannot be associated is rejected; no `report.md` is written. Display lines are generated only from the accepted pairs and table rows.
 
 ## CLI
 
@@ -60,4 +65,4 @@ bflabs-readiness round report --project DIR
 bflabs-readiness round report --project DIR --measurement-report PATH --output DIR/report.md
 ```
 
-`validate` and `report` exit 1 when schema or cross-file checks fail. `report` embeds a supplied measurement `stage_table` and does not compute AI-answer metrics.
+`validate` and `report` exit 1 when schema or cross-file checks fail. `report` also exits 1 when a supplied measurement report cannot be associated; it then prints `{"status":"failed","errors":[...]}` and does not write the report file. A valid measurement report is embedded after those checks; this module does not compute AI-answer metrics.
