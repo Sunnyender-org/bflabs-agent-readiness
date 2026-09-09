@@ -29,7 +29,7 @@ Each `(round_id, prompt_id, platform, terminal)` has a frozen sample-slot set. D
 
 An observation whose `sample_slot_id` is outside the frozen set is excluded as `unplanned_slot`. It stays in the file and in `attempts`, and is counted as `exploratory_answers`. It never enters a valid denominator. `valid_slots` cannot exceed `planned_slots`. A valid observation that has `round_id` but no `sample_slot_id` is excluded as `missing_slot`. Replacement still only fills the original planned slot.
 
-A second valid observation that reuses a `session_id` already used in the same `(round_id, prompt_id, platform, terminal)` group is excluded as `shared_session`. Across a pair, a session that appears on both sides makes the pair `session_reused`.
+A valid observation that reuses a `session_id` already used on the same `(platform, terminal)` is excluded as `shared_session`, even across questions or rounds. Keep only the first answer from that session in valid counts; retain later attempts as evidence. A pair containing a reused session is `session_reused` and cannot be compared. In particular, do not ask a non-brand question in a chat that already contains a brand question. The same session label on a different platform or terminal does not indicate the same conversation.
 
 Technical failures stay in the file. Count them in `attempts` and `technical_failures`, not in valid denominators. At most one replacement per slot per round, and only for a technical failure in that same slot. `replacement_of` must point at that failed observation. Failed attempts are never deleted.
 
@@ -61,7 +61,7 @@ CSV may include the optional columns. An absent column means the field is absent
 
 ## Comparability and after-release evidence
 
-A later round is comparable to baseline only when required conditions are present and then equal. If any valid member is missing `question_version`, `facts_version`, `rubric_version`, `language`, or `region`, the pair records `<field>_missing`. After both sides are known, unequal values are `<field>_mismatch`. `personalization_status` must be `off` or `on` on every valid member of both sides; `unknown` or missing is `personalization_unknown`. `visible_model` must match when both sides are known. Unknown model on either side is `visible_model_unknown`.
+A later round is comparable to baseline only when required conditions are present, unique within each round group, and then equal between rounds. If any valid member is missing `question_version`, `facts_version`, `rubric_version`, `language`, or `region`, the pair records `<field>_missing`. Multiple values inside either group are `<field>_mixed`, even when both groups contain the same list of values. After each side has one known value, unequal values are `<field>_mismatch`. `personalization_status` must be `off` or `on` on every valid member of both sides; `unknown` or missing is `personalization_unknown`, and mixed settings are `personalization_status_mixed`. `visible_model` must have one known value per group and match between groups; unknown model is `visible_model_unknown`, and multiple models are `visible_model_mixed`. Collect different models or conditions as separate comparisons rather than pooling their results.
 
 Normalize `prompt_text` (NFKC, collapse whitespace, strip, casefold) and fingerprint it. Every valid member of a round group must share one fingerprint; a difference inside the group is a quality blocker. Baseline and after fingerprints must match, or the pair is `prompt_text_mismatch`.
 

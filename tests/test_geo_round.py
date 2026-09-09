@@ -384,10 +384,10 @@ class GeoRoundTests(unittest.TestCase):
         self.assertNotIn("美元 1000", body)
         self.assertIn("注册率为 100.0%（1 / 1）", body)
 
-    def test_report_embeds_measurement_stage_table(self) -> None:
+    def test_report_derives_measurement_table_from_pairs_and_project_question(self) -> None:
         measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))
         markdown = render_report(FIXTURES / "valid", measurement)
-        self.assertIn("品牌被提到", markdown)
+        self.assertIn("What is Example?", markdown)
         self.assertIn("1/10", markdown)
         self.assertIn("3/10", markdown)
         self.assertNotIn("\n未测\n", "\n" + markdown.split("## 前后对比", 1)[1].split("## 转化率", 1)[0])
@@ -398,7 +398,7 @@ class GeoRoundTests(unittest.TestCase):
             path = write_report(project, FIXTURES / "measurement-report.json")
             self.assertEqual(path, (project / "report.md").resolve())
             text = path.read_text("utf-8")
-            self.assertIn("品牌被提到", text)
+            self.assertIn("What is Example?", text)
 
     def test_cli_round_validate_status_report(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -426,7 +426,7 @@ class GeoRoundTests(unittest.TestCase):
             result = json.loads(output)
             self.assertEqual(status, 0)
             self.assertTrue(Path(result["report"]).is_file())
-            self.assertIn("品牌被提到", Path(result["report"]).read_text("utf-8"))
+            self.assertIn("What is Example?", Path(result["report"]).read_text("utf-8"))
 
     def test_cli_round_validate_fails_on_named_error(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

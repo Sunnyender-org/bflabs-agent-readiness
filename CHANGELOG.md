@@ -4,6 +4,8 @@ All notable changes to the public release candidate are documented here.
 
 ## 0.5.0 - 2026-09-09
 
+- Closed remaining review counterexamples: validate actual baseline observations and frozen context; derive report displays from associated counts; require complete business windows with equal elapsed duration; reject mixed-model groups and cross-question conversation reuse. Legacy single-batch measurement remains unchanged.
+
 - Described the free single-website GEO round in the root Skill (facts and goals, baseline before any change, issues and pages, change, public retest, answer comparison, business review, report, next round) and added a fixed start prompt that only points to the root Skill URL.
 - Added the Agent-only round contract: request classification, per-phase precondition checks, a mandatory real-baseline gate before answer-affecting changes, resume-from-record rules, and the resource URL scheme. Full-round and continuation requests route to the root capability; the two CLI workflows remain the only automatic multi-capability executions.
 - Served every Skill's companion files online at `/skills/<id>/<path>` with a versioned, SHA-256 manifest at `/skills/<id>/manifest.json`, ETag/304 support, traversal rejection, and honest 404s; a test proves the whole reference graph resolves from the root Skill and that served files are a subset of the Skill Hub package.

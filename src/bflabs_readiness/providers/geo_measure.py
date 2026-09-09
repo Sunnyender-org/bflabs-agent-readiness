@@ -457,30 +457,17 @@ def _apply_slot_plan(observations: List[Dict[str, Any]], planned_slot_ids: Seque
             item["exclusion_reason"] = "unplanned_slot"
 
 
-def _session_group(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str, str]]:
-    if not observation.get("round_id"):
-        return None
-    return (
-        observation["round_id"],
-        observation["prompt_id"],
-        observation["platform"],
-        observation["terminal"],
-    )
-
-
 def _apply_shared_sessions(observations: List[Dict[str, Any]]) -> None:
-    seen: Dict[Tuple[str, str, str, str], Set[str]] = {}
+    seen: Set[Tuple[str, str, str]] = set()
     ordered = sorted(observations, key=lambda item: (_parse_dt(item["captured_at"]), item["id"]))
     for item in ordered:
-        key = _session_group(item)
-        if key is None or not _is_valid(item):
+        if not item.get("round_id") or not _is_valid(item):
             continue
-        used = seen.setdefault(key, set())
-        session_id = item["session_id"]
-        if session_id in used:
+        key = (item["platform"], item["terminal"], item["session_id"])
+        if key in seen:
             item["exclusion_reason"] = "shared_session"
             continue
-        used.add(session_id)
+        seen.add(key)
 
 
 def _prompt_consistency_blockers(observations: List[Dict[str, Any]]) -> List[str]:
@@ -621,6 +608,8 @@ def _comparability_reasons(
         right_missing, right_values = _valid_field_states(after_members, field)
         if left_missing or right_missing:
             reasons.append("{}_missing".format(field))
+        elif len(left_values) > 1 or len(right_values) > 1:
+            reasons.append("{}_mixed".format(field))
         elif left_values != right_values:
             reasons.append("{}_mismatch".format(field))
 
@@ -632,13 +621,17 @@ def _comparability_reasons(
     elif baseline_personalization and after_personalization:
         left = _unique(baseline_personalization)
         right = _unique(after_personalization)
-        if left != right:
+        if len(left) > 1 or len(right) > 1:
+            reasons.append("personalization_status_mixed")
+        elif left != right:
             reasons.append("personalization_status_mismatch")
 
     baseline_model = _visible_model(baseline_members)
     after_model = _visible_model(after_members)
     if baseline_model == "unknown" or after_model == "unknown":
         reasons.append("visible_model_unknown")
+    elif isinstance(baseline_model, list) or isinstance(after_model, list):
+        reasons.append("visible_model_mixed")
     elif baseline_model != after_model:
         reasons.append("visible_model_mismatch")
 
@@ -661,7 +654,10 @@ def _comparability_reasons(
 
     baseline_sessions = {item["session_id"] for item in baseline_valid}
     after_sessions = {item["session_id"] for item in after_valid}
-    if baseline_sessions & after_sessions:
+    if baseline_sessions & after_sessions or any(
+        item.get("exclusion_reason") == "shared_session"
+        for item in list(baseline_members) + list(after_members)
+    ):
         reasons.append("session_reused")
 
     if baseline_members and after_members:
@@ -731,7 +727,7 @@ def _verdict(
     return "unchanged"
 
 
-def _stage_side(counts: Optional[Dict[str, int]]) -> str:
+def format_stage_side(counts: Optional[Dict[str, int]]) -> str:
     if counts is None:
         return "未测"
     return "正确 {}/{} · 已判读 {}/{} · 有效样本位 {}/{} · 尝试 {} 次 · 技术失败 {} 次".format(
@@ -890,8 +886,8 @@ def _build_stage_table(pairs: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         rows.append(
             {
                 "label": label,
-                "baseline": _stage_side(pair["_baseline_counts"]),
-                "after": _stage_side(pair["_after_counts"]),
+                "baseline": format_stage_side(pair["_baseline_counts"]),
+                "after": format_stage_side(pair["_after_counts"]),
                 "basis": _stage_basis(pair["_baseline_members"], pair["_after_members"]),
                 "result": VERDICT_LABELS[pair["verdict"]],
             }

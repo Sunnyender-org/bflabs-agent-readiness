@@ -28,7 +28,7 @@ Every metric reports numerator, denominator, exclusions, missing values, rate, d
 - `duplicate_slot_answer`: a second valid answer in the same `(round_id, prompt_id, platform, terminal, sample_slot_id)`. The first valid answer is kept.
 - `unplanned_slot`: `sample_slot_id` is outside the frozen planned set. Retained as an exploratory sample.
 - `missing_slot`: a valid observation has `round_id` but no `sample_slot_id`.
-- `shared_session`: a later valid observation reuses a `session_id` already used in the same `(round_id, prompt_id, platform, terminal)` group.
+- `shared_session`: a later valid observation reuses a `session_id` already used on the same `(platform, terminal)`, including another question or round. It remains an attempt but cannot count as an independent answer; pairs containing the reused observation are `session_reused`.
 
 Replacement rules are quality blockers, not silent exclusions: at most one replacement per slot per round; `replacement_of` must name a technical failure in that same slot; a replacement of a valid observation, a second replacement, or a slot change blocks the run. Prompt text that differs among valid members of one round group is also a blocker.
 
@@ -36,4 +36,4 @@ Replacement rules are quality blockers, not silent exclusions: at most one repla
 
 Aggregates remain descriptive and are stratified by platform and terminal. Observation lines A, B, C, and D are never merged. Small, user-supplied, or convenience samples do not support causal conclusions. Three repetitions support process trial and direction only. Readiness and answer observations do not establish traffic, conversion, or revenue.
 
-Comparability requires known conditions first: missing versions, language, or region; unknown personalization; unverified network; mismatched prompt fingerprints; reused sessions; or empty release evidence. `not_comparable` and `insufficient` pairs still pass quality. A `not_comparable` pair lists every failed condition; it is not a regression. Unjudged answers cannot turn a regression into an improvement.
+Comparability requires known conditions that are unique inside each round group and equal between rounds. Missing or mixed versions, language, region, model, or personalization; unverified network; mismatched prompt fingerprints; reused sessions; or empty release evidence prevent comparison. Matching lists of mixed models or conditions do not qualify as equal conditions. `not_comparable` and `insufficient` pairs still pass quality. A `not_comparable` pair lists every failed condition; it is not a regression. Unjudged answers cannot turn a regression into an improvement.

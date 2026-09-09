@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 from .paths import repository_root
+from .providers.geo_measure import LINE_LABELS, TERMINAL_LABELS, format_stage_side
 from .schemas import SchemaValidationError, load_schema, validate_instance
 
 
@@ -41,6 +43,7 @@ ERR_BASELINE_OBSERVATION_ROUND_ID = "baseline observation round_id does not matc
 ERR_BASELINE_OBSERVATION_PHASE = "baseline observation phase must be baseline"
 ERR_BASELINE_OBSERVATION_QUESTION_VERSION = "baseline observation question_version does not match experiment"
 ERR_BASELINE_OBSERVATION_EXPERIMENT_ID = "baseline observation experiment_id does not match experiment"
+ERR_BASELINE_OBSERVATION_INVALID = "baseline observation is not valid evidence"
 ERR_MEASUREMENT_NO_EXPERIMENT_ID = "measurement report has no experiment_id"
 ERR_MEASUREMENT_NO_QUESTIONS_VERSION = "measurement report has no questions_version"
 ERR_MEASUREMENT_NO_BASELINE_ROUND_ID = "measurement report has no baseline_round_id"
@@ -344,7 +347,11 @@ def _load_observation_rows(path: Path) -> Tuple[Optional[List[Any]], Optional[st
             return None, "{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, path.name)
         if not isinstance(value, dict) or not isinstance(value.get("observations"), list):
             return None, ERR_BASELINE_OBSERVATION_FORMAT
-        return value["observations"], None
+        return [
+            {"observation": observation, "site_domain": value.get("site_domain"),
+             "experiment_id": value.get("experiment_id")}
+            for observation in value["observations"]
+        ], None
     rows: List[Any] = []
     for line in text.splitlines():
         if not line.strip():
@@ -379,22 +386,70 @@ def baseline_evidence_errors(root: Path, experiment: Optional[Dict[str, Any]], q
     expected_round = baseline.get("round_id")
     expected_version = (experiment or {}).get("questions_version")
     expected_experiment = (experiment or {}).get("experiment_id")
+    declared_rounds = {item["round_id"]: item["phase"] for item in (experiment or {}).get("rounds", [])}
+    known_questions = {item["question_id"]: item for item in (questions or {}).get("questions", [])}
     for row in rows or []:
         observation = _row_observation(row)
         if observation is None:
             errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_PARSE, label))
             continue
+        try:
+            validate_instance(observation, "observation.schema.json")
+        except SchemaValidationError as exc:
+            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_INVALID, exc))
+            continue
         prompt_id = observation.get("prompt_id")
+        if row.get("site_domain") is not None and row["site_domain"] != (experiment or {}).get("site_domain"):
+            errors.append("{}: site mismatch for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        for identity in (row.get("experiment_id"), observation.get("experiment_id")):
+            if identity is not None and identity != expected_experiment:
+                errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_EXPERIMENT_ID, prompt_id))
+        round_id = observation.get("round_id")
+        if round_id != expected_round:
+            if round_id not in declared_rounds or observation.get("phase") != declared_rounds[round_id]:
+                errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_ROUND_ID, prompt_id))
+            # The append-only observation file also holds declared later rounds.
+            # Only the frozen baseline set supplies baseline coverage and evidence.
+            continue
         if prompt_id:
             seen_prompts.add(prompt_id)
-        if observation.get("round_id") != expected_round:
-            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_ROUND_ID, prompt_id or "?"))
+        question = known_questions.get(prompt_id)
+        if question is None:
+            errors.append("{}: {}".format(ERR_UNKNOWN_QUESTION_ID, prompt_id))
+        elif " ".join(observation["prompt_text"].split()) != " ".join(question["text"].split()):
+            errors.append("{}: prompt text changed for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        elif observation.get("observation_line") != question["observation_line"]:
+            errors.append("{}: observation line changed for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        expected_hash = "sha256:" + hashlib.sha256(observation["answer_text"].encode("utf-8")).hexdigest()
+        if observation["answer_hash"] != expected_hash:
+            errors.append("{}: answer hash mismatch for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        excluded = observation.get("exclusion_reason")
+        failed = observation.get("execution_status", "valid") != "valid"
+        if failed or not observation["evidence_complete"]:
+            if not _nonempty(excluded):
+                errors.append("{}: missing exclusion reason for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        elif not _nonempty(excluded) and (
+            not observation["answer_text"].strip()
+            or observation["source_kind"] != "model-answer"
+            or (observation["network_status"] == "verified" and not _nonempty(observation["network_evidence"]))
+        ):
+            errors.append("{}: missing answer evidence for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        window = baseline.get("captured_window") or {}
+        try:
+            captured_at = parse_datetime(observation["captured_at"])
+            if not parse_datetime(window["start"]) <= captured_at <= parse_datetime(window["end"]):
+                errors.append("{}: captured outside baseline window for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+            if question and captured_at < parse_datetime(question["frozen_at"]):
+                errors.append("{}: captured before question freeze for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        except (KeyError, TypeError, ValueError):
+            errors.append("{}: invalid capture window for {}".format(ERR_BASELINE_OBSERVATION_INVALID, prompt_id))
+        for field in ("facts_version", "rubric_version"):
+            if observation.get(field) != (experiment or {}).get(field):
+                errors.append("{}: {} mismatch for {}".format(ERR_BASELINE_OBSERVATION_INVALID, field, prompt_id))
         if observation.get("phase") != "baseline":
             errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_PHASE, prompt_id or "?"))
         if observation.get("question_version") != expected_version:
             errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_QUESTION_VERSION, prompt_id or "?"))
-        if observation.get("experiment_id") is not None and observation.get("experiment_id") != expected_experiment:
-            errors.append("{}: {}".format(ERR_BASELINE_OBSERVATION_EXPERIMENT_ID, prompt_id or "?"))
     missing_questions = sorted(_question_ids(questions) - seen_prompts)
     if missing_questions:
         errors.append("{} {}".format(MISSING_BASELINE_QUESTIONS_PREFIX, ", ".join(missing_questions)))
@@ -457,16 +512,14 @@ def window_days(window: Dict[str, Any]) -> float:
     return (parse_datetime(window["end"]) - parse_datetime(window["start"])).total_seconds() / 86400.0
 
 
-def window_whole_days(window: Dict[str, Any]) -> int:
-    start = parse_datetime(window["start"]).date()
-    end = parse_datetime(window["end"]).date()
-    return (end - start).days
+def window_duration(window: Dict[str, Any]) -> timedelta:
+    return parse_datetime(window["end"]) - parse_datetime(window["start"])
 
 
-def windows_equal_to_the_day(left: Dict[str, Any], right: Dict[str, Any]) -> bool:
-    return parse_datetime(left["start"]).date() == parse_datetime(right["start"]).date() and parse_datetime(
+def windows_equal(left: Dict[str, Any], right: Dict[str, Any]) -> bool:
+    return parse_datetime(left["start"]) == parse_datetime(right["start"]) and parse_datetime(
         left["end"]
-    ).date() == parse_datetime(right["end"]).date()
+    ) == parse_datetime(right["end"])
 
 
 def windows_overlap(left: Dict[str, Any], right: Dict[str, Any]) -> bool:
@@ -637,7 +690,7 @@ def _comparison(experiment: Optional[Dict[str, Any]], analyzed: List[Dict[str, A
         (
             item
             for item in analyzed
-            if item.get("window") and "start" in item["window"] and windows_equal_to_the_day(item["window"], before_window)
+            if item.get("window") and "start" in item["window"] and windows_equal(item["window"], before_window)
         ),
         None,
     )
@@ -650,11 +703,14 @@ def _comparison(experiment: Optional[Dict[str, Any]], analyzed: List[Dict[str, A
         }
     before = before_match
     overlap = windows_overlap(before_window, after["window"])
-    equal_length = window_whole_days(before_window) == window_whole_days(after["window"])
+    before_duration = window_duration(before_window)
+    equal_length = before_duration.total_seconds() > 0 and before_duration == window_duration(after["window"])
     if before.get("coverage") == "partial":
         reason: Optional[str] = "baseline import coverage partial"
     elif before.get("coverage") == "unknown":
         reason = "baseline import coverage unknown"
+    elif after.get("coverage") == "partial":
+        reason = "after import coverage partial"
     elif after.get("coverage") == "unknown":
         reason = "after import coverage unknown"
     elif overlap:
@@ -895,6 +951,8 @@ def _comparison_text(comparison: Optional[Dict[str, Any]]) -> List[str]:
         lines = ["改前窗口的覆盖范围不明，不能做前后对比。"]
     elif reason == "after import coverage unknown":
         lines = ["改后窗口的覆盖范围不明，不能做前后对比。"]
+    elif reason == "after import coverage partial":
+        lines = ["改后窗口的导入不完整，不能做前后对比。"]
     elif reason == "windows overlap":
         lines = ["两段窗口不能对比，因为两端窗口有重叠。"]
     elif reason == "unequal window length":
@@ -962,8 +1020,8 @@ def _business_limits() -> str:
             "注册率需要访问次数，成交率需要注册次数；缺了这些次数时只报个数。",
             "测试事件不计入真实收入。",
             "不同币种分开统计。",
-            "业务改前数字必须来自一段已导入、覆盖完整、且和改前观察同一起止日期的窗口，不能把缺数据当成零。",
-            "窗口长度按整天计算，两端必须一样长且不重叠，才能并排对比。",
+            "业务改前数字必须来自一段已导入、覆盖完整、且和改前观察同一起止时间的窗口，不能把缺数据当成零。",
+            "两端窗口都要覆盖完整，按实际时间计算一样长且不重叠，才能并排对比。",
             "窗口外、其他站点或重复导入的事件不计入次数和收入。",
             "这些数字不能证明是这次改动带来了业务变化。",
             "只看这一站点、这一市场，不把其他语言或其他地区的结果加进来。",
@@ -1089,7 +1147,71 @@ def _measurement_association_errors(report: Dict[str, Any], experiment: Dict[str
     return list(dict.fromkeys(errors))
 
 
-def accept_measurement_report(report: Dict[str, Any], experiment: Dict[str, Any]) -> Dict[str, Any]:
+def _derived_measurement_table(
+    report: Dict[str, Any], experiment: Dict[str, Any], questions: Optional[Dict[str, Any]]
+) -> List[Dict[str, str]]:
+    """Render the associated question and structured counts, never cached display prose."""
+    question_map = {item["question_id"]: item for item in (questions or {}).get("questions", [])}
+    group_fields = ("round_id", "phase", "prompt_id", "observation_line", "platform", "terminal")
+    groups = {}
+    for group in report.get("rounds") or []:
+        key = tuple(group[field] for field in group_fields)
+        if key in groups:
+            raise MeasurementReportError(["measurement report has duplicate round groups"])
+        groups[key] = group
+
+    def side_text(pair: Dict[str, Any], side: str) -> str:
+        counts = pair[side]
+        if counts["correct"] > counts["valid_answers"] or counts["valid_slots"] > counts["planned_slots"]:
+            raise MeasurementReportError(["measurement pair counts are inconsistent"])
+        round_id = pair["baseline_round_id" if side == "baseline" else "after_round_id"]
+        if round_id is None:
+            return "未测"
+        phase = "baseline" if side == "baseline" else pair["phase"]
+        key = (round_id, phase, pair["prompt_id"], pair["observation_line"], pair["platform"], pair["terminal"])
+        group = groups.get(key)
+        if group is not None:
+            full = group["counts"]
+            if any(full[field] != counts[field] for field in counts):
+                raise MeasurementReportError(["measurement round counts do not match pair counts"])
+            if (
+                full["judged_answers"] + full["unjudged_answers"] != full["valid_answers"]
+                or full["correct"] > full["judged_answers"]
+                or full["valid_answers"] + full["technical_failures"] > full["attempts"]
+            ):
+                raise MeasurementReportError(["measurement round counts are inconsistent"])
+            return format_stage_side(full)
+        if groups:
+            raise MeasurementReportError(["measurement pair has no matching round group"])
+        # Older reports contain only pair counts: do not invent attempts or judgement coverage.
+        return "正确标注 {}/{} 条有效回答 · 有效样本位 {}/{}（未附判读与尝试明细）".format(
+            counts["correct"], counts["valid_answers"], counts["valid_slots"], counts["planned_slots"]
+        )
+
+    rows = []
+    for pair in report.get("pairs") or []:
+        question = question_map.get(pair["prompt_id"])
+        if questions is not None and (
+            question is None or question["observation_line"] != pair["observation_line"]
+        ):
+            raise MeasurementReportError(["measurement question does not match the frozen project questions"])
+        question_text = " ".join(question["text"].split()) if question else "问题内容未关联"
+        rows.append({
+            "label": "{} · {} {} · {}".format(
+                LINE_LABELS[pair["observation_line"]], pair["platform"],
+                TERMINAL_LABELS.get(pair["terminal"], pair["terminal"]), question_text,
+            ),
+            "baseline": side_text(pair, "baseline"),
+            "after": side_text(pair, "after"),
+            "basis": "本项目题目版本 {}；两轮计数来自已关联的测量记录".format(experiment["questions_version"]),
+            "result": VERDICT_LABELS[pair["verdict"]],
+        })
+    return rows
+
+
+def accept_measurement_report(
+    report: Dict[str, Any], experiment: Dict[str, Any], questions: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     if not isinstance(report, dict):
         raise MeasurementReportError(["measurement report must be a JSON object"])
     try:
@@ -1099,7 +1221,7 @@ def accept_measurement_report(report: Dict[str, Any], experiment: Dict[str, Any]
     errors = _measurement_association_errors(report, experiment or {})
     if errors:
         raise MeasurementReportError(errors)
-    return report
+    return {**report, "stage_table": _derived_measurement_table(report, experiment, questions)}
 
 
 def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]] = None) -> str:
@@ -1107,7 +1229,9 @@ def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]]
     experiment = records["experiment"] or {}
     accepted = None
     if measurement_report is not None:
-        accepted = accept_measurement_report(measurement_report, experiment)
+        accepted = accept_measurement_report(measurement_report, experiment, records.get("questions"))
+        if accepted.get("pairs") and records.get("questions") is None:
+            raise MeasurementReportError(["project questions are required for a measurement comparison"])
     analysis = analyze_business(records)
     next_step = experiment.get("next_step") or "先查看当前进度，再决定下一件要改的事。"
     return _fill_template(

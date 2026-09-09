@@ -37,7 +37,7 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 1. Run `bflabs-readiness round status --project DIR` first.
 2. Do not redo released actions.
 3. `changed_local` is not released and is not a public recheck.
-4. A declared baseline must be resolvable: the observation file exists inside the project, parses as JSONL or as JSON with `observations`, every row matches the baseline round, `phase=baseline`, the frozen question version, and the experiment id when present, and every question id has at least one observation. That check is a precondition for `change`, `release`, `retest`, `business_review`, `report`, and `next_round`. A later phase does not waive it.
+4. A declared baseline must be resolvable: the observation file stays inside the project and parses as JSONL or JSON with observations. Each row must satisfy the observation schema and answer hash, match a frozen question text and observation line, and have a capture time inside the baseline window and no earlier than question freezing. Round, phase, question/fact/rubric versions and any supplied site/experiment identity must match. Missing answers or incomplete/failed captures require explicit exclusion reasons; those attempts remain evidence of a gap, not successful answers. The file may also contain observations appended for other declared rounds: their round/phase must agree with the experiment, and they never replace the frozen baseline set. Every frozen question must be represented in that baseline set. This is a precondition for change and all later phases; a later phase does not waive it.
 
 ## Business import rules
 
@@ -47,13 +47,13 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 - Signup rate needs visits. Purchase rate needs signups. Otherwise rates stay null and only counts are shown.
 - Separate currencies. Separate test events from real revenue.
 - Overlapping import windows are flagged.
-- Before/after comparison needs an imported baseline window whose start and end match the experiment baseline window to the day, with coverage `complete`. The after window must have the same length in whole days, must not overlap, and cannot have unknown coverage. Missing baseline import, partial or unknown baseline coverage, unknown after coverage, overlap, or unequal length are not comparable. The before side is the import or null; it is never a fabricated zero.
+- Before/after comparison needs an imported baseline window whose timezone-aware start and end match the experiment baseline instants exactly. Both imports need complete coverage. The after window must have the same positive elapsed duration and must not overlap. Equivalent instants expressed with different UTC offsets compare equally; dropping hours or rounding dates does not make windows equal. Missing baseline import, partial or unknown coverage on either side, overlap, or unequal elapsed length are not comparable. The before side is the import or null, never a fabricated zero.
 - Events outside the import window, or whose page host is not the experiment site or a subdomain of it, are excluded. A missing page URL is allowed. Only included events feed counts, rates, and revenue. Excluded counts are shown when they are not zero.
 - No GEO causation claims. Chinese demo results and English market results are never merged.
 
 ## Measurement report association
 
-`round report --measurement-report` accepts a measurement report only when it belongs to this experiment. The file must match `measurement-report.schema.json`, use the same `site_domain`, carry `experiment_id` and `questions_version` that match the experiment, bind every pair to this experiment's baseline round and to a recorded after round, and have a `stage_table` whose length and Chinese results match the pair verdicts (`improved` → 改善, `regressed` → 回退, `unchanged` → 持平, `insufficient` → 样本不足, `not_comparable` → 不可比). A report from another site or an old file that cannot be associated is rejected; no `report.md` is written. Display lines are generated only from the accepted pairs and table rows.
+`round report --measurement-report` accepts a report only when it belongs to this experiment. The file must match measurement-report.schema.json, use the same site, experiment and question version, and bind each pair to the frozen baseline, a recorded after round and a known project question. Any supplied full round counts must match the pair counts. Display numbers come from structured counts and labels from frozen project questions; imported stage_table prose is not copied. Older associated reports with only pair counts show those counts without inventing judgement or attempt details. Contradictory counts, unknown questions, other sites and unassociated reports are rejected without writing a report. The reporter does not resample platforms or recalculate AI judgements.
 
 ## CLI
 

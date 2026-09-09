@@ -6,6 +6,7 @@ import hashlib
 import json
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from bflabs_readiness.artifacts import publish_run, validate_run
@@ -611,10 +612,102 @@ class MeasureTests(unittest.TestCase):
         baseline = first_round(report, "baseline")
         after = first_round(report, "after_release")
         self.assertEqual(baseline["counts"]["valid_answers"], 1)
-        self.assertEqual(after["counts"]["valid_answers"], 1)
+        self.assertEqual(after["counts"]["valid_answers"], 0)
         self.assertIn("session_reused", pair["incomparable_reasons"])
         self.assertEqual(pair["verdict"], "not_comparable")
         self.assertFalse(pair["comparable"])
+
+    def test_mixed_model_proportions_cannot_manufacture_improvement(self) -> None:
+        request = copy.deepcopy(load_rounds_input())
+        for item in request["observations"]:
+            good = item["sample_slot_id"] == "slot_1" or (
+                item["phase"] == "after_release" and item["sample_slot_id"] == "slot_3"
+            )
+            item["visible_model"] = "model-good" if good else "model-bad"
+            item["answer_verdict"] = "correct" if good else "wrong"
+            item["answer_text"] = "Correct answer." if good else "Wrong answer."
+            item["answer_hash"] = sha(item["answer_text"])
+        _, report = report_of(request)
+        pair = first_pair(report)
+        self.assertEqual(pair["baseline"]["correct"], 1)
+        self.assertEqual(pair["after"]["correct"], 2)
+        self.assertFalse(pair["comparable"])
+        self.assertEqual(pair["verdict"], "not_comparable")
+        self.assertIn("visible_model_mixed", pair["incomparable_reasons"])
+
+    def test_comparison_conditions_must_be_unique_within_each_round(self) -> None:
+        alternatives = {
+            "question_version": "qv2",
+            "facts_version": "fv2",
+            "rubric_version": "rv2",
+            "language": "zh",
+            "region": "CN",
+            "personalization_status": "on",
+        }
+        for field, alternative in alternatives.items():
+            with self.subTest(field=field):
+                request = copy.deepcopy(load_rounds_input())
+                for item in request["observations"]:
+                    if item["sample_slot_id"] == "slot_2":
+                        item[field] = alternative
+                _, report = report_of(request)
+                pair = first_pair(report)
+                self.assertFalse(pair["comparable"])
+                self.assertEqual(pair["verdict"], "not_comparable")
+                self.assertIn(field + "_mixed", pair["incomparable_reasons"])
+
+    def test_nonbrand_sampling_cannot_reuse_brand_question_sessions(self) -> None:
+        for reuse in (True, False):
+            with self.subTest(reuse=reuse):
+                request = copy.deepcopy(load_rounds_input())
+                for item in list(request["observations"]):
+                    if item["execution_status"] != "valid":
+                        continue
+                    extra = copy.deepcopy(item)
+                    extra["id"] += "d"
+                    extra["prompt_id"] = "q_d_nonbrand"
+                    extra["observation_line"] = "D"
+                    extra["prompt_text"] = "Which public API documentation hosts should I evaluate?"
+                    extra["captured_at"] = (
+                        datetime.fromisoformat(item["captured_at"].replace("Z", "+00:00"))
+                        + timedelta(seconds=30)
+                    ).isoformat()
+                    extra["network_status"] = "verified"
+                    extra["network_evidence"] = "synthetic search panel"
+                    extra["answer_text"] = "Synthetic nonbrand answer " + extra["id"]
+                    extra["answer_hash"] = sha(extra["answer_text"])
+                    extra.pop("replacement_of", None)
+                    if not reuse:
+                        extra["session_id"] += "-independent"
+                    request["observations"].append(extra)
+                _, report = report_of(request)
+                pair = next(item for item in report["pairs"] if item["observation_line"] == "D")
+                groups = [item for item in report["rounds"] if item["observation_line"] == "D"]
+                if reuse:
+                    self.assertFalse(pair["comparable"])
+                    self.assertEqual(pair["verdict"], "not_comparable")
+                    self.assertIn("session_reused", pair["incomparable_reasons"])
+                    self.assertTrue(all(item["counts"]["valid_answers"] == 0 for item in groups))
+                else:
+                    self.assertTrue(pair["comparable"])
+                    self.assertEqual(pair["verdict"], "regressed")
+                    self.assertTrue(all(item["counts"]["valid_answers"] == 3 for item in groups))
+
+    def test_session_names_do_not_collide_across_platform_or_terminal(self) -> None:
+        for field, value in (("platform", "Gemini"), ("terminal", "app")):
+            with self.subTest(field=field):
+                request = copy.deepcopy(load_rounds_input())
+                for item in list(request["observations"]):
+                    extra = copy.deepcopy(item)
+                    extra["id"] += "other"
+                    extra[field] = value
+                    if extra.get("replacement_of"):
+                        extra["replacement_of"] += "other"
+                    request["observations"].append(extra)
+                _, report = report_of(request)
+                self.assertEqual(len(report["pairs"]), 2)
+                self.assertTrue(all(pair["comparable"] for pair in report["pairs"]))
+                self.assertTrue(all(pair["verdict"] == "regressed" for pair in report["pairs"]))
 
     def test_review_null_release_evidence_is_not_comparable(self) -> None:
         request = copy.deepcopy(load_rounds_input())
@@ -647,4 +740,3 @@ class MeasureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
