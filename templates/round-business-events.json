@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "imports": [
+    {
+      "import_id": "imp_example",
+      "source": "manual",
+      "source_label": "Owner-supplied export placeholder",
+      "window": {
+        "start": "2026-01-01T00:00:00Z",
+        "end": "2026-01-08T00:00:00Z",
+        "timezone": "UTC"
+      },
+      "coverage": "unknown",
+      "export_filter": null,
+      "events": []
+    }
+  ]
+}

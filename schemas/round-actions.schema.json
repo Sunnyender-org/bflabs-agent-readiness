@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/round-actions.schema.json",
+  "type": "object",
+  "required": ["schema_version", "actions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "required": [
+        "action_id",
+        "page_url",
+        "question_ids",
+        "fact_ids",
+        "issue_type",
+        "summary",
+        "deliverable",
+        "status",
+        "released_at",
+        "release_evidence",
+        "public_recheck"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action_id": { "type": "string", "pattern": "^act_[a-z0-9_-]+$" },
+        "page_url": { "type": "string", "format": "uri" },
+        "question_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^q_[a-z0-9_-]+$" }
+        },
+        "fact_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^fact_[a-z0-9_-]+$" }
+        },
+        "issue_type": { "enum": ["fact", "structure", "source", "execution"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "deliverable": { "type": ["string", "null"] },
+        "status": {
+          "enum": ["planned", "changed_local", "released", "verified_public", "reverted"]
+        },
+        "released_at": { "type": ["string", "null"], "format": "date-time" },
+        "release_evidence": { "type": ["string", "null"] },
+        "public_recheck": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/publicRecheck" }
+          ]
+        }
+      }
+    },
+    "publicRecheck": {
+      "type": "object",
+      "required": ["checked_at", "result", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "checked_at": { "type": "string", "format": "date-time" },
+        "result": { "enum": ["pass", "fail", "unknown"] },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

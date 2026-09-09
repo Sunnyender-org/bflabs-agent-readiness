@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/round-experiment.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "site_domain",
+    "site_url",
+    "target_market",
+    "brand",
+    "facts_version",
+    "questions_version",
+    "rubric_version",
+    "representative_pages",
+    "baseline",
+    "rounds",
+    "current_phase",
+    "next_step",
+    "updated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "experiment_id": { "type": "string", "pattern": "^exp_[a-z0-9_-]+$" },
+    "site_domain": { "type": "string", "minLength": 1 },
+    "site_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "target_market": { "$ref": "#/$defs/targetMarket" },
+    "brand": { "$ref": "#/$defs/brand" },
+    "facts_version": { "type": "string", "minLength": 1 },
+    "questions_version": { "type": "string", "minLength": 1 },
+    "rubric_version": { "type": "string", "minLength": 1 },
+    "representative_pages": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/representativePage" }
+    },
+    "baseline": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/baseline" }
+      ]
+    },
+    "rounds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/round" }
+    },
+    "current_phase": {
+      "enum": ["setup", "baseline", "change", "release", "retest", "business_review", "report", "next_round"]
+    },
+    "next_step": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "timeWindow": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "targetMarket": {
+      "type": "object",
+      "required": ["language", "region"],
+      "additionalProperties": false,
+      "properties": {
+        "language": { "type": "string", "minLength": 1 },
+        "region": { "type": "string", "minLength": 1 }
+      }
+    },
+    "brand": {
+      "type": "object",
+      "required": ["canonical_name", "aliases", "official_domains"],
+      "additionalProperties": false,
+      "properties": {
+        "canonical_name": { "type": "string", "minLength": 1 },
+        "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "official_domains": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "representativePage": {
+      "type": "object",
+      "required": ["url", "purpose", "selection_reason", "fetch_status"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "purpose": { "type": "string", "minLength": 1 },
+        "selection_reason": { "type": "string", "minLength": 1 },
+        "fetch_status": { "enum": ["ok", "failed", "unknown"] }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "required": ["round_id", "observation_file", "captured_window"],
+      "additionalProperties": false,
+      "properties": {
+        "round_id": { "type": "string", "minLength": 1 },
+        "observation_file": { "type": "string", "minLength": 1 },
+        "captured_window": { "$ref": "#/$defs/timeWindow" }
+      }
+    },
+    "round": {
+      "type": "object",
+      "required": ["round_id", "phase", "window", "compared_action_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "round_id": { "type": "string", "minLength": 1 },
+        "phase": { "enum": ["baseline", "after_release", "follow_up"] },
+        "window": { "$ref": "#/$defs/timeWindow" },
+        "compared_action_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^act_[a-z0-9_-]+$" }
+        }
+      }
+    }
+  }
+}

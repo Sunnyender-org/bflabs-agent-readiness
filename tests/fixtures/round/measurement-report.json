@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "site_domain": "example.com",
+  "captured_at": "2026-01-16T18:00:00Z",
+  "experiment_id": "exp_valid",
+  "questions_version": "1",
+  "baseline_round_id": "rnd_baseline",
+  "counts": {
+    "input": 10,
+    "valid": 10,
+    "excluded": 0,
+    "ordinary_web_search_results": 0,
+    "incomplete_evidence": 0
+  },
+  "metrics": [
+    {
+      "id": "network_rate",
+      "numerator": 0,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.0,
+      "wilson_95": {"lower": 0.0, "upper": 0.28},
+      "denominator_rule": "valid answers"
+    },
+    {
+      "id": "site_citation_rate",
+      "numerator": 1,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.1,
+      "wilson_95": {"lower": 0.02, "upper": 0.4},
+      "denominator_rule": "valid answers"
+    },
+    {
+      "id": "content_absorption_rate",
+      "numerator": 1,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.1,
+      "wilson_95": {"lower": 0.02, "upper": 0.4},
+      "denominator_rule": "valid answers"
+    },
+    {
+      "id": "brand_mention_rate",
+      "numerator": 3,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.3,
+      "wilson_95": {"lower": 0.11, "upper": 0.6},
+      "denominator_rule": "valid answers"
+    },
+    {
+      "id": "recommendation_rate",
+      "numerator": 0,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.0,
+      "wilson_95": {"lower": 0.0, "upper": 0.28},
+      "denominator_rule": "valid answers"
+    },
+    {
+      "id": "dynamic_fact_accuracy",
+      "numerator": 1,
+      "denominator": 10,
+      "excluded": 0,
+      "missing": 0,
+      "rate": 0.1,
+      "wilson_95": {"lower": 0.02, "upper": 0.4},
+      "denominator_rule": "valid answers"
+    }
+  ],
+  "strata": [],
+  "research_rule_ids": [],
+  "limitations": [
+    "Results describe only the supplied observations and do not establish causality.",
+    "AI visibility observations do not establish traffic, conversion, or revenue outcomes."
+  ],
+  "pairs": [
+    {
+      "baseline_round_id": "rnd_baseline",
+      "after_round_id": "rnd_after",
+      "phase": "after_release",
+      "prompt_id": "q_brand",
+      "observation_line": "A",
+      "platform": "ChatGPT",
+      "terminal": "web",
+      "comparable": true,
+      "incomparable_reasons": [],
+      "insufficiency_reasons": [],
+      "baseline": {
+        "correct": 1,
+        "valid_answers": 10,
+        "valid_slots": 10,
+        "planned_slots": 10
+      },
+      "after": {
+        "correct": 3,
+        "valid_answers": 10,
+        "valid_slots": 10,
+        "planned_slots": 10
+      },
+      "verdict": "improved"
+    }
+  ],
+  "stage_table": [
+    {
+      "label": "品牌被提到",
+      "baseline": "1/10",
+      "after": "3/10",
+      "basis": "同一批问题",
+      "result": "改善"
+    }
+  ]
+}

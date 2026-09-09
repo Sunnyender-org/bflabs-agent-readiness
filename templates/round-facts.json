@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "facts_version": "1",
+  "facts": [
+    {
+      "fact_id": "fact_example_name",
+      "statement": "The public brand name is Example.",
+      "category": "identity",
+      "source_url": "https://example.com/",
+      "source_captured_at": "2026-01-01T00:00:00Z",
+      "source_hash": null,
+      "evidence_status": "unverified",
+      "conflict_note": null,
+      "last_reviewed_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

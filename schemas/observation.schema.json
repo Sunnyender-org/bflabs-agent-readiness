@@ -7,7 +7,7 @@
   "properties": {
     "id": { "type": "string", "pattern": "^obs_[a-z0-9_-]+$" },
     "captured_at": { "type": "string", "format": "date-time" },
-    "platform": { "enum": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek"] },
+    "platform": { "enum": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek", "Perplexity", "Claude", "Grok", "Kimi", "Qwen"] },
     "terminal": { "enum": ["web", "app", "api"] },
     "prompt_id": { "type": "string", "minLength": 1 },
     "prompt_text": { "type": "string", "minLength": 1 },
@@ -23,7 +23,40 @@
     "recommended": { "$ref": "#/$defs/triState" },
     "dynamic_fact_correct": { "$ref": "#/$defs/triState" },
     "evidence_complete": { "type": "boolean" },
-    "exclusion_reason": { "type": ["string", "null"] }
+    "exclusion_reason": { "type": ["string", "null"] },
+    "experiment_id": { "type": "string", "minLength": 1 },
+    "round_id": { "type": "string", "minLength": 1 },
+    "phase": { "enum": ["baseline", "after_release", "follow_up"] },
+    "question_version": { "type": "string", "minLength": 1 },
+    "facts_version": { "type": "string", "minLength": 1 },
+    "rubric_version": { "type": "string", "minLength": 1 },
+    "observation_line": { "enum": ["A", "B", "C", "D"] },
+    "intent_tag": { "enum": ["brand", "category", "compare", "evaluate", "act"] },
+    "language": { "type": "string", "minLength": 1 },
+    "region": { "type": "string", "minLength": 1 },
+    "visible_model": { "type": "string", "minLength": 1 },
+    "personalization_status": { "enum": ["off", "on", "unknown"] },
+    "sample_slot_id": { "type": "string", "minLength": 1 },
+    "attempt_index": { "type": "integer", "minimum": 1 },
+    "execution_status": { "enum": ["valid", "technical_failure", "quota", "login_failed", "mode_mismatch"] },
+    "replacement_of": { "type": ["string", "null"], "pattern": "^obs_[a-z0-9_-]+$" },
+    "collection_method": { "enum": ["manual_export", "approved_api", "recorded_fixture"] },
+    "answer_verdict": { "enum": ["correct", "partially_correct", "wrong", "no_answer", "unknown"] },
+    "fact_judgement": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["fact_id", "status", "answer_excerpt"],
+        "additionalProperties": false,
+        "properties": {
+          "fact_id": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["correct", "wrong", "omitted", "unknown"] },
+          "answer_excerpt": { "type": "string" }
+        }
+      }
+    },
+    "compared_action_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "evidence_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
   },
   "$defs": {
     "triState": { "enum": [true, false, "unknown"] }

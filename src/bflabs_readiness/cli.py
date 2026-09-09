@@ -12,13 +12,14 @@ from typing import Any, Dict, Optional, Sequence
 from . import __version__
 from .artifacts import publish_run, validate_run
 from .evals import run_router_evals
+from .geo_round import MeasurementReportError, project_status, render_report, validate_project, write_report
 from .orchestrator import run_discover_content, run_discover_diagnose
-from .paths import repository_root
 from .packaging import CAPABILITY_IDS, PackageError, package_target, validate_archive
-from .providers.geo_optimize import run_geo_optimize
-from .providers.geo_discover import run_geo_discover
+from .paths import repository_root
 from .providers.geo_content import run_geo_content
+from .providers.geo_discover import run_geo_discover
 from .providers.geo_measure import load_measurement_input, run_geo_measure
+from .providers.geo_optimize import run_geo_optimize
 from .providers.seo_plan import run_seo_plan
 from .registry import CapabilityRegistry, RegistryError
 from .remote import scan_public_site
@@ -82,7 +83,75 @@ def build_parser() -> argparse.ArgumentParser:
     package_parser = commands.add_parser("package")
     package_parser.add_argument("--target", required=True, choices=["source", "unified", "skillhub", *CAPABILITY_IDS])
     package_parser.add_argument("--output", type=Path, default=Path("dist"))
+
+    round_parser = commands.add_parser("round")
+    round_commands = round_parser.add_subparsers(dest="round_command", required=True)
+    round_validate = round_commands.add_parser("validate")
+    round_validate.add_argument("--project", required=True, type=Path)
+    round_status = round_commands.add_parser("status")
+    round_status.add_argument("--project", required=True, type=Path)
+    round_status.add_argument("--format", choices=["json", "summary"], default="json")
+    round_report = round_commands.add_parser("report")
+    round_report.add_argument("--project", required=True, type=Path)
+    round_report.add_argument("--measurement-report", type=Path)
+    round_report.add_argument("--output", type=Path)
     return parser
+
+
+def _print_round_status(status: Dict[str, Any], output_format: str) -> None:
+    if output_format == "json":
+        print(json.dumps(status, ensure_ascii=False, indent=2))
+        return
+    print("current_phase: {}".format(status["current_phase"]))
+    print("next_step: {}".format(status["next_step"]))
+    print("baseline_present: {}".format(str(status["baseline_present"]).lower()))
+    print("last_updated: {}".format(status["last_updated"]))
+    counts = status["actions_by_status"]
+    print("actions_by_status: {}".format(", ".join("{}={}".format(name, counts[name]) for name in counts)))
+    if status["missing_preconditions"]:
+        print("missing_preconditions: {}".format("; ".join(status["missing_preconditions"])))
+    else:
+        print("missing_preconditions: none")
+
+
+def _run_round_command(args: argparse.Namespace) -> int:
+    if args.round_command == "validate":
+        errors = validate_project(args.project)
+        if errors:
+            print(json.dumps({"status": "failed", "errors": errors}, ensure_ascii=False, indent=2))
+            return 1
+        print(json.dumps({"status": "pass"}, ensure_ascii=False, indent=2))
+        return 0
+    if args.round_command == "status":
+        _print_round_status(project_status(args.project), args.format)
+        return 0
+    if args.round_command == "report":
+        errors = validate_project(args.project)
+        if errors:
+            print(json.dumps({"status": "failed", "errors": errors}, ensure_ascii=False, indent=2))
+            return 1
+        try:
+            if args.output is None:
+                path = write_report(args.project, args.measurement_report)
+            else:
+                measurement = None
+                if args.measurement_report is not None:
+                    measurement = _load_json(args.measurement_report)
+                text = render_report(args.project, measurement)
+                if not text.endswith("\n"):
+                    text += "\n"
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(text, "utf-8")
+                path = args.output
+        except MeasurementReportError as exc:
+            print(json.dumps({"status": "failed", "errors": exc.errors}, ensure_ascii=False, indent=2))
+            return 1
+        except (OSError, ValueError) as exc:
+            print(json.dumps({"status": "failed", "errors": [str(exc)]}, ensure_ascii=False, indent=2))
+            return 1
+        print(json.dumps({"status": "pass", "report": str(path)}, ensure_ascii=False, indent=2))
+        return 0
+    return 2
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -174,6 +243,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 return 1
             print(json.dumps({"status": "pass", "root": str(repository_root()), "run": str(args.run) if args.run else None}, indent=2))
             return 0
+        if args.command == "round":
+            return _run_round_command(args)
     except (OSError, ValueError, RegistryError, PackageError, RuntimeError) as exc:
         print("FAIL: {}".format(exc), file=sys.stderr)
         return 1

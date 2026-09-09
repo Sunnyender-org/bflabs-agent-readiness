@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "questions_version": "1",
+  "language": "en",
+  "questions": [
+    {
+      "question_id": "q_brand",
+      "observation_line": "A",
+      "intent_tag": "brand",
+      "text": "What is Example?",
+      "provides_url": false,
+      "asks_for_browsing": false,
+      "required_fact_ids": ["fact_name"],
+      "critical_error_fact_ids": ["fact_name"],
+      "partial_credit_rule": "Credit a mention of the public brand name.",
+      "frozen_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

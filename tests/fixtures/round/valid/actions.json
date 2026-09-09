@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "actions": [
+    {
+      "action_id": "act_home_name",
+      "page_url": "https://example.com/",
+      "question_ids": ["q_brand"],
+      "fact_ids": ["fact_name"],
+      "issue_type": "fact",
+      "summary": "Put the public brand name on the homepage.",
+      "deliverable": "Homepage first paragraph names Example.",
+      "status": "verified_public",
+      "released_at": "2026-01-08T18:00:00Z",
+      "release_evidence": "https://example.com/",
+      "public_recheck": {
+        "checked_at": "2026-01-09T12:00:00Z",
+        "result": "pass",
+        "note": "Public homepage shows the brand name."
+      }
+    },
+    {
+      "action_id": "act_price_copy",
+      "page_url": "https://example.com/pricing",
+      "question_ids": ["q_price"],
+      "fact_ids": ["fact_price"],
+      "issue_type": "fact",
+      "summary": "State the public starting price on the pricing page.",
+      "deliverable": "Pricing page states the public starting price.",
+      "status": "released",
+      "released_at": "2026-01-08T18:00:00Z",
+      "release_evidence": "https://example.com/pricing",
+      "public_recheck": null
+    },
+    {
+      "action_id": "act_home_structure",
+      "page_url": "https://example.com/",
+      "question_ids": ["q_brand"],
+      "fact_ids": ["fact_name"],
+      "issue_type": "structure",
+      "summary": "Move the brand sentence above the fold.",
+      "deliverable": null,
+      "status": "changed_local",
+      "released_at": null,
+      "release_evidence": null,
+      "public_recheck": null
+    },
+    {
+      "action_id": "act_docs_link",
+      "page_url": "https://example.com/docs",
+      "question_ids": ["q_brand"],
+      "fact_ids": ["fact_name"],
+      "issue_type": "source",
+      "summary": "Add a plain-language product sentence to the docs index.",
+      "deliverable": null,
+      "status": "planned",
+      "released_at": null,
+      "release_evidence": null,
+      "public_recheck": null
+    }
+  ]
+}

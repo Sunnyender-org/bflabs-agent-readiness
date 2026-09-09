@@ -35,6 +35,10 @@ Generate at least one traceable question for each:
 
 Read [opportunity-method.md](references/opportunity-method.md) before scoring.
 
+## Frozen Question Set For A Round
+
+When the user is preparing a single-site GEO round, build and freeze `questions.json` before any site change. Read [round-questions-method.md](references/round-questions-method.md). Map the seven dimensions onto the four observation lines (`A`, `B`, `C`, `D`) and five intent tags (`brand`, `category`, `compare`, `evaluate`, `act`). Lines are never merged. Changing a question's text, or the facts or rubric it depends on, creates a new `questions_version` and needs a new baseline.
+
 ## Evidence And Scoring Rules
 
 - Every question must trace to a seed, an explicit input, or a named assumption.
@@ -46,8 +50,8 @@ Read [opportunity-method.md](references/opportunity-method.md) before scoring.
 ## Workflow Boundary
 
 - A single discovery intent runs only this Skill.
-- `discover-diagnose` may pass `opportunity-map.json` to `geo-optimize` only when the user explicitly asks for both stages.
-- `discover-content` remains unavailable until `geo-content` is active; do not simulate it.
+- `discover-diagnose` and `discover-content` are both active. Run a workflow only when the user explicitly asks for both of its stages.
+- `discover-diagnose` may pass `opportunity-map.json` to `geo-optimize` only when the user explicitly asks for both stages. `discover-content` may pass discovery output to `geo-content` only on the same explicit request. Do not simulate either workflow.
 
 ## Output Contract
 

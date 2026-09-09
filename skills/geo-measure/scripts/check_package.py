@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-REQUIRED = ["SKILL.md", "agents/openai.yaml", "references/measurement-boundary.md", "templates/measurement-input.json", "templates/observations.csv", "examples/measurement-input.json", "evals/trigger_cases.json"]
+REQUIRED = ["SKILL.md", "agents/openai.yaml", "references/measurement-boundary.md", "references/sampling-guide.md", "templates/measurement-input.json", "templates/observations.csv", "examples/measurement-input.json", "examples/round-pairing-input.json", "evals/trigger_cases.json"]
 
 
 def fail(message: str) -> None:
@@ -24,10 +24,10 @@ skill = (ROOT / "SKILL.md").read_text("utf-8")
 front = re.match(r"^---\n(.*?)\n---\n", skill, re.S)
 if not front or "name: geo-measure" not in front.group(1) or "Not for" not in front.group(1):
     fail("invalid SKILL.md frontmatter")
-for relative in ["references/measurement-boundary.md", "templates/measurement-input.json", "templates/observations.csv"]:
+for relative in ["references/measurement-boundary.md", "references/sampling-guide.md", "templates/measurement-input.json", "templates/observations.csv"]:
     if relative not in skill:
         fail("SKILL.md does not route to " + relative)
-for relative in ["templates/measurement-input.json", "examples/measurement-input.json", "evals/trigger_cases.json"]:
+for relative in ["templates/measurement-input.json", "examples/measurement-input.json", "examples/round-pairing-input.json", "evals/trigger_cases.json"]:
     json.loads((ROOT / relative).read_text("utf-8"))
 with (ROOT / "templates/observations.csv").open("r", encoding="utf-8", newline="") as handle:
     if not list(csv.DictReader(handle)):

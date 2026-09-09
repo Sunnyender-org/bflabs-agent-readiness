@@ -81,6 +81,111 @@
         "summary": "Read the current three-axis ruleset version",
         "responses": {"200": {"description": "Ruleset", "content": {"application/json": {"schema": {"type": "object"}}}}}
       }
+    },
+    "/skills/{skillId}": {
+      "get": {
+        "operationId": "getSkillBody",
+        "summary": "Read one Skill body",
+        "description": "Canonical Skill URL has no trailing slash. /skills/{skillId}/ serves the same body so relative links resolve against the trailing-slash collection URL.",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Skill body",
+            "headers": {
+              "Link": {
+                "schema": {"type": "string", "example": "<https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json>; rel=\"describedby\""},
+                "description": "describedby link to this Skill's manifest.json"
+              },
+              "X-Content-Type-Options": {"schema": {"type": "string", "example": "nosniff"}}
+            },
+            "content": {"text/plain": {"schema": {"type": "string"}}}
+          },
+          "404": {
+            "description": "Skill does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
+    },
+    "/skills/{skillId}/": {
+      "get": {
+        "operationId": "getSkillBodyTrailingSlash",
+        "summary": "Read one Skill body (trailing-slash equivalent)",
+        "description": "Same body as /skills/{skillId}. The canonical Skill URL remains without the trailing slash.",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Skill body",
+            "headers": {
+              "Link": {
+                "schema": {"type": "string", "example": "<https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json>; rel=\"describedby\""},
+                "description": "describedby link to this Skill's manifest.json"
+              }
+            },
+            "content": {"text/plain": {"schema": {"type": "string"}}}
+          },
+          "404": {
+            "description": "Skill does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
+    },
+    "/skills/{skillId}/manifest.json": {
+      "get": {
+        "operationId": "getSkillResourceManifest",
+        "summary": "Read one Skill's versioned companion-file manifest",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Versioned companion-file manifest",
+            "headers": {
+              "Cache-Control": {"schema": {"type": "string", "example": "public, max-age=300"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceManifest"}}}
+          },
+          "404": {
+            "description": "Skill or resource does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
+    },
+    "/skills/{skillId}/{resourcePath}": {
+      "get": {
+        "operationId": "getSkillResource",
+        "summary": "Read one Skill companion file",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "resourcePath", "in": "path", "required": true, "schema": {"type": "string"}, "style": "simple", "explode": false}
+        ],
+        "responses": {
+          "200": {
+            "description": "Companion file",
+            "headers": {
+              "Cache-Control": {"schema": {"type": "string", "example": "public, max-age=300"}},
+              "ETag": {"schema": {"type": "string"}},
+              "X-Content-Type-Options": {"schema": {"type": "string", "example": "nosniff"}}
+            }
+          },
+          "304": {
+            "description": "Not modified",
+            "headers": {
+              "ETag": {"schema": {"type": "string"}}
+            }
+          },
+          "404": {
+            "description": "Skill or resource does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
     }
   },
   "components": {
@@ -125,6 +230,33 @@
           "disclaimers": {"type": "object"}
         },
         "additionalProperties": false
+      },
+      "SkillResourceManifest": {
+        "type": "object",
+        "required": ["version", "url", "digest", "resources"],
+        "properties": {
+          "version": {"type": "string"},
+          "url": {"type": "string", "format": "uri"},
+          "digest": {"type": "string"},
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "url", "sha256", "bytes"],
+              "properties": {
+                "path": {"type": "string"},
+                "url": {"type": "string", "format": "uri"},
+                "sha256": {"type": "string"},
+                "bytes": {"type": "integer"}
+              }
+            }
+          }
+        }
+      },
+      "SkillResourceError": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {"error": {"type": "string"}}
       },
       "ProblemDetails": {
         "type": "object",

@@ -1,12 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { SKILL_IDS, ROOT_SKILL_ID, PUBLIC_SKILL_ORIGIN, listSkillResources, buildSkillPublication } from '../src/skill-resources.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPOSITORY_ROOT = path.resolve(ROOT, '..', '..');
 const OUTPUT = path.join(ROOT, '.worker-build');
-const SKILL_IDS = ['bflabs-agent-readiness', 'geo-content', 'geo-discover', 'geo-measure', 'geo-optimize', 'seo-plan', 'webmcp-enable'];
 
 await fs.rm(OUTPUT, { recursive: true, force: true });
 await fs.mkdir(OUTPUT, { recursive: true });
@@ -24,25 +23,23 @@ await Promise.all([
   fs.copyFile(path.join(ROOT, 'src', 'mcp-server.mjs'), path.join(OUTPUT, 'mcp-server.mjs')),
   fs.copyFile(path.join(ROOT, 'src', 'product-contract.mjs'), path.join(OUTPUT, 'product-contract.mjs')),
   fs.copyFile(path.join(ROOT, 'src', 'geo-handoff.mjs'), path.join(OUTPUT, 'geo-handoff.mjs')),
+  fs.copyFile(path.join(ROOT, 'src', 'skill-resources.mjs'), path.join(OUTPUT, 'skill-resources.mjs')),
 ]);
 
-const skills = {};
+const skillText = {};
 for (const id of SKILL_IDS) {
-  skills[id] = await fs.readFile(id === 'bflabs-agent-readiness'
+  skillText[id] = await fs.readFile(id === ROOT_SKILL_ID
     ? path.join(REPOSITORY_ROOT, 'SKILL.md')
     : path.join(REPOSITORY_ROOT, 'skills', id, 'SKILL.md'), 'utf8');
 }
-const skillIndex = {
-  $schema: 'https://schemas.agentskills.io/discovery/0.2.0/schema.json',
-  skills: Object.entries(skills).map(([name, body]) => ({
-    name,
-    type: 'skill-md',
-    description: name === 'bflabs-agent-readiness'
-      ? 'Diagnose a public website and route one evidence-backed next action to the smallest BFLabs child Skill.'
-      : `Run the BFLabs ${name} child Skill for its registered evidence-backed intent.`,
-    url: `https://readiness.bflabs.cn/skills/${name}`,
-    digest: `sha256:${crypto.createHash('sha256').update(body).digest('hex')}`,
-  })),
-};
-await fs.writeFile(path.join(OUTPUT, 'skills.generated.mjs'), `export const SKILL_TEXT = ${JSON.stringify(skills, null, 2)};\nexport const SKILL_INDEX = ${JSON.stringify(skillIndex, null, 2)};\n`);
-console.log(`Built Cloudflare Worker sources in ${OUTPUT}`);
+const { skillIndex, skillResources, resourceManifest } = buildSkillPublication({
+  skillText,
+  resources: await listSkillResources(REPOSITORY_ROOT),
+  publicBase: PUBLIC_SKILL_ORIGIN,
+});
+await fs.writeFile(
+  path.join(OUTPUT, 'skills.generated.mjs'),
+  `export const SKILL_TEXT = ${JSON.stringify(skillText, null, 2)};\nexport const SKILL_INDEX = ${JSON.stringify(skillIndex, null, 2)};\nexport const SKILL_RESOURCES = ${JSON.stringify(skillResources, null, 2)};\nexport const RESOURCE_MANIFEST = ${JSON.stringify(resourceManifest, null, 2)};\n`,
+);
+const resourceCount = Object.values(skillResources).reduce((sum, files) => sum + Object.keys(files).length, 0);
+console.log(`Built Cloudflare Worker sources in ${OUTPUT} (${resourceCount} companion resources)`);

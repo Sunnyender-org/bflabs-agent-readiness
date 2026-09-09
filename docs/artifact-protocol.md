@@ -28,3 +28,7 @@ The quality report separates warnings from blockers. A warning may publish a deg
 ## Download envelope
 
 The diagnostic app downloads an `artifact-pack.schema.json` envelope containing the manifest and its JSON files. The envelope is a transport representation of the same protocol, not a new report format. Consumers must validate the manifest and recompute hashes before trusting any file.
+
+## Round record (free local files)
+
+A GEO round record is a portable project directory the owner keeps locally: `experiment.json`, `facts.json`, `questions.json`, `actions.json`, `business-events.json`, and generated `report.md`. It is not an Artifact Protocol run and does not publish `run-manifest.json`. `report.md` cites those record files. Artifact Protocol 1.0.0 semantics are unchanged.

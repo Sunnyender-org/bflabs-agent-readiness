@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/round-business-events.schema.json",
+  "type": "object",
+  "required": ["schema_version", "imports"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "imports": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/importBatch" }
+    }
+  },
+  "$defs": {
+    "importWindow": {
+      "type": "object",
+      "required": ["start", "end", "timezone"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "timezone": { "type": "string", "minLength": 1 }
+      }
+    },
+    "importBatch": {
+      "type": "object",
+      "required": ["import_id", "source", "source_label", "window", "coverage", "export_filter", "events"],
+      "additionalProperties": false,
+      "properties": {
+        "import_id": { "type": "string", "minLength": 1 },
+        "source": { "enum": ["analytics", "payments", "crm", "manual", "other"] },
+        "source_label": { "type": "string", "minLength": 1 },
+        "window": { "$ref": "#/$defs/importWindow" },
+        "coverage": { "enum": ["complete", "partial", "unknown"] },
+        "export_filter": { "type": ["string", "null"] },
+        "events": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/businessEvent" }
+        }
+      }
+    },
+    "businessEvent": {
+      "type": "object",
+      "required": [
+        "external_id",
+        "type",
+        "occurred_at",
+        "page_url",
+        "source_type",
+        "source_evidence_url",
+        "attribution_method",
+        "amount_minor",
+        "currency",
+        "is_test"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "external_id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["visit", "signup", "lead", "activation", "purchase"] },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "page_url": { "type": ["string", "null"], "format": "uri" },
+        "source_type": { "enum": ["ai", "search", "social", "direct", "unknown"] },
+        "source_evidence_url": { "type": ["string", "null"], "format": "uri" },
+        "attribution_method": { "enum": ["referrer", "tracked_link", "authorized_report", "unknown"] },
+        "amount_minor": { "type": ["integer", "null"], "minimum": 0 },
+        "currency": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[A-Z]{3}$" }
+          ]
+        },
+        "is_test": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -70,6 +70,8 @@ class PackagingTests(unittest.TestCase):
             self.assertLessEqual(len(names), 200)
             self.assertIn("SKILL.md", names)
             self.assertIn("assets/bflabs-logo.svg", names)
+            self.assertIn("schemas/round-experiment.schema.json", names)
+            self.assertGreaterEqual(sum(1 for name in names if name.startswith("schemas/round-") and name.endswith(".schema.json")), 5)
             self.assertNotIn("LICENSE", names)
             self.assertFalse(any(".wrangler" in name or ".worker-build" in name for name in names))
 

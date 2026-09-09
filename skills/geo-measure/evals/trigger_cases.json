@@ -9,6 +9,8 @@
     {"id":"positive-jsonl-en","prompt":"Measure this JSONL answer batch","should_trigger":true},
     {"id":"positive-csv-zh","prompt":"导入 CSV 模型回答样本","should_trigger":true},
     {"id":"positive-price-en","prompt":"Calculate dynamic fact accuracy from supplied answers","should_trigger":true},
+    {"id":"positive-before-after-en","prompt":"Compare before and after rounds of the same questions under identical conditions","should_trigger":true},
+    {"id":"positive-before-after-zh","prompt":"用同一批冻结问题做发布前后对比","should_trigger":true},
     {"id":"negative-sample-zh","prompt":"帮我登录 ChatGPT 实际提问","should_trigger":false},
     {"id":"negative-search-en","prompt":"Use Google search snippets as model answers","should_trigger":false},
     {"id":"negative-content-zh","prompt":"生成价格答案页","should_trigger":false},

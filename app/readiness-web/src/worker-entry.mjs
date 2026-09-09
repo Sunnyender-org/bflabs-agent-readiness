@@ -1,6 +1,7 @@
 import { RULESET_VERSION, scanSite } from './scanner.worker.mjs';
 import { normalizeTarget } from './safety-worker.mjs';
-import { SKILL_INDEX, SKILL_TEXT } from './skills.generated.mjs';
+import { SKILL_INDEX, SKILL_TEXT, SKILL_RESOURCES, RESOURCE_MANIFEST } from './skills.generated.mjs';
+import { handleSkillRoute } from './skill-resources.mjs';
 import { forwardHelloEmail } from './email-forwarder.mjs';
 import { handleMcp } from './mcp-server.mjs';
 import { publishToLeaderboard, readLeaderboard, readLeaderboardEntry } from './leaderboard.mjs';
@@ -158,10 +159,12 @@ async function route(request, env, url) {
       skills: SKILL_TEXT,
     });
   }
-  if (request.method === 'GET' && url.pathname.startsWith('/skills/')) {
-    const skillId = decodeURIComponent(url.pathname.slice('/skills/'.length));
-    const body = SKILL_TEXT[skillId];
-    return body ? new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8', 'x-content-type-options': 'nosniff' } }) : json({ error: '未知子 Skill' }, 404);
+  if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/skills/')) {
+    return handleSkillRoute(request, {
+      skillText: SKILL_TEXT,
+      skillResources: SKILL_RESOURCES,
+      resourceManifest: RESOURCE_MANIFEST,
+    });
   }
   if (request.method === 'GET' && url.pathname === '/privacy') {
     return html('隐私与扫描边界', '<p>本服务只读取你提交域名的公开页面，不登录、不绕过访问控制。完整报告、证据正文和交给 Agent 的修复提示词不写入应用数据库。使用网页完成诊断时，会为继续到 WorkBuddy 保存一份不含正文的诊断摘要，继续链接有效 15 分钟且只能使用一次。只有用户主动选择加入公开榜单时，才保存域名、可发现、可理解、可操作结果、检查时间和结果指纹；不保存 IP。榜单记录最多保留 30 天，同一域名主动再次公开会刷新该记录。基础设施服务商仍可能按其政策处理必要的安全与运行日志。</p><p>站点所有者可以在网站根目录放置 <code>/.well-known/bflabs-agent-readiness-opt-out</code> 停止诊断。榜单移除或滥用报告请发送至 <a href="mailto:hello@bflabs.cn">hello@bflabs.cn</a>。</p>');

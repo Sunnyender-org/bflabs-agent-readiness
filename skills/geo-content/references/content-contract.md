@@ -20,3 +20,13 @@
 Markdown uses internal claim markers that map to the evidence ledger. They prove local traceability only. They do not imply that an external model, search engine, or publisher cited the content.
 
 Publishing, deployment, CMS writes, and bulk generation require separate approval and are not performed by this Skill.
+
+## Facts From A Round Record
+
+When a content brief draws facts from a project-record `facts.json`:
+
+- Carry each fact's `evidence_status`.
+- `forbidden` and `conflict` never enter drafts.
+- `unverified` may appear only as clearly marked pending.
+- If `source_hash` or the source content changed, prior verification is stale; re-check before reuse.
+

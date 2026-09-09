@@ -7,8 +7,9 @@ Use `bflabs-readiness route --text` when a portable machine-readable decision is
 1. reject forbidden guarantees, bulk publishing, hidden admin exposure, auth bypass, and autonomous payments;
 2. recognize only the two explicit multi-stage requests below;
 3. honor one explicitly named capability;
-4. select the smallest matching capability for a single intent;
-5. return `needs_clarification` when the request is ambiguous or outside this product.
+4. recognize an explicit full-round or continuation request as root Skill guidance;
+5. select the smallest matching capability for a single intent;
+6. return `needs_clarification` when the request is ambiguous or outside this product.
 
 The only workflow definitions are:
 
@@ -53,6 +54,16 @@ Use `skills/webmcp-enable/SKILL.md` when the requested outcome includes:
 - security review of browser Agent tools.
 
 External enablement and production mutations are explicit-only. A local audit does not authorize them.
+
+## Full round and continuation
+
+Route an explicit full-round request, or an explicit request to continue an existing round, to the root Skill's guidance. The selected capability is `bflabs-agent-readiness`. Follow `references/root-agent-contract.md` and `references/round-contract.md`.
+
+The two CLI workflows remain the only automatic multi-capability executions. A full round is not `discover-diagnose` and is not `discover-content`. Do not claim those workflows captured a baseline, released a change, retested public answers, compared AI answers, or reviewed business data.
+
+Explain-only requests are answered without executing a capability or a workflow. A definitional prompt such as what GEO is must not start a round.
+
+A single-capability request is never escalated into a full round.
 
 ## Route to the diagnostic app
 

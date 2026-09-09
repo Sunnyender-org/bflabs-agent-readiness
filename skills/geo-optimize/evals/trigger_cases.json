@@ -32,6 +32,18 @@
       "reason": "Repository-level readiness audit with a separate Agent Actionability axis"
     },
     {
+      "id": "positive-round-pages-en",
+      "prompt": "audit the three key pages of my site against the frozen question set",
+      "should_trigger": true,
+      "reason": "Single-site round page audit against a frozen question set"
+    },
+    {
+      "id": "positive-round-pages-zh",
+      "prompt": "按冻结的问题清单逐页核对官网事实",
+      "should_trigger": true,
+      "reason": "Per-page official-site fact check against a frozen question list"
+    },
+    {
       "id": "negative-ranking-monitor",
       "prompt": "连续一个月监控我们在 ChatGPT 和豆包里的品牌排名。",
       "should_trigger": false,
@@ -60,6 +72,24 @@
       "prompt": "给这个网站从零实现 WebMCP，并在 Cloudflare 上打开 Site MCP Server pack。",
       "should_trigger": false,
       "reason": "WebMCP implementation and Cloudflare enablement belong to webmcp-enable"
+    },
+    {
+      "id": "negative-discover-questions",
+      "prompt": "Discover buyer questions for this product.",
+      "should_trigger": false,
+      "reason": "Question discovery belongs to geo-discover"
+    },
+    {
+      "id": "negative-content-blueprint",
+      "prompt": "生成一个价格页面蓝图。",
+      "should_trigger": false,
+      "reason": "Content specification belongs to geo-content"
+    },
+    {
+      "id": "negative-measure-observations",
+      "prompt": "聚合这些模型回答样本。",
+      "should_trigger": false,
+      "reason": "Observation aggregation belongs to geo-measure"
     }
   ]
 }
