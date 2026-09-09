@@ -456,6 +456,7 @@ export function buildAgentPrompt({ origin, fingerprint, axes, findings, evidence
     '先读取 BFLabs Skill：',
     `- Agent Skills 索引：${PUBLIC_SKILL_BASE}/.well-known/agent-skills/index.json`,
     `- 根 Skill：${PUBLIC_SKILL_BASE}/skills/bflabs-agent-readiness`,
+    `- 根 Skill 的 Agent 约定与配套文件清单：${PUBLIC_SKILL_BASE}/skills/bflabs-agent-readiness/manifest.json；行动前先从该清单读取 references/root-agent-contract.md`,
     `- 本次唯一子 Skill：${routeId === 'none' ? '无' : `${routeId} (${PUBLIC_SKILL_BASE}/skills/${routeId})`}`,
     '- 如果当前 Agent 无法联网读取 Skill，继续使用下方完整诊断事实，不要换成别的 Skill。',
     '',

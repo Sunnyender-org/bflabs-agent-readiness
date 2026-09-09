@@ -9,6 +9,7 @@ import { handleMcp } from './mcp-server.mjs';
 import { memoryLeaderboardStore, publishToLeaderboard, readLeaderboard, readLeaderboardEntry } from './leaderboard.mjs';
 import { leaderboardIndexPage, leaderboardSharePage, methodology, problemDetails, reportToMarkdown, wantsMarkdown } from './product-contract.mjs';
 import { attachGeoHandoff, createMemoryGeoHandoffStore, handleGeoHandoffRequest } from './geo-handoff.mjs';
+import { SKILL_IDS, listSkillResources, buildSkillPublication, handleSkillRoute } from './skill-resources.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -17,7 +18,7 @@ const PORT = Number(process.env.PORT || 4177);
 const reports = new Map();
 const leaderboard = memoryLeaderboardStore(new Map());
 const geoHandoffs = createMemoryGeoHandoffStore();
-const SKILL_IDS = new Set(['bflabs-agent-readiness', 'geo-content', 'geo-discover', 'geo-measure', 'geo-optimize', 'seo-plan', 'webmcp-enable']);
+const PUBLIC_BASE = `http://127.0.0.1:${PORT}`;
 
 const types = {
   '.html': 'text/html; charset=utf-8',
@@ -75,20 +76,20 @@ async function readSkillTexts() {
   return Object.fromEntries(await Promise.all([...SKILL_IDS].map(async (id) => [id, await fs.readFile(skillPath(id), 'utf8')])));
 }
 
-async function buildAgentSkillIndex() {
-  const skills = await readSkillTexts();
+async function loadSkillPublication() {
+  const skillText = await readSkillTexts();
   return {
-    $schema: 'https://schemas.agentskills.io/discovery/0.2.0/schema.json',
-    skills: Object.entries(skills).map(([name, body]) => ({
-      name,
-      type: 'skill-md',
-      description: name === 'bflabs-agent-readiness'
-        ? 'Diagnose a public website and route one evidence-backed next action to the smallest BFLabs child Skill.'
-        : `Run the BFLabs ${name} child Skill for its registered evidence-backed intent.`,
-      url: `http://127.0.0.1:${PORT}/skills/${name}`,
-      digest: `sha256:${crypto.createHash('sha256').update(body).digest('hex')}`,
-    })),
+    skillText,
+    ...buildSkillPublication({
+      skillText,
+      resources: await listSkillResources(REPOSITORY_ROOT),
+      publicBase: PUBLIC_BASE,
+    }),
   };
+}
+
+async function buildAgentSkillIndex() {
+  return (await loadSkillPublication()).skillIndex;
 }
 
 async function completeScan(url, options = {}) {
@@ -207,16 +208,17 @@ const server = http.createServer(async (request, response) => {
       });
       return sendFetchResponse(response, result);
     }
-    if (request.method === 'GET' && url.pathname.startsWith('/skills/')) {
-      const skillId = decodeURIComponent(url.pathname.slice('/skills/'.length));
-      if (!SKILL_IDS.has(skillId)) return sendJson(response, 404, { error: '未知子 Skill' });
-      const body = await fs.readFile(skillPath(skillId), 'utf8');
-      response.writeHead(200, {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-cache',
-        'X-Content-Type-Options': 'nosniff',
-      });
-      return response.end(body);
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/skills/')) {
+      const publication = await loadSkillPublication();
+      return sendFetchResponse(response, handleSkillRoute(new Request(url, {
+        method: request.method,
+        headers: request.headers,
+      }), {
+        skillText: publication.skillText,
+        skillResources: publication.skillResources,
+        resourceManifest: publication.resourceManifest,
+        skillTextCacheControl: 'no-cache',
+      }));
     }
     if (request.method === 'GET' && ['/privacy', '/terms'].includes(url.pathname)) {
       response.writeHead(200, { 'Content-Type': types['.html'] });

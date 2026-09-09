@@ -81,6 +81,58 @@
         "summary": "Read the current three-axis ruleset version",
         "responses": {"200": {"description": "Ruleset", "content": {"application/json": {"schema": {"type": "object"}}}}}
       }
+    },
+    "/skills/{skillId}/manifest.json": {
+      "get": {
+        "operationId": "getSkillResourceManifest",
+        "summary": "Read one Skill's versioned companion-file manifest",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Versioned companion-file manifest",
+            "headers": {
+              "Cache-Control": {"schema": {"type": "string", "example": "public, max-age=300"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceManifest"}}}
+          },
+          "404": {
+            "description": "Skill or resource does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
+    },
+    "/skills/{skillId}/{resourcePath}": {
+      "get": {
+        "operationId": "getSkillResource",
+        "summary": "Read one Skill companion file",
+        "parameters": [
+          {"name": "skillId", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "resourcePath", "in": "path", "required": true, "schema": {"type": "string"}, "style": "simple", "explode": false}
+        ],
+        "responses": {
+          "200": {
+            "description": "Companion file",
+            "headers": {
+              "Cache-Control": {"schema": {"type": "string", "example": "public, max-age=300"}},
+              "ETag": {"schema": {"type": "string"}},
+              "X-Content-Type-Options": {"schema": {"type": "string", "example": "nosniff"}}
+            }
+          },
+          "304": {
+            "description": "Not modified",
+            "headers": {
+              "ETag": {"schema": {"type": "string"}}
+            }
+          },
+          "404": {
+            "description": "Skill or resource does not exist",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SkillResourceError"}}}
+          }
+        }
+      }
     }
   },
   "components": {
@@ -125,6 +177,33 @@
           "disclaimers": {"type": "object"}
         },
         "additionalProperties": false
+      },
+      "SkillResourceManifest": {
+        "type": "object",
+        "required": ["version", "url", "digest", "resources"],
+        "properties": {
+          "version": {"type": "string"},
+          "url": {"type": "string", "format": "uri"},
+          "digest": {"type": "string"},
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "url", "sha256", "bytes"],
+              "properties": {
+                "path": {"type": "string"},
+                "url": {"type": "string", "format": "uri"},
+                "sha256": {"type": "string"},
+                "bytes": {"type": "integer"}
+              }
+            }
+          }
+        }
+      },
+      "SkillResourceError": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {"error": {"type": "string"}}
       },
       "ProblemDetails": {
         "type": "object",

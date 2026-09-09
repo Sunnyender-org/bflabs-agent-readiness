@@ -9,6 +9,7 @@ const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'public/styles.css'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
 const server = fs.readFileSync(path.join(root, 'src/server.mjs'), 'utf8');
+const skillResources = fs.readFileSync(path.join(root, 'src/skill-resources.mjs'), 'utf8');
 
 test('uses the committed BFLabs Grok prototype as the formal web shell', () => {
   assert.match(html, /BF LABS/);
@@ -77,8 +78,10 @@ test('exposes a real BFLabs inquiry route and an in-session retest contract', ()
   assert.doesNotMatch(html, /唯一对应 Skill|读取根 Skill|Agent Journey|SkillHub/);
   assert.match(app, /finding\.rule_id/);
   assert.doesNotMatch(app, /finding\.owner_route|item\.route|report\.skill_routes\[0\]\.id/);
-  assert.match(server, /const SKILL_IDS = new Set/);
-  assert.match(server, /text\/plain; charset=utf-8/);
+  assert.match(server, /from '\.\/skill-resources\.mjs'/);
+  assert.match(server, /handleSkillRoute/);
+  assert.match(skillResources, /export const SKILL_IDS/);
+  assert.match(skillResources, /text\/plain; charset=utf-8/);
   assert.match(server, /await completeScan/);
   assert.doesNotMatch(server, /sendJson\(response, 202/);
 });

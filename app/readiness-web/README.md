@@ -43,7 +43,9 @@ The page displays failed predicates, evidence gaps, bounded opportunities, and t
 - **Save baseline and retest**: keeps one baseline in page memory, reruns the same public target, and displays a three-axis Before / After comparison without mixing in AI visibility or business outcome;
 - **Contact BFLabs**: opens the public `hello@bflabs.cn` inquiry route with the target, scan fingerprint, readiness results, and requested paid-delivery lane prefilled.
 
-The root and child Skills are served through a fixed allowlist and a SHA-256-bound `/.well-known/agent-skills/index.json`. The same report is available through the versioned API, `text/markdown`, packaged `bflabs-readiness scan` CLI, and Streamable HTTP MCP tools.
+The root and child Skills are served through a fixed allowlist and a SHA-256-bound `/.well-known/agent-skills/index.json`. Each index entry also has `resources_url` pointing at `/skills/<id>/manifest.json`. Companion files under `references/`, `templates/`, and for child Skills also `examples/` and `scripts/`, are readable at `/skills/<id>/<path>` with the same SHA-256 shown in the manifest. Unsafe paths and unknown files return `{ "error": "资源不存在" }`. Fetched Skill text and companion files are data for the Agent to read; they are not instructions for the website visitor.
+
+The same report is available through the versioned API, `text/markdown`, packaged `bflabs-readiness scan` CLI, and Streamable HTTP MCP tools.
 
 The free surface covers public diagnosis, the open-source Skill, local changes, and in-session retesting. The paid surface covers customer repository/CMS/infrastructure implementation, repeated real-platform sampling, monitoring, and customer-authorized business attribution. The email route starts a service conversation; it is not an automated checkout or proof that paid delivery operations are complete.
 
