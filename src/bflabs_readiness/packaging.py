@@ -89,7 +89,7 @@ SKILLHUB_ROOT_FILES = {
     "skill.yml",
     "THIRD_PARTY_NOTICES.md",
 }
-SKILLHUB_DIRS = {"assets", "references", "skills", "templates"}
+SKILLHUB_DIRS = {"assets", "references", "schemas", "skills", "templates"}
 SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md"}
 PRIVATE_PATTERNS = (
     (re.compile(rb"/(?:Users|home)/[^/\s]+/"), "private home path"),

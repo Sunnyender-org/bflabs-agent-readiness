@@ -13,7 +13,7 @@ export const SKILL_IDS = [
 
 export const ROOT_SKILL_ID = 'bflabs-agent-readiness';
 export const SKILLHUB_ALLOWED_SUFFIXES = new Set(['.csv', '.json', '.md', '.py', '.svg', '.yaml', '.yml']);
-export const ROOT_RESOURCE_DIRS = ['references', 'templates'];
+export const ROOT_RESOURCE_DIRS = ['references', 'templates', 'schemas'];
 export const CHILD_RESOURCE_DIRS = ['references', 'templates', 'examples', 'scripts'];
 export const MAX_EMBEDDED_RESOURCE_BYTES = 2 * 1024 * 1024;
 export const PUBLIC_SKILL_ORIGIN = 'https://readiness.bflabs.cn';
@@ -199,8 +199,7 @@ export function parseSkillsPathname(pathname) {
   } catch {
     return { type: 'unsafe' };
   }
-  if (rawRest === null) return { type: 'skill', skillId };
-  if (rawRest === '') return { type: 'unsafe', skillId };
+  if (rawRest === null || rawRest === '') return { type: 'skill', skillId };
   let relativePath;
   try {
     relativePath = decodeURIComponent(rawRest);
@@ -247,6 +246,7 @@ export function handleSkillRoute(request, { skillText, skillResources, resourceM
     const headers = {
       'content-type': 'text/plain; charset=utf-8',
       'x-content-type-options': 'nosniff',
+      link: `<${PUBLIC_SKILL_ORIGIN}/skills/${parsed.skillId}/manifest.json>; rel="describedby"`,
     };
     if (skillTextCacheControl) headers['cache-control'] = skillTextCacheControl;
     return new Response(method === 'HEAD' ? null : body, { headers });

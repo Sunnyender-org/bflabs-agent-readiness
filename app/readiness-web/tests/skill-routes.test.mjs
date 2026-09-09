@@ -85,3 +85,20 @@ test('skill companion routes serve manifest, hashed body, 304, and honest 404s',
   assert.equal(unknownNested.status, 404);
   assert.deepEqual(await unknownNested.json(), { error: '资源不存在' });
 });
+
+test('bare Skill URLs accept a trailing slash and advertise the manifest', async () => {
+  const publication = await loadPublication();
+  const describedBy = `<${PUBLIC_SKILL_ORIGIN}/skills/${ROOT_SKILL_ID}/manifest.json>; rel="describedby"`;
+  const canonical = route(publication, `/skills/${ROOT_SKILL_ID}`);
+  const slashed = route(publication, `/skills/${ROOT_SKILL_ID}/`);
+  assert.equal(canonical.status, 200);
+  assert.equal(slashed.status, 200);
+  assert.equal(canonical.headers.get('link'), describedBy);
+  assert.equal(slashed.headers.get('link'), describedBy);
+  assert.equal(await slashed.text(), await canonical.text());
+
+  const schema = route(publication, `/skills/${ROOT_SKILL_ID}/schemas/round-experiment.schema.json`);
+  assert.equal(schema.status, 200);
+  assert.equal(schema.headers.get('content-type'), 'application/json; charset=utf-8');
+  assert.match(await schema.text(), /round-experiment/);
+});

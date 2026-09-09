@@ -56,7 +56,7 @@ Read `experiment.json` `current_phase` and `next_step`, then `actions.json` stat
 
 ## Resource reading
 
-Online, each Skill body is at `https://readiness.bflabs.cn/skills/<skill-id>`. Supporting files are served at `https://readiness.bflabs.cn/skills/<skill-id>/<relative-path>`. A file list is at `https://readiness.bflabs.cn/skills/<skill-id>/manifest.json`.
+The canonical Skill URL is `https://readiness.bflabs.cn/skills/<skill-id>` (no trailing slash). The same body is also served at `https://readiness.bflabs.cn/skills/<skill-id>/`. Relative links inside Skill bodies resolve against `https://readiness.bflabs.cn/skills/<skill-id>/` (with that trailing slash). Supporting files are served at `https://readiness.bflabs.cn/skills/<skill-id>/<relative-path>`. A file list is at `https://readiness.bflabs.cn/skills/<skill-id>/manifest.json`.
 
 Examples:
 

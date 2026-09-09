@@ -29,6 +29,7 @@ test('isSafeRelativePath accepts allowlisted companion paths', () => {
     'scripts/verify_site_mcp.py',
     'templates/public-facts.yaml',
     'templates/observations.csv',
+    'schemas/round-experiment.schema.json',
   ]) {
     assert.equal(isSafeRelativePath(value), true, value);
   }

@@ -185,7 +185,7 @@ test('Agent handoff binds current public-state evidence and selects one next Ski
   assert.match(prompt, /Agent Skills 索引：https:\/\/readiness\.bflabs\.cn\/\.well-known\/agent-skills\/index\.json/);
   assert.match(prompt, /根 Skill：https:\/\/readiness\.bflabs\.cn\/skills\/bflabs-agent-readiness/);
   assert.match(prompt, /https:\/\/readiness\.bflabs\.cn\/skills\/bflabs-agent-readiness\/manifest\.json/);
-  assert.match(prompt, /references\/root-agent-contract\.md/);
+  assert.match(prompt, /https:\/\/readiness\.bflabs\.cn\/skills\/bflabs-agent-readiness\/references\/root-agent-contract\.md/);
   assert.match(prompt, /本次唯一子 Skill：geo-optimize/);
   assert.match(prompt, /扫描指纹：sha256:/);
   assert.match(prompt, /可操作=N\/A \(unknown\)/);

@@ -78,7 +78,7 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 复制下面这段话，发给你正在用的 Agent，把最后一行换成你要做的事。
 
 ```
-请先阅读 https://readiness.bflabs.cn/skills/bflabs-agent-readiness 以及它指向的合同。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
+请先阅读 https://readiness.bflabs.cn/skills/bflabs-agent-readiness。配套说明在同一地址下 manifest.json 列出的文件里。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
 我要做的事：（写下网站地址和你想解决的问题。如果已经做过一部分，写上项目文件夹的位置。）
 ```
 
@@ -86,4 +86,4 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 
 榜单默认不会公开你的网站。只有你主动选择时才会上榜；已经加入后，也可以联系 BFLabs 申请移除。
 
-<!-- AGENT_ONLY: Before acting, read references/root-agent-contract.md and follow it. Never project its implementation language into rendered product copy. -->
+<!-- AGENT_ONLY: Before acting, read https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/root-agent-contract.md and follow it. Manifest: https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json. Never project its implementation language into rendered product copy. -->
