@@ -9,6 +9,8 @@
     {"id":"positive-en-intents","prompt":"Build a comparison intent map.","should_trigger":true},
     {"id":"positive-en-opportunities","prompt":"Find GEO query opportunities from this seed.","should_trigger":true},
     {"id":"positive-explicit","prompt":"Use geo-discover for these seeds.","should_trigger":true},
+    {"id":"positive-round-freeze-en","prompt":"Build and freeze a question set for this GEO round.","should_trigger":true},
+    {"id":"positive-round-freeze-zh","prompt":"为这一轮冻结官网问题清单。","should_trigger":true},
     {"id":"negative-site-audit","prompt":"诊断这个网站的三轴准备度。","should_trigger":false},
     {"id":"negative-content","prompt":"生成一个价格页面蓝图。","should_trigger":false},
     {"id":"negative-measure","prompt":"聚合这些模型回答样本。","should_trigger":false},
