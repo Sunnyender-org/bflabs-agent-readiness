@@ -132,7 +132,8 @@ def analyze(
         return result
 
     identity, conflicts = _resolve_identity(links)
-    rows = _collect_rows(selected_imports, identity, applied_filters)
+    excluded = []
+    rows = _collect_rows(selected_imports, identity, applied_filters, experiment.get("site_domain"), excluded)
     if resolved_as_of is None:
         resolved_as_of = _latest_occurred(rows)
 
@@ -141,7 +142,7 @@ def analyze(
     event_counts = _count_events(visible_rows)
     user_funnel = _user_funnel(visible_rows)
     session_funnel = _session_funnel(visible_rows)
-    refund_rows = _collect_rows(selected_imports, identity, {k: v for k, v in applied_filters.items() if k != "payment_status"})
+    refund_rows = _collect_rows(selected_imports, identity, {k: v for k, v in applied_filters.items() if k != "payment_status"}, experiment.get("site_domain"))
     paid_orders, duplicate_skipped = _paid_orders(rows)
     refunds_by_order, unlinked_refunds = _bind_refunds(refund_rows, paid_orders)
     views = _build_views(rows, paid_orders, survey_rows, identity, resolved_as_of, explicit_as_of)
@@ -176,6 +177,10 @@ def analyze(
         limitations.append("数据覆盖尚不完整，以上仅代表已提供的记录。")
     if unresolved_ids:
         limitations.append("部分选定数据未匹配，以上仅展示已读取的记录，请核对导入名称。")
+    if excluded:
+        labels = {"outside_window": "窗口外", "other_site": "其他站点", "duplicate_event": "重复记录"}
+        limitations.append("未计入：" + "，".join(f"{label} {excluded.count(reason)} 条"
+            for reason, label in labels.items() if reason in excluded))
     return {
         "schema_version": SCHEMA_VERSION,
         "as_of": resolved_as_of,
@@ -398,15 +403,37 @@ def _collect_rows(
     imports: List[Dict[str, Any]],
     identity: Dict[str, Dict[str, str]],
     filters: Dict[str, Any],
+    site_domain: Optional[str] = None,
+    excluded: Optional[list] = None,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
+    seen = set()
     for batch in imports:
+        window = batch.get("window") or {}
+        start, end = _parse_datetime(window.get("start")), _parse_datetime(window.get("end"))
         for event in batch.get("events") or []:
             if not isinstance(event, dict):
+                continue
+            occurred = _parse_datetime(event.get("occurred_at"))
+            if start is not None and end is not None and (occurred is None or not start <= occurred <= end):
+                if excluded is not None:
+                    excluded.append("outside_window")
+                continue
+            host = _host(event.get("page_url"))
+            domain = _host(site_domain)
+            if host and domain and host != domain and not host.endswith("." + domain):
+                if excluded is not None:
+                    excluded.append("other_site")
+                continue
+            key = (batch.get("source"), event.get("external_id"))
+            if key in seen:
+                if excluded is not None:
+                    excluded.append("duplicate_event")
                 continue
             channel, reason = derive_channel(event)
             if not _passes_filters(event, filters, channel):
                 continue
+            seen.add(key)
             rows.append(
                 {
                     "event": event,
@@ -416,7 +443,7 @@ def _collect_rows(
                     "channel": channel,
                     "channel_reason": reason,
                     "user_id": _resolved_user(event, identity),
-                    "occurred": _parse_datetime(event.get("occurred_at")),
+                    "occurred": occurred,
                     "natural_ai": channel == "ai" and not event.get("is_test") and not event.get("is_self_promo"),
                 }
             )

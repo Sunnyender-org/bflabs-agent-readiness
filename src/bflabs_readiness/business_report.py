@@ -32,13 +32,13 @@ def render_business_report(report: dict[str, Any]) -> str:
     for key, label in labels.items():
         groups = views[key].get("by_channel", views[key].get("by_page", {}))
         if groups:
-            lines.append(f'\n{label}关联的实付：')
+            lines.append(f'\n{label}关联的收款（未扣退款）：')
             lines.extend(f'- {channels.get(name, name)}：{_amounts(amount)}' for name, amount in groups.items())
     if any(views[key].get("totals_by_currency") for key in labels):
         lines.append("\n同一订单可出现在多个来源视角中，各视角金额不能相加；来源关联不代表本轮优化带来的增量。")
     comparison = report.get("comparison")
     if comparison and comparison.get("comparable"):
-        lines.append("\n业务前后对比（实付）：")
+        lines.append("\n业务前后对比（收款总额，未扣退款）：")
         for side, label in [("before", "改前"), ("after", "改后")]:
             row = comparison[side]
             lines.append(f'- {label}：{row["paid_orders"]} 笔，{_amounts(row["by_currency"])}。')
