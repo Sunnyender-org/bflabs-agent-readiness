@@ -4,7 +4,17 @@ This file is Agent-only. It defines the free, single-website GEO round. Do not p
 
 Read `references/root-agent-contract.md` first. Record files and field names are in `references/round-record.md`. Sampling and pairing rules are in `skills/geo-measure/references/sampling-guide.md`. Page binding is in `skills/geo-optimize/references/page-fact-checklist.md`. Question freezing is in `skills/geo-discover/references/round-questions-method.md`.
 
-The two registered CLI workflows do not execute this round. A single-capability request must not be expanded into this round.
+The two registered CLI workflows do not execute this round and must not be advertised as a full round. A single-item request — including attribution on one supplied business export — must not be expanded into this round.
+
+Do not enter this round for:
+
+- **no-site / build-only** — produce a site-foundation plan via `seo-plan`. Do not invent a public URL. Do not start unrelated sampling. Do not create `experiment.json`.
+- **explain-only** — answer the method question and stop. Do not start execution.
+- **single-item attribution** — analyze the supplied export only. Do not open a full round.
+
+**resume** continues an existing record. It does not redo already-released actions and does not restart setup or recapture a baseline that already exists for the same frozen questions.
+
+Older records remain readable. Do not fabricate identity, survey, refund, or business-window fields that the record does not contain.
 
 ## Scope
 
@@ -41,9 +51,9 @@ bflabs-readiness round report --project DIR
 
 ## Phase: setup
 
-**Entry.** The user asked for a full round on one site, or a continuation has no `experiment.json` yet.
+**Entry.** The user asked for a full round on one existing site that already has a real public URL, or a resume has no `experiment.json` yet. A no-site or build-only request does not enter this phase.
 
-**Need.** Site URL. Facts source. Target market if known.
+**Need.** A real site URL. Facts source. Target market if known. If there is no URL, stop: plan site foundation instead. Do not invent a public URL. Do not start unrelated sampling.
 
 **Record.** Create or update `experiment.json` with `site_domain`, `site_url`, `target_market`, `brand`, version stamps, `current_phase=setup`, and `baseline=null`. Write `facts.json`. Freeze `questions.json`. Leave `actions.json` empty or unchanged. Do not write observations yet.
 

@@ -10,15 +10,18 @@ Read `references/routing.md` before selecting a child Skill. Read `references/pr
 
 Classify every request as exactly one of:
 
-1. **Single capability** — one child Skill, or root diagnosis only.
-2. **Registered CLI workflow** — only `discover-diagnose` or `discover-content`.
-3. **Full round for one site** — an explicit request to run the free method end to end for one website.
-4. **Continue an existing round** — an explicit request to resume a project record.
-5. **Explain only** — the user wants a definition or method explanation and is not asking to execute.
+1. **no-site** — no public URL yet, or the user only wants site-foundation / build-only work. Route to `seo-plan`. Do not invent a public URL. Do not start unrelated sampling. Do not create a round experiment.
+2. **existing-site** — a real site or public URL is in scope. Select the smallest matching child Skill unless the user explicitly asked for a full round.
+3. **explain-only** — a definition or method explanation, including attribution how-to with do-not-execute. Answer and stop. Do not start a round, workflow, or child Skill.
+4. **single-item** — one child Skill, one registered CLI workflow (`discover-diagnose` or `discover-content`), or one offline analysis of a supplied export. Never escalate into a full round. Attribution-only does not select `bflabs-agent-readiness`.
+5. **full-round** — an explicit request to run the free method end to end for one existing site. Select `bflabs-agent-readiness`.
+6. **resume** — an explicit request to continue an existing project record. Select `bflabs-agent-readiness`. Start at `next_step`. Do not redo already-released actions.
 
-A single-capability request is never escalated into a full round. A full round is never claimed to be executed by the two CLI workflows. Those workflows remain the only automatic multi-capability executions; they cover discovery-then-diagnose or discovery-then-content, not baseline, public retest, comparison, business review, or the next-round gate.
+The two CLI workflows remain the only automatic multi-capability executions. They are not a full round. They cover discovery-then-diagnose or discovery-then-content, not baseline, public retest, comparison, business review, or the next-round gate. The root Skill still adds the same six child Skills; do not add a seventh.
 
-If the user only asks what GEO is, how the method works, or what a stage means, answer and stop. Do not start a round, do not run a workflow, and do not ask them to pick a child Skill. The deterministic router may return `needs_clarification` for a definitional prompt; that is not a reason to refuse a plain-language explanation.
+If the user only asks what GEO is, how attribution works, how the method works, or what a stage means, answer and stop. Do not start a round, do not run a workflow, and do not ask them to pick a child Skill. The deterministic router may return `needs_clarification` for a definitional or do-not-execute prompt; that is not a reason to refuse a plain-language explanation.
+
+Older records remain readable. Do not fabricate identity, survey, refund, or business-window fields that the record does not contain.
 
 ## Per-phase precondition checks
 
@@ -26,7 +29,7 @@ Ask only for what the current phase still needs. Never re-ask material already p
 
 | Phase | Ask only if missing |
 |---|---|
-| `setup` | Site URL and a facts source (official pages or owner-supplied facts). Target market if it is not already recorded. |
+| `setup` | A real site URL and a facts source (official pages or owner-supplied facts). Target market if it is not already recorded. If there is no URL, this is no-site work: do not invent a public URL and do not open an experiment. |
 | `baseline` | Platform access or user-supplied answer records. Do not ask for repository or CMS access. Do not ask for a business export. |
 | `change` | Repository or CMS access. |
 | `release` | Owner confirmation that the change may go public, plus release evidence. |
@@ -82,7 +85,7 @@ Report each compared item as `improved`, `unchanged`, `regressed`, `not comparab
 
 ## Workflow
 
-1. Classify the input as a public URL, repository, prior report, full-round request, continuation, or explain-only question.
+1. Classify the input as no-site, existing-site, explain-only, single-item, full-round, or resume.
 2. Record evidence for Discoverable, Understandable, and Actionable before recommending changes.
 3. Select only the smallest active capability unless the request explicitly matches one of the two registered workflows or an explicit full round / continuation.
 4. Keep `ai_visibility` and `business_outcome` as `not_measured` unless separate evidence satisfies their contracts.
@@ -94,7 +97,7 @@ Report each compared item as `improved`, `unchanged`, `regressed`, `not comparab
 - Question and opportunity discovery: `skills/geo-discover/SKILL.md`
 - Evidence-linked content work: `skills/geo-content/SKILL.md`
 - Offline aggregation of supplied AI observations: `skills/geo-measure/SKILL.md`
-- Evidence-bounded technical SEO planning: `skills/seo-plan/SKILL.md`
+- Evidence-bounded technical SEO planning, including site-foundation when there is no public URL: `skills/seo-plan/SKILL.md`
 - Repository-local public-fact and readiness work: `skills/geo-optimize/SKILL.md`
 - MCP or WebMCP implementation and verification: `skills/webmcp-enable/SKILL.md`
 

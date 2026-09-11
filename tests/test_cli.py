@@ -24,7 +24,7 @@ class CliTests(unittest.TestCase):
         report = json.loads(output)
         self.assertEqual(status, 0)
         self.assertEqual(report["status"], "pass")
-        self.assertEqual(report["passed"], 70)
+        self.assertEqual(report["passed"], 76)
 
     def test_run_text_can_select_an_explicit_stable_workflow(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

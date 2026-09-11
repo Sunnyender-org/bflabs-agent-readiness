@@ -35,6 +35,26 @@ AMBIGUOUS: PatternGroup = _patterns(
     r"^(?:help|do|improve)\s+(?:geo|seo|website)\s*[.!]?$",
 )
 
+# Explain / attribution / do-not-execute must win over FULL_ROUND and WORKFLOW.
+# "先不要做 AI 采样" on a build-only request is not explain-only.
+EXPLAIN_ONLY_PATTERNS: PatternGroup = _patterns(
+    r"(?:解释|说明).{0,48}(?:来源)?归因",
+    r"(?:解释|说明).{0,24}(?:一下)?.{0,16}(?:怎么做|如何做|是什么).{0,40}(?:先不要执行|不要执行)",
+    r"(?:解释|说明).{0,40}(?:先不要执行|不要执行)",
+    r"explain.{0,48}attribution",
+    r"(?:只分析).{0,32}(?:业务(?:导出|数据)|导出)",
+    r"(?:不要开整轮|别开整轮|勿开整轮)",
+    r"(?:do not|don't).{0,20}(?:start|open|begin).{0,16}(?:a\s+)?(?:full\s+)?(?:round|workflow)",
+)
+
+SITE_FOUNDATION_PATTERNS: PatternGroup = _patterns(
+    r"(?:还没有|尚无|没有).{0,12}(?:网站|站点)",
+    r"(?:网站基础|站点基础)",
+    r"(?:只).{0,8}(?:帮我)?建(?:网站|站)",
+    r"(?:don't|do not)\s+have\s+(?:a\s+)?website",
+    r"site\s+foundation",
+)
+
 FULL_ROUND_PATTERNS: PatternGroup = _patterns(
     r"(?:完整|整轮).{0,24}一轮.{0,16}(?:GEO|geo).{0,48}(?:基线|改前|复测|闭环)",
     r"(?:GEO|geo).{0,20}(?:完整|整轮).{0,12}一轮.{0,40}(?:基线|改前|复测)",
@@ -93,6 +113,10 @@ CAPABILITY_PATTERNS: List[Tuple[str, PatternGroup]] = [
             r"(?:网站迁移|site\s+migration).{0,18}(?:seo|索引|收录|redirect|canonical)",
             r"(?:技术\s*seo|technical\s+seo|国际\s*seo|international\s+seo)",
             r"(?:规划|plan).{0,12}(?:网站\s*)?seo|seo.{0,12}(?:规划|plan)",
+            r"(?:网站基础|站点基础|site\s+foundation)",
+            r"(?:还没有|尚无|没有).{0,12}(?:网站|站点)",
+            r"(?:don't|do not)\s+have\s+(?:a\s+)?website",
+            r"(?:建网站|建站)",
         ),
     ),
     (
@@ -247,6 +271,10 @@ def route(text: str, registry: Optional[CapabilityRegistry] = None) -> Dict[str,
         return _terminal_decision(original, normalized, rejected=True)
     if _matches(normalized, AMBIGUOUS):
         return _terminal_decision(original, normalized, rejected=False)
+    if _matches(normalized, EXPLAIN_ONLY_PATTERNS):
+        return _terminal_decision(original, normalized, rejected=False)
+    if _matches(normalized, SITE_FOUNDATION_PATTERNS):
+        return _decision_for_capability(original, normalized, registry, "seo-plan")
 
     for workflow_id, patterns in WORKFLOW_PATTERNS:
         if _matches(normalized, patterns):
