@@ -10,7 +10,8 @@ def _amounts(bucket: dict) -> str:
 
 def render_business_report(report: dict[str, Any]) -> str:
     if report["measurement_status"] == "not_measured":
-        return "业务结果未测。可以先完成本阶段报告，取得业务数据后再补充。"
+        note = next((item for item in report.get("limitations", []) if item != report.get("view_warning")), "业务结果未测。")
+        return note + " 可以先完成本阶段报告，取得所需记录后再补充。"
     counts = report["event_counts"]
     lines = [f'访问 {counts["visit"]} 次，注册 {counts["signup"]} 次，付款事件 {counts["purchase"]} 次。',
              f'所选数据的现金净收款：{_amounts(report["cashflow"]["totals_by_currency"])}。']

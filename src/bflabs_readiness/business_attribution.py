@@ -93,6 +93,10 @@ def analyze(
     business_window = experiment.get("business_window") if isinstance(experiment.get("business_window"), dict) else None
     explicit_as_of = as_of or (business_window or {}).get("as_of")
     resolved_as_of = explicit_as_of
+    if (selected_import_ids is not None or "selected_import_ids" in experiment) and not selected_ids:
+        result = _empty_result(resolved_as_of)
+        result["limitations"] = ["尚未选择用于分析的数据。选定记录后可继续。"]
+        return result
 
     if not imports:
         result = _empty_result(resolved_as_of)
@@ -170,6 +174,8 @@ def analyze(
     )
     if any(batch.get("coverage") != "complete" for batch in selected_imports):
         limitations.append("数据覆盖尚不完整，以上仅代表已提供的记录。")
+    if unresolved_ids:
+        limitations.append("部分选定数据未匹配，以上仅展示已读取的记录，请核对导入名称。")
     return {
         "schema_version": SCHEMA_VERSION,
         "as_of": resolved_as_of,
