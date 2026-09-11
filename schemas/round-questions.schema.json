@@ -5,7 +5,7 @@
   "required": ["schema_version", "questions_version", "language", "questions"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "questions_version": { "type": "string", "minLength": 1 },
     "language": { "type": "string", "minLength": 1 },
     "questions": {
@@ -45,7 +45,8 @@
           "items": { "type": "string", "pattern": "^fact_[a-z0-9_-]+$" }
         },
         "partial_credit_rule": { "type": "string", "minLength": 1 },
-        "frozen_at": { "type": "string", "format": "date-time" }
+        "frozen_at": { "type": "string", "format": "date-time" },
+        "provenance": { "$ref": "query-map.schema.json#/$defs/provenance" }
       }
     }
   }

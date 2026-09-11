@@ -5,7 +5,7 @@
   "required": ["schema_version", "actions"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "actions": {
       "type": "array",
       "items": { "$ref": "#/$defs/action" }
@@ -52,6 +52,20 @@
             { "type": "null" },
             { "$ref": "#/$defs/publicRecheck" }
           ]
+        },
+        "content_version_before": { "type": ["string", "null"], "minLength": 1 },
+        "content_version_after": { "type": ["string", "null"], "minLength": 1 },
+        "observation_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "business_evidence_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "method_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^M[1-8]-[a-z0-9-]+$" }
         }
       }
     },

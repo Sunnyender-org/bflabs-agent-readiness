@@ -38,6 +38,16 @@ Chinese demo questions and English market questions are separate sets. Never mer
 
 A later Optimize pass that aims to change AI answers requires `experiment.json.baseline` for this frozen `questions_version`. Building the question set does not create that baseline.
 
+## Frozen set vs next-round pool
+
+Keep two lists. `questions.json` is the frozen set for this `questions_version`. `question-backlog.json` is the next-round pool.
+
+- A newly heard user question goes into `next_round_pool`. It does not join, replace, or rewrite the frozen set.
+- This-round mention, correctness, and rate denominators stay the frozen `question_id`s. Adding a candidate does not change those denominators.
+- The next round creates a new `questions_version`, copies only the selected candidates, and takes a new baseline under the comparison rules. Old questions and their results stay on the previous version.
+- Record `source_kind`, `captured_at`, `market`, and `redacted` on both frozen questions and backlog candidates. `agent_hypothesis` items are not real search volume.
+- Asking the current price and receiving an old price is still inaccurate against the current fact. Re-verifying a fact does not move `content_updated_at`. A facts or questions version change is a new comparability decision, not an in-place edit.
+
 ## Example set (first case site)
 
 Placeholder `fact_id`s only. This block is a method example, not scored answers and not a claim about current AI output.

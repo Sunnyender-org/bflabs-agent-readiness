@@ -50,6 +50,46 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(quality["status"], "blocked")
         self.assertTrue(any("source-query trace" in blocker for blocker in quality["blockers"]))
 
+    def test_query_map_keeps_brief_provenance_and_marks_hypotheses(self) -> None:
+        brief = load_brief()
+        brief["schema_version"] = "1.1.0"
+        brief["market"] = "zh-CN"
+        brief["redacted"] = False
+        brief["provenance"] = {
+            "source_kind": "user_reported",
+            "captured_at": "2026-08-11T05:00:00Z",
+            "market": "zh-CN",
+            "redacted": False,
+        }
+        brief["seed_query_provenance"] = [
+            {
+                "query": brief["seed_queries"][0],
+                "source_kind": "user_reported",
+                "captured_at": "2026-08-11T05:00:00Z",
+                "market": "zh-CN",
+                "redacted": False,
+            }
+        ]
+        validate_instance(brief, "discovery-brief.schema.json")
+        result = run_geo_discover(brief)
+        query_map = result["outputs"]["outputs/query-map.json"][0]
+        opportunity_map = result["outputs"]["outputs/opportunity-map.json"][0]
+        validate_instance(query_map, "query-map.schema.json")
+        self.assertEqual(query_map["schema_version"], "1.1.0")
+        seed_queries = [query for query in query_map["queries"] if query["trace"]["source_type"] == "seed"]
+        self.assertTrue(seed_queries)
+        for query in seed_queries:
+            self.assertEqual(query["provenance"]["source_kind"], "user_reported")
+            self.assertEqual(query["provenance"]["captured_at"], "2026-08-11T05:00:00Z")
+            self.assertEqual(query["provenance"]["market"], "zh-CN")
+        hypotheses = [query for query in query_map["queries"] if query["trace"]["source_type"] == "assumption"]
+        self.assertTrue(hypotheses)
+        for query in hypotheses:
+            self.assertEqual(query["provenance"]["source_kind"], "agent_hypothesis")
+        self.assertTrue(
+            all(item["search_volume"] == {"status": "not_measured", "value": None} for item in opportunity_map["opportunities"])
+        )
+
     def test_duplicate_evidence_ids_block_quality(self) -> None:
         result = run_geo_discover(load_brief())
         query_map = result["outputs"]["outputs/query-map.json"][0]

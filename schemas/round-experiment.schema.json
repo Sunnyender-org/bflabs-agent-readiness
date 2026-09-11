@@ -21,7 +21,7 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "experiment_id": { "type": "string", "pattern": "^exp_[a-z0-9_-]+$" },
     "site_domain": { "type": "string", "minLength": 1 },
     "site_url": { "type": "string", "format": "uri", "pattern": "^https://" },
@@ -48,7 +48,33 @@
       "enum": ["setup", "baseline", "change", "release", "retest", "business_review", "report", "next_round"]
     },
     "next_step": { "type": "string", "minLength": 1 },
-    "updated_at": { "type": "string", "format": "date-time" }
+    "updated_at": { "type": "string", "format": "date-time" },
+    "business_window": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/businessWindow" }
+      ]
+    },
+    "first_paid_lookback": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/firstPaidLookback" }
+      ]
+    },
+    "cohort_maturity": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/cohortMaturity" }
+      ]
+    },
+    "selected_import_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "selected_metric": {
+      "enum": ["paid_amount", "purchases", "visits", "signups", "user_pay_rate"]
+    },
+    "selected_filters": { "$ref": "#/$defs/selectedFilters" }
   },
   "$defs": {
     "timeWindow": {
@@ -58,6 +84,47 @@
       "properties": {
         "start": { "type": "string", "format": "date-time" },
         "end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "businessWindow": {
+      "type": "object",
+      "required": ["before", "after", "timezone", "as_of"],
+      "additionalProperties": false,
+      "properties": {
+        "before": { "$ref": "#/$defs/timeWindow" },
+        "after": { "$ref": "#/$defs/timeWindow" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "as_of": { "type": "string", "format": "date-time" }
+      }
+    },
+    "firstPaidLookback": {
+      "type": "object",
+      "required": ["days"],
+      "additionalProperties": false,
+      "properties": {
+        "days": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cohortMaturity": {
+      "type": "object",
+      "required": ["required_days", "observed_days"],
+      "additionalProperties": false,
+      "properties": {
+        "required_days": { "type": "integer", "minimum": 0 },
+        "observed_days": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "selectedFilters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "exclude_test": { "type": "boolean" },
+        "exclude_self_promo": { "type": "boolean" },
+        "source_type": { "enum": ["ai", "search", "social", "direct", "unknown"] },
+        "payment_status": {
+          "enum": ["pending", "failed", "paid", "refunded", "partial_refund", "test"]
+        }
       }
     },
     "targetMarket": {

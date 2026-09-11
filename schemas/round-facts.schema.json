@@ -5,7 +5,7 @@
   "required": ["schema_version", "facts_version", "facts"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "facts_version": { "type": "string", "minLength": 1 },
     "facts": {
       "type": "array",
@@ -45,7 +45,10 @@
           "enum": ["official", "third_party", "unverified", "conflict", "forbidden"]
         },
         "conflict_note": { "type": ["string", "null"] },
-        "last_reviewed_at": { "type": "string", "format": "date-time" }
+        "last_reviewed_at": { "type": "string", "format": "date-time" },
+        "effective_at": { "type": "string", "format": "date-time" },
+        "verified_at": { "type": "string", "format": "date-time" },
+        "content_updated_at": { "type": "string", "format": "date-time" }
       }
     }
   }

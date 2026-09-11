@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "experiment_id": "exp_example",
   "site_domain": "example.com",
   "site_url": "https://example.com",
@@ -26,6 +26,31 @@
   "baseline": null,
   "rounds": [],
   "current_phase": "setup",
-  "next_step": "Write the facts this site should get right, then freeze the question list.",
-  "updated_at": "2026-01-01T00:00:00Z"
+  "next_step": "先写下这个网站必须说对的事实，再冻结本轮问题。",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "business_window": {
+    "before": {
+      "start": "2026-01-01T00:00:00Z",
+      "end": "2026-01-15T00:00:00Z"
+    },
+    "after": {
+      "start": "2026-01-15T00:00:00Z",
+      "end": "2026-01-29T00:00:00Z"
+    },
+    "timezone": "UTC",
+    "as_of": "2026-01-29T00:00:00Z"
+  },
+  "first_paid_lookback": {
+    "days": 14
+  },
+  "cohort_maturity": {
+    "required_days": 14,
+    "observed_days": 14
+  },
+  "selected_import_ids": ["imp_example"],
+  "selected_metric": "paid_amount",
+  "selected_filters": {
+    "exclude_test": true,
+    "exclude_self_promo": true
+  }
 }

@@ -49,6 +49,7 @@ TEMPLATE_SCHEMAS = (
     ("templates/round-questions.json", "round-questions.schema.json"),
     ("templates/round-actions.json", "round-actions.schema.json"),
     ("templates/round-business-events.json", "round-business-events.schema.json"),
+    ("templates/question-backlog.json", "question-backlog.schema.json"),
 )
 
 

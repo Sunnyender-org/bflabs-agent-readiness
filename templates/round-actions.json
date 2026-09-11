@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "actions": [
     {
       "action_id": "act_example_home_name",
@@ -7,12 +7,17 @@
       "question_ids": ["q_example_brand"],
       "fact_ids": ["fact_example_name"],
       "issue_type": "fact",
-      "summary": "Put the public brand name on the homepage in one plain sentence.",
+      "summary": "把对外品牌名写进首页第一句。",
       "deliverable": null,
       "status": "planned",
       "released_at": null,
       "release_evidence": null,
-      "public_recheck": null
+      "public_recheck": null,
+      "content_version_before": "home-2026-01-01",
+      "content_version_after": null,
+      "observation_ids": [],
+      "business_evidence_refs": [],
+      "method_ids": ["M5-page-change", "M7-touchpoint"]
     }
   ]
 }

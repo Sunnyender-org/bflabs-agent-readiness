@@ -5,10 +5,18 @@
   "required": ["schema_version", "imports"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "imports": {
       "type": "array",
       "items": { "$ref": "#/$defs/importBatch" }
+    },
+    "identity_links": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identityLink" }
+    },
+    "surveys": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sourceSurvey" }
     }
   },
   "$defs": {
@@ -33,6 +41,8 @@
         "window": { "$ref": "#/$defs/importWindow" },
         "coverage": { "enum": ["complete", "partial", "unknown"] },
         "export_filter": { "type": ["string", "null"] },
+        "collection_method": { "$ref": "#/$defs/collectionMethod" },
+        "rule_version": { "type": "string", "minLength": 1 },
         "events": {
           "type": "array",
           "items": { "$ref": "#/$defs/businessEvent" }
@@ -56,7 +66,9 @@
       "additionalProperties": false,
       "properties": {
         "external_id": { "type": "string", "minLength": 1 },
-        "type": { "enum": ["visit", "signup", "lead", "activation", "purchase"] },
+        "type": {
+          "enum": ["visit", "signup", "lead", "activation", "purchase", "refund", "first_success_call"]
+        },
         "occurred_at": { "type": "string", "format": "date-time" },
         "page_url": { "type": ["string", "null"], "format": "uri" },
         "source_type": { "enum": ["ai", "search", "social", "direct", "unknown"] },
@@ -69,7 +81,118 @@
             { "type": "string", "pattern": "^[A-Z]{3}$" }
           ]
         },
-        "is_test": { "type": "boolean" }
+        "is_test": { "type": "boolean" },
+        "raw_touch": { "$ref": "#/$defs/rawTouch" },
+        "derived_channel": { "$ref": "#/$defs/derivedChannel" },
+        "visitor_id": { "type": "string", "minLength": 1 },
+        "session_id": { "type": "string", "minLength": 1 },
+        "user_id": { "type": "string", "minLength": 1 },
+        "order_id": { "type": "string", "minLength": 1 },
+        "payment_status": {
+          "enum": ["pending", "failed", "paid", "refunded", "partial_refund", "test"]
+        },
+        "purchase_kind": { "enum": ["first", "repeat"] },
+        "is_topup": { "type": "boolean" },
+        "is_self_promo": { "type": "boolean" },
+        "first_success_call": { "type": "boolean" },
+        "collection_method": { "$ref": "#/$defs/collectionMethod" },
+        "rule_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rawTouch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "referrer_url": { "type": ["string", "null"] },
+        "referrer_host": { "type": ["string", "null"] },
+        "utm_source": { "type": ["string", "null"] },
+        "utm_medium": { "type": ["string", "null"] },
+        "utm_campaign": { "type": ["string", "null"] },
+        "landing_url": { "type": ["string", "null"] },
+        "distribution_source": { "type": ["string", "null"] }
+      }
+    },
+    "derivedChannel": {
+      "type": "object",
+      "required": ["source_type", "rule_version"],
+      "additionalProperties": false,
+      "properties": {
+        "source_type": { "enum": ["ai", "search", "social", "direct", "unknown"] },
+        "rule_version": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "collectionMethod": {
+      "enum": [
+        "analytics_export",
+        "payment_export",
+        "crm_export",
+        "manual",
+        "survey",
+        "sdk",
+        "authorized_report"
+      ]
+    },
+    "identityLink": {
+      "type": "object",
+      "required": ["link_id", "user_id", "evidence", "linked_at"],
+      "additionalProperties": false,
+      "properties": {
+        "link_id": { "type": "string", "minLength": 1 },
+        "visitor_id": { "type": ["string", "null"] },
+        "session_id": { "type": ["string", "null"] },
+        "user_id": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "enum": ["explicit_signup", "explicit_login", "authorized_export", "user_confirmed"]
+        },
+        "linked_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "surveyAnswer": {
+      "type": "object",
+      "required": ["answer_kind", "verbatim"],
+      "additionalProperties": false,
+      "properties": {
+        "answer_kind": {
+          "enum": ["ai", "search", "social", "direct", "other", "skip", "do_not_remember"]
+        },
+        "verbatim": { "type": ["string", "null"] }
+      }
+    },
+    "aiQuestion": {
+      "type": "object",
+      "required": ["asked", "verbatim"],
+      "additionalProperties": false,
+      "properties": {
+        "asked": { "type": "boolean" },
+        "verbatim": { "type": ["string", "null"] }
+      }
+    },
+    "sourceSurvey": {
+      "type": "object",
+      "required": [
+        "survey_id",
+        "respondent_ref",
+        "asked_at",
+        "first_awareness",
+        "this_visit",
+        "ai_question",
+        "selection_bias_note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "survey_id": { "type": "string", "pattern": "^srv_[a-z0-9_-]+$" },
+        "respondent_ref": { "type": "string", "minLength": 1 },
+        "asked_at": { "type": "string", "format": "date-time" },
+        "first_awareness": { "$ref": "#/$defs/surveyAnswer" },
+        "this_visit": { "$ref": "#/$defs/surveyAnswer" },
+        "ai_question": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/aiQuestion" }
+          ]
+        },
+        "selection_bias_note": { "type": "string", "minLength": 1 }
       }
     }
   }
