@@ -20,7 +20,7 @@ Generate content only from the fact units and evidence sources in a schema-valid
 - `refine`: local improvement that requires source Markdown;
 - `article-friendly`: evidence-preserving restructuring that requires source Markdown.
 
-Read [references/content-contract.md](references/content-contract.md) before producing output. Use [templates/content-brief.json](templates/content-brief.json) as the portable input shape. The GPT-5.6 price blueprint example is [examples/beefapi-gpt-5-6-content-brief.json](examples/beefapi-gpt-5-6-content-brief.json).
+Read [references/content-contract.md](references/content-contract.md) before producing output. Use [templates/content-brief.json](templates/content-brief.json) as the portable input shape. The GPT-5.6 price blueprint example is [examples/beefapi-gpt-5-6-content-brief.json](examples/beefapi-gpt-5-6-content-brief.json). When the work is a missing home, product, docs, or policy page, follow https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/site-foundation.md.
 
 ## Workflow
 
@@ -36,7 +36,10 @@ Read [references/content-contract.md](references/content-contract.md) before pro
 - Do not claim ranking, recommendation, conversion, or revenue effects.
 - Do not treat discovery opportunity scores as search volume.
 - Dynamic price claims must match the canonical evidence hash and `fact_version` captured in the brief.
+- Prefer fixing an existing page. Several questions may share one page. Six questions do not require six new pages. Do not rebuild an existing site.
+- Write for a person who will read the page and take the next step. Use ordinary internal links. Keep real sources and real dates. Do not hide navigation, invent reviews, or scrub dates.
 - HTML is not a v1 output format. If HTML is added later, user-controlled strings must be escaped and independently tested.
+- This Skill specifies content. Actual scaffolding and deploy belong to the host Agent.
 
 ## Verification
 

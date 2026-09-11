@@ -1,0 +1,163 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-09-11",
+  "method_source": "references/whitehat-method.md",
+  "evidence_log": "references/method-evidence.md",
+  "review_template": "templates/method-review.md",
+  "site_foundation": "references/site-foundation.md",
+  "notes": [
+    "Public method IDs are the source. Academy, Skills, and reports cite these IDs.",
+    "Do not copy product prices, models, or customer facts into this map.",
+    "Pointers use plan IDs: T tasks, S Skill work, A academy, D delivery, E evidence scenarios, P practice."
+  ],
+  "modules": [
+    {
+      "id": "M1",
+      "title": "目标与白帽原则",
+      "items": [
+        {
+          "id": "M1-purpose",
+          "pointers": ["T01", "S01", "A01", "A02", "D03", "E01", "E11"]
+        },
+        {
+          "id": "M1-whitehat",
+          "pointers": ["T01", "S01", "A02", "A04", "E15"]
+        },
+        {
+          "id": "M1-stage-metrics",
+          "pointers": ["T01", "S11", "S15", "D03", "E03", "E11"]
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "网站基础与承接",
+      "items": [
+        {
+          "id": "M2-site-foundation",
+          "pointers": ["T01", "S02", "S03", "A02", "D03", "E01", "P01"]
+        },
+        {
+          "id": "M2-information-architecture",
+          "pointers": ["T01", "S01", "S03", "A02", "E01", "P01"]
+        },
+        {
+          "id": "M2-action-entry",
+          "pointers": ["S03", "S11", "E01", "E03"]
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "事实与真实问题",
+      "items": [
+        {
+          "id": "M3-fact-cards",
+          "pointers": ["T01", "S04", "S05", "E09"]
+        },
+        {
+          "id": "M3-question-sources",
+          "pointers": ["S05", "S06", "S09", "E09"]
+        },
+        {
+          "id": "M3-question-page-map",
+          "pointers": ["S01", "S03", "E01", "E09", "P01"]
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "基线与测量设计",
+      "items": [
+        {
+          "id": "M4-frozen-set",
+          "pointers": ["S05", "S06", "E02", "E09"]
+        },
+        {
+          "id": "M4-environment",
+          "pointers": ["S14", "E10"]
+        },
+        {
+          "id": "M4-observation-window",
+          "pointers": ["S12", "S14", "D01", "E08"]
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "内容与独立信任",
+      "items": [
+        {
+          "id": "M5-original-content",
+          "pointers": ["S01", "S16", "A02"]
+        },
+        {
+          "id": "M5-public-sources",
+          "pointers": ["S01", "S04", "E09"]
+        },
+        {
+          "id": "M5-page-change",
+          "pointers": ["S04", "S16", "D01", "E10"]
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "发布、发现与复测",
+      "items": [
+        {
+          "id": "M6-publish-readback",
+          "pointers": ["S04", "S16", "D01", "E10"]
+        },
+        {
+          "id": "M6-discovery",
+          "pointers": ["S14", "E10"]
+        },
+        {
+          "id": "M6-retest",
+          "pointers": ["S14", "S15", "E08", "E10"]
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "title": "来源、行为与业务",
+      "items": [
+        {
+          "id": "M7-touchpoint",
+          "pointers": ["S07", "S13", "S15", "E03", "E05"]
+        },
+        {
+          "id": "M7-identity",
+          "pointers": ["S08", "S11", "E06"]
+        },
+        {
+          "id": "M7-self-report",
+          "pointers": ["S09", "E04"]
+        },
+        {
+          "id": "M7-funnel",
+          "pointers": ["S11", "S12", "E06", "E08"]
+        },
+        {
+          "id": "M7-money-views",
+          "pointers": ["S10", "S13", "S15", "E04", "E07"]
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "title": "复盘与下一轮",
+      "items": [
+        {
+          "id": "M8-review",
+          "pointers": ["T02", "T03", "S16", "A03", "E11", "E15"]
+        },
+        {
+          "id": "M8-next-round",
+          "pointers": ["S06", "S16", "D03", "E11"]
+        }
+      ]
+    }
+  ]
+}
