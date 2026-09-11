@@ -471,7 +471,7 @@ def _apply_shared_sessions(observations: List[Dict[str, Any]]) -> None:
 
 
 def _prompt_consistency_blockers(observations: List[Dict[str, Any]]) -> List[str]:
-    grouped: Dict[Tuple[str, str, str, str, str, str], List[Dict[str, Any]]] = {}
+    grouped: Dict[Tuple[str, str, str, str, str, str, str], List[Dict[str, Any]]] = {}
     for item in observations:
         key = _group_identity(item)
         if key is None or not _is_valid(item):
@@ -524,7 +524,12 @@ def _resolve_bound_baseline(
     return None, False
 
 
-def _group_identity(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str, str, str, str]]:
+def _search_interface(observation: Dict[str, Any]) -> str:
+    value = observation.get("search_interface")
+    return str(value) if value else ""
+
+
+def _group_identity(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str, str, str, str, str]]:
     required = ("round_id", "phase", "observation_line", "prompt_id", "platform", "terminal")
     if any(not observation.get(field) for field in required):
         return None
@@ -535,6 +540,7 @@ def _group_identity(observation: Dict[str, Any]) -> Optional[Tuple[str, str, str
         observation["prompt_id"],
         observation["platform"],
         observation["terminal"],
+        _search_interface(observation),
     )
 
 
@@ -775,15 +781,15 @@ def _build_rounds(
     observations: List[Dict[str, Any]],
     site_domain: str,
     planned_slots: int,
-) -> Tuple[List[Dict[str, Any]], Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]]]:
-    grouped: Dict[Tuple[str, str, str, str, str, str], List[Dict[str, Any]]] = {}
+) -> Tuple[List[Dict[str, Any]], Dict[Tuple[str, str, str, str, str, str, str], Dict[str, Any]]]:
+    grouped: Dict[Tuple[str, str, str, str, str, str, str], List[Dict[str, Any]]] = {}
     for item in observations:
         key = _group_identity(item)
         if key is None:
             continue
         grouped.setdefault(key, []).append(item)
     rounds: List[Dict[str, Any]] = []
-    details: Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]] = {}
+    details: Dict[Tuple[str, str, str, str, str, str, str], Dict[str, Any]] = {}
     for key in sorted(grouped):
         members = grouped[key]
         counts = _round_counts(members, site_domain, planned_slots)
@@ -803,10 +809,10 @@ def _build_rounds(
 
 
 def _match_baseline(
-    after_key: Tuple[str, str, str, str, str, str],
-    details: Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]],
+    after_key: Tuple[str, str, str, str, str, str, str],
+    details: Dict[Tuple[str, str, str, str, str, str, str], Dict[str, Any]],
     bound_round_id: Optional[str],
-) -> Optional[Tuple[str, str, str, str, str, str]]:
+) -> Optional[Tuple[str, str, str, str, str, str, str]]:
     if not bound_round_id:
         return None
     for key in details:
@@ -816,7 +822,7 @@ def _match_baseline(
 
 
 def _build_pairs(
-    details: Dict[Tuple[str, str, str, str, str, str], Dict[str, Any]],
+    details: Dict[Tuple[str, str, str, str, str, str, str], Dict[str, Any]],
     actions: Dict[str, Dict[str, Any]],
     bound_round_id: Optional[str],
     ambiguous: bool,

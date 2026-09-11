@@ -37,12 +37,15 @@ AMBIGUOUS: PatternGroup = _patterns(
 
 # Explain / attribution / do-not-execute must win over FULL_ROUND and WORKFLOW.
 # "先不要做 AI 采样" on a build-only request is not explain-only.
+# Scope negation ("不要开整轮") is weaker than an explicit capability or resume.
 EXPLAIN_ONLY_PATTERNS: PatternGroup = _patterns(
     r"(?:解释|说明).{0,48}(?:来源)?归因",
     r"(?:解释|说明).{0,24}(?:一下)?.{0,16}(?:怎么做|如何做|是什么).{0,40}(?:先不要执行|不要执行)",
     r"(?:解释|说明).{0,40}(?:先不要执行|不要执行)",
     r"explain.{0,48}attribution",
     r"(?:只分析).{0,32}(?:业务(?:导出|数据)|导出)",
+)
+SCOPE_NEGATION_PATTERNS: PatternGroup = _patterns(
     r"(?:不要开整轮|别开整轮|勿开整轮)",
     r"(?:do not|don't).{0,20}(?:start|open|begin).{0,16}(?:a\s+)?(?:full\s+)?(?:round|workflow)",
 )
@@ -273,12 +276,6 @@ def route(text: str, registry: Optional[CapabilityRegistry] = None) -> Dict[str,
         return _terminal_decision(original, normalized, rejected=False)
     if _matches(normalized, EXPLAIN_ONLY_PATTERNS):
         return _terminal_decision(original, normalized, rejected=False)
-    if _matches(normalized, SITE_FOUNDATION_PATTERNS):
-        return _decision_for_capability(original, normalized, registry, "seo-plan")
-
-    for workflow_id, patterns in WORKFLOW_PATTERNS:
-        if _matches(normalized, patterns):
-            return _decision_for_workflow(original, normalized, registry, workflow_id)
 
     explicit_ids = [capability.id for capability in registry.list_capabilities() if capability.id in normalized.lower()]
     if len(explicit_ids) == 1:
@@ -288,8 +285,16 @@ def route(text: str, registry: Optional[CapabilityRegistry] = None) -> Dict[str,
 
     if _matches(normalized, FULL_ROUND_PATTERNS):
         return _decision_for_capability(original, normalized, registry, "bflabs-agent-readiness")
+    if _matches(normalized, SITE_FOUNDATION_PATTERNS):
+        return _decision_for_capability(original, normalized, registry, "seo-plan")
+
+    for workflow_id, patterns in WORKFLOW_PATTERNS:
+        if _matches(normalized, patterns):
+            return _decision_for_workflow(original, normalized, registry, workflow_id)
 
     for capability_id, patterns in CAPABILITY_PATTERNS:
         if _matches(normalized, patterns):
             return _decision_for_capability(original, normalized, registry, capability_id)
+    if _matches(normalized, SCOPE_NEGATION_PATTERNS):
+        return _terminal_decision(original, normalized, rejected=False)
     return _terminal_decision(original, normalized, rejected=False)

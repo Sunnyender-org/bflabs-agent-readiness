@@ -1,0 +1,210 @@
+{
+  "project": {
+    "id": "5c492570-7f89-4c6e-9e2d-a93659d467a3",
+    "name": "Synthetic transfer",
+    "origin": "https://example.com",
+    "goal": "Synthetic portable evidence roundtrip",
+    "facts": [],
+    "questions": [],
+    "pages": [],
+    "tasks": [],
+    "identity_links": [
+      {
+        "id": "lnk_example",
+        "visitor_id": "vis_example",
+        "user_id": "usr_example",
+        "session_id": "ses_example",
+        "bind_evidence": "explicit_signup",
+        "bound_at": "2026-01-02T11:00:00.000Z"
+      }
+    ],
+    "surveys": [
+      {
+        "respondent_ref": "user:usr_example",
+        "asked_at": "2026-01-02T11:05:00.000Z",
+        "first_awareness": {
+          "answer_kind": "ai",
+          "verbatim": "先在 ChatGPT 里看到的"
+        },
+        "this_visit": {
+          "answer_kind": "search",
+          "verbatim": "这次是 Google 搜来的"
+        },
+        "ai_question": {
+          "asked": true,
+          "verbatim": "Example 现在多少钱？"
+        },
+        "selection_bias_note": "自愿填写，不能代表全部来访者。",
+        "id": "srv_example"
+      }
+    ],
+    "as_of": "2026-01-15T00:00:00.000Z",
+    "selected_import_ids": [
+      "imp_example"
+    ],
+    "record_context": {
+      "business_window": {
+        "before": {
+          "start": "2026-01-01T00:00:00Z",
+          "end": "2026-01-08T00:00:00Z"
+        },
+        "after": {
+          "start": "2026-01-08T00:00:00Z",
+          "end": "2026-01-15T00:00:00Z"
+        },
+        "timezone": "UTC",
+        "as_of": "2026-01-15T00:00:00Z"
+      },
+      "selected_import_ids": [
+        "imp_example"
+      ],
+      "selected_metric": "paid_amount"
+    },
+    "business_imports": [
+      {
+        "import_id": "imp_example",
+        "source": "analytics:imp_example",
+        "period_start": "2026-01-01T00:00:00.000Z",
+        "period_end": "2026-01-15T00:00:00.000Z",
+        "portable_metadata": {
+          "import_id": "imp_example",
+          "source": "analytics",
+          "source_label": "Owner-supplied export placeholder",
+          "coverage": "complete",
+          "export_filter": null,
+          "collection_method": "manual",
+          "rule_version": "ba-1.1.0",
+          "timezone": "UTC",
+          "schema_version": "1.1.0"
+        }
+      }
+    ],
+    "version": 2,
+    "created_at": "2026-08-31T00:00:00.000Z",
+    "updated_at": "2026-08-31T00:00:00.000Z"
+  },
+  "business_batches": [
+    {
+      "id": "ad716f74-dd35-4e97-8a3b-3c63595aadbb",
+      "source": "analytics:imp_example",
+      "period_start": "2026-01-01T00:00:00.000Z",
+      "period_end": "2026-01-15T00:00:00.000Z",
+      "imported_at": "2026-08-31T00:00:00.000Z",
+      "provenance": {
+        "imported": true,
+        "independently_verified": false
+      },
+      "events": [
+        {
+          "external_id": "evt_example_visit",
+          "type": "visit",
+          "occurred_at": "2026-01-02T10:00:00.000Z",
+          "page_url": "https://example.com/",
+          "visitor_id": "vis_example",
+          "session_id": "ses_example",
+          "source_type": "search",
+          "source_evidence_url": null,
+          "attribution_method": "referrer",
+          "amount_minor": null,
+          "currency": null,
+          "is_test": false,
+          "provenance": {
+            "imported": true,
+            "independently_verified": false
+          },
+          "raw_touch": {
+            "referrer_url": "https://www.google.com/",
+            "referrer_host": "www.google.com",
+            "utm_source": null,
+            "utm_medium": null,
+            "utm_campaign": null,
+            "landing_url": "https://example.com/",
+            "distribution_source": null
+          },
+          "collection_method": "manual",
+          "rule_version": "ba-1.1.0",
+          "derived_channel": {
+            "source_type": "search",
+            "rule_version": "ba-1.1.0",
+            "reason": "referrer 是 Google，记为搜索，不是 AI"
+          }
+        },
+        {
+          "external_id": "pay1",
+          "type": "purchase",
+          "occurred_at": "2026-01-03T10:00:00.000Z",
+          "page_url": "https://example.com/",
+          "visitor_id": "vis_example",
+          "session_id": "ses_example",
+          "source_type": "search",
+          "source_evidence_url": null,
+          "attribution_method": "referrer",
+          "amount_minor": 1000,
+          "currency": "USD",
+          "is_test": false,
+          "provenance": {
+            "imported": true,
+            "independently_verified": false
+          },
+          "user_id": "usr_example",
+          "order_id": "order1",
+          "raw_touch": {
+            "referrer_url": "https://www.google.com/",
+            "referrer_host": "www.google.com",
+            "utm_source": null,
+            "utm_medium": null,
+            "utm_campaign": null,
+            "landing_url": "https://example.com/",
+            "distribution_source": null
+          },
+          "collection_method": "manual",
+          "rule_version": "ba-1.1.0",
+          "derived_channel": {
+            "source_type": "search",
+            "rule_version": "ba-1.1.0",
+            "reason": "referrer 是 Google，记为搜索，不是 AI"
+          },
+          "payment_status": "paid"
+        },
+        {
+          "external_id": "refund1",
+          "type": "refund",
+          "occurred_at": "2026-01-04T10:00:00.000Z",
+          "page_url": "https://example.com/",
+          "visitor_id": "vis_example",
+          "session_id": "ses_example",
+          "source_type": "search",
+          "source_evidence_url": null,
+          "attribution_method": "referrer",
+          "amount_minor": 500,
+          "currency": "USD",
+          "is_test": false,
+          "provenance": {
+            "imported": true,
+            "independently_verified": false
+          },
+          "user_id": "usr_example",
+          "order_id": "order1",
+          "raw_touch": {
+            "referrer_url": "https://www.google.com/",
+            "referrer_host": "www.google.com",
+            "utm_source": null,
+            "utm_medium": null,
+            "utm_campaign": null,
+            "landing_url": "https://example.com/",
+            "distribution_source": null
+          },
+          "collection_method": "manual",
+          "rule_version": "ba-1.1.0",
+          "derived_channel": {
+            "source_type": "search",
+            "rule_version": "ba-1.1.0",
+            "reason": "referrer 是 Google，记为搜索，不是 AI"
+          },
+          "payment_status": "refunded",
+          "original_order_id": "order1"
+        }
+      ]
+    }
+  ]
+}

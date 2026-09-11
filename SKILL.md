@@ -1,7 +1,7 @@
 ---
 name: bflabs-agent-readiness
 slug: bflabs-agent-readiness
-version: 0.5.0
+version: 0.6.0
 displayName: BFLabs Agent Readiness
 summary: 免费诊断网站是否对 AI Agent 可发现、可理解、可操作，并把证据与唯一下一步交给 Agent。
 tags: [GEO, Agent Readiness, Website Audit, MCP, SEO]
@@ -90,4 +90,4 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 
 榜单默认不会公开你的网站。只有你主动选择时才会上榜；已经加入后，也可以联系 BFLabs 申请移除。
 
-<!-- AGENT_ONLY: Before acting, read https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/root-agent-contract.md and follow it. Manifest: https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json. Never project its implementation language into rendered product copy. -->
+<!-- AGENT_ONLY: For a locally loaded package, first read references/root-agent-contract.md relative to that package and use its local companions. For an online entry, read https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/root-agent-contract.md and follow it. Manifest: https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json. Never project its implementation language into rendered product copy. -->

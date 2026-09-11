@@ -109,6 +109,12 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
     for dimension in DIMENSIONS:
         text = templates[dimension]
         source_type, source_value, evidence_id, assumptions = _trace_for_dimension(brief, dimension, first_evidence_id)
+        seeds = {str(item) for item in (brief.get("seed_queries") or []) if item}
+        if text not in seeds:
+            source_type = "assumption"
+            assumptions = assumptions or [
+                "由已记录的材料生成，不是用户原话：{}".format(source_value)
+            ]
         query_id = _id("qry", dimension + ":" + text)
         query = {
             "id": query_id,
@@ -130,6 +136,37 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
                 "id": stable_claim_id(text),
                 "text": text,
                 "evidence_ids": [evidence_id] if evidence_id else [],
+                "support_level": "context-only",
+            }
+        )
+
+    seen_texts = {query["text"] for query in queries}
+    for seed in brief.get("seed_queries") or []:
+        text = str(seed)
+        if not text or text in seen_texts:
+            continue
+        query_id = _id("qry", "seed:" + text)
+        query = {
+            "id": query_id,
+            "text": text,
+            "dimension": "decision",
+            "trace": {
+                "source_type": "seed",
+                "source_value": text,
+                "evidence_id": first_evidence_id,
+            },
+            "assumptions": [],
+        }
+        provenance = _query_provenance(brief, "seed", text)
+        if provenance is not None:
+            query["provenance"] = provenance
+        queries.append(query)
+        seen_texts.add(text)
+        claims.append(
+            {
+                "id": stable_claim_id(text),
+                "text": text,
+                "evidence_ids": [first_evidence_id],
                 "support_level": "context-only",
             }
         )

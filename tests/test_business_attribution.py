@@ -595,7 +595,6 @@ class E08Tests(unittest.TestCase):
         )
         without_selection = analyze(events, experiment_doc=_experiment())
         self.assertIsNone(without_selection["comparison"])
-        self.assertTrue(any("不自动取最早" in line for line in without_selection["limitations"]))
 
         experiment = _experiment(
             baseline={

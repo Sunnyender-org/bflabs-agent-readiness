@@ -7,7 +7,8 @@
   "properties": {
     "id": { "type": "string", "pattern": "^obs_[a-z0-9_-]+$" },
     "captured_at": { "type": "string", "format": "date-time" },
-    "platform": { "enum": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek", "Perplexity", "Claude", "Grok", "Kimi", "Qwen"] },
+    "platform": { "enum": ["ChatGPT", "Gemini", "Tencent Yuanbao", "Doubao", "DeepSeek", "Perplexity", "Claude", "Grok", "Kimi", "Qwen", "Google Search"] },
+    "search_interface": { "enum": ["AI Overview", "AI Mode", "organic", "other"] },
     "terminal": { "enum": ["web", "app", "api"] },
     "prompt_id": { "type": "string", "minLength": 1 },
     "prompt_text": { "type": "string", "minLength": 1 },

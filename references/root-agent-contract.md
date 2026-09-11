@@ -44,7 +44,7 @@ Do not ask the user to choose a child Skill, fill a technical form, or configure
 
 Before any Optimize-mode change whose purpose is to change AI answers, `experiment.json.baseline` must reference a real baseline observation set for the frozen `questions.json`. If that reference is missing, stop and take the measurement path first. Do not edit the site for AI-answer effect.
 
-The only exception is an explicit user-recorded emergency site fix. Log it in `actions.json` with the reason. Never report that exception as an improvement in AI answers.
+This requirement applies to the full before/after experiment, not to drafts, diagnostics or separately requested ordinary repairs. Record an explicitly requested repair without a baseline as unmeasured for AI-answer improvement; continue other work. Never backfill a baseline or claim an unmeasured improvement.
 
 Never fabricate a baseline. Never back-fill one after the site has already changed for this purpose.
 
@@ -145,3 +145,7 @@ The website, CLI, Markdown response, and MCP scan tool use the same report contr
 ## Compatibility boundary
 
 The deterministic router returns one capability for a single intent. It returns a workflow DAG only for explicit `discover-diagnose` or `discover-content` requests. Full-round and continuation requests return capability `bflabs-agent-readiness` and are executed from this contract, not from those two workflows. Both approved workflows publish one atomic run. Planned or forbidden routes must never execute silently.
+
+## Local candidate and standalone business analysis
+
+When the root Skill is loaded from a local package, resolve companion references from that package first. Do not fetch an older public resource when the matching local file exists. For a supplied business export alone, read `references/business-attribution.md` and use its standalone analyzer; no experiment or AI baseline is required.

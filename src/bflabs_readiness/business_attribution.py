@@ -91,7 +91,8 @@ def analyze(
     links = identity_links if identity_links is not None else list((events_doc or {}).get("identity_links") or [])
     survey_rows = surveys if surveys is not None else list((events_doc or {}).get("surveys") or [])
     business_window = experiment.get("business_window") if isinstance(experiment.get("business_window"), dict) else None
-    resolved_as_of = as_of or (business_window or {}).get("as_of")
+    explicit_as_of = as_of or (business_window or {}).get("as_of")
+    resolved_as_of = explicit_as_of
 
     if not imports:
         result = _empty_result(resolved_as_of)
@@ -104,17 +105,42 @@ def analyze(
         return result
 
     selected_imports = _select_imports(imports, selected_ids)
+    known_import_ids = {batch.get("import_id") for batch in imports}
+    unresolved_ids = [item for item in selected_ids if item not in known_import_ids]
+    if selected_ids and not selected_imports:
+        result = _empty_result(resolved_as_of)
+        result["measurement_status"] = "not_measured"
+        result["comparison"] = {
+            "comparable": False,
+            "reason": "选定的业务批次不存在，不能当作已测。",
+            "selected_import_ids": selected_ids,
+            "selected_metric": metric_name,
+            "ai_window": None,
+            "before": None,
+            "after": None,
+            "boundary_double_count": False,
+            "cohort_maturity": None,
+        }
+        result["limitations"] = [
+            VIEW_WARNING,
+            "选定的业务批次不存在，业务结果未测。",
+        ]
+        return result
+
     identity, conflicts = _resolve_identity(links)
     rows = _collect_rows(selected_imports, identity, applied_filters)
     if resolved_as_of is None:
         resolved_as_of = _latest_occurred(rows)
 
-    event_counts = _count_events(rows)
-    user_funnel = _user_funnel(rows)
-    session_funnel = _session_funnel(rows)
+    visible_rows = [row for row in rows if not row["event"].get("is_test")
+                    and _on_or_before(row["occurred"], _parse_datetime(explicit_as_of))]
+    event_counts = _count_events(visible_rows)
+    user_funnel = _user_funnel(visible_rows)
+    session_funnel = _session_funnel(visible_rows)
+    refund_rows = _collect_rows(selected_imports, identity, {k: v for k, v in applied_filters.items() if k != "payment_status"})
     paid_orders, duplicate_skipped = _paid_orders(rows)
-    refunds_by_order, unlinked_refunds = _bind_refunds(rows, paid_orders)
-    views = _build_views(rows, paid_orders, survey_rows, identity)
+    refunds_by_order, unlinked_refunds = _bind_refunds(refund_rows, paid_orders)
+    views = _build_views(rows, paid_orders, survey_rows, identity, resolved_as_of, explicit_as_of)
     cashflow = _cashflow(paid_orders, refunds_by_order, unlinked_refunds, business_window, resolved_as_of)
     cohort_net = _cohort_net(paid_orders, refunds_by_order, business_window, resolved_as_of)
     test_or_self_promo = _test_or_self_promo(rows)
@@ -128,6 +154,8 @@ def analyze(
         refunds_by_order,
         metric_name,
         business_window,
+        unresolved_ids,
+        resolved_as_of,
     )
     measurement_status = _measurement_status(selected_imports, event_counts, rows)
     limitations = _limitations(
@@ -140,6 +168,8 @@ def analyze(
         rows,
         paid_orders,
     )
+    if any(batch.get("coverage") != "complete" for batch in selected_imports):
+        limitations.append("数据覆盖尚不完整，以上仅代表已提供的记录。")
     return {
         "schema_version": SCHEMA_VERSION,
         "as_of": resolved_as_of,
@@ -194,6 +224,7 @@ def _empty_views() -> Dict[str, Any]:
         "self_report": {"by_channel": {}, "totals_by_currency": {}},
         "page_touch": {"by_page": {}, "totals_by_currency": {}},
         "order_total": {},
+        "orders": [],
     }
 
 
@@ -230,6 +261,10 @@ def _is_ai_referrer(host: str) -> bool:
     return host in AI_REFERRER_HOSTS
 
 
+def _utm_token(value: Optional[str]) -> str:
+    return str(value or "").strip().lower()
+
+
 def derive_channel(event: Dict[str, Any]) -> Tuple[str, str]:
     raw = event.get("raw_touch") if isinstance(event.get("raw_touch"), dict) else {}
     host = _host(raw.get("referrer_host") or raw.get("referrer_url"))
@@ -237,10 +272,11 @@ def derive_channel(event: Dict[str, Any]) -> Tuple[str, str]:
         return "search", "referrer 是 Google，记为搜索，不是 AI"
     if host and _is_ai_referrer(host):
         return "ai", "referrer 是 AI 对话来源"
-    utm = str(raw.get("utm_source") or "").strip().lower()
-    if utm in {"google", "bing", "baidu"}:
+    utm = _utm_token(raw.get("utm_source"))
+    utm_host = _host(utm)
+    if utm in {"google", "bing", "baidu"} or (utm_host and _is_google_search(utm_host)):
         return "search", "UTM 来源是搜索引擎"
-    if utm in {"chatgpt", "openai", "perplexity", "claude"}:
+    if utm in {"chatgpt", "openai", "perplexity", "claude"} or (utm_host and _is_ai_referrer(utm_host)):
         return "ai", "UTM 来源是 AI 对话"
     stored = event.get("source_type")
     if stored in {"ai", "search", "social", "direct", "unknown"}:
@@ -259,6 +295,24 @@ def _select_imports(imports: List[Dict[str, Any]], selected_ids: List[str]) -> L
         return list(imports)
     wanted = set(selected_ids)
     return [batch for batch in imports if batch.get("import_id") in wanted]
+
+
+def _on_or_before(occurred: Optional[datetime], cutoff: Optional[datetime]) -> bool:
+    if occurred is None or cutoff is None:
+        return cutoff is None
+    return occurred <= cutoff
+
+
+def _window_covers(batch_window: Any, target: Optional[Dict[str, Any]]) -> bool:
+    if not isinstance(batch_window, dict) or not isinstance(target, dict):
+        return False
+    start = _parse_datetime(batch_window.get("start"))
+    end = _parse_datetime(batch_window.get("end"))
+    target_start = _parse_datetime(target.get("start"))
+    target_end = _parse_datetime(target.get("end"))
+    if None in {start, end, target_start, target_end}:
+        return False
+    return start <= target_start and end >= target_end
 
 
 def _resolve_identity(links: Iterable[Any]) -> Tuple[Dict[str, str], List[Dict[str, Any]]]:
@@ -392,11 +446,10 @@ def _count_events(rows: List[Dict[str, Any]]) -> Dict[str, int]:
 def _rate(numerator: int, denominator: int) -> Optional[Dict[str, Any]]:
     if denominator <= 0:
         return None
-    capped = min(numerator, denominator)
     return {
-        "numerator": capped,
+        "numerator": numerator,
         "denominator": denominator,
-        "text": "{}/{}".format(capped, denominator),
+        "text": "{}/{}".format(numerator, denominator),
     }
 
 
@@ -411,13 +464,14 @@ def _user_funnel(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         for row in rows
         if row["user_id"] and _is_paid_purchase(row["event"])
     }
+    linked_signups = signed_up & visited
     return {
         "users": len(users),
         "visited": len(visited),
         "signed_up": len(signed_up),
         "paid": len(paid),
         "pay_rate": _rate(len(paid), len(users)),
-        "signup_rate": _rate(len(signed_up), len(visited)) if visited else None,
+        "signup_rate": _rate(len(linked_signups), len(visited)) if visited else None,
     }
 
 
@@ -469,9 +523,10 @@ def _add_money(bucket: Dict[str, Dict[str, Any]], currency: str, amount_minor: i
 
 
 def _order_key(event: Dict[str, Any], import_source: Any) -> Tuple[str, str]:
+    del import_source
     if event.get("order_id"):
         return ("order", str(event["order_id"]))
-    return ("external", "{}:{}".format(import_source or "", event.get("external_id") or ""))
+    return ("external", str(event.get("external_id") or ""))
 
 
 def _paid_orders(rows: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -513,6 +568,35 @@ def _paid_orders(rows: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List
     return list(kept.values()), skipped
 
 
+def _refund_identity(event: Dict[str, Any]) -> Tuple[str, str]:
+    if event.get("refund_id"):
+        return ("refund", str(event["refund_id"]))
+    if event.get("external_id"):
+        return ("refund", str(event["external_id"]))
+    return (
+        "refund",
+        "|".join(
+            [
+                str(event.get("order_id") or ""),
+                str(event.get("occurred_at") or ""),
+                str(event.get("amount_minor") or ""),
+            ]
+        ),
+    )
+
+
+def _is_effective_refund(event: Dict[str, Any]) -> bool:
+    if event.get("type") != "refund":
+        return False
+    if event.get("is_test") or event.get("is_topup"):
+        return False
+    if event.get("payment_status") in NOT_PAID_STATUSES:
+        return False
+    if event.get("amount_minor") is None or not event.get("currency"):
+        return False
+    return True
+
+
 def _bind_refunds(
     rows: List[Dict[str, Any]],
     paid_orders: List[Dict[str, Any]],
@@ -521,12 +605,15 @@ def _bind_refunds(
     by_key = {order["key"]: order for order in paid_orders}
     bound: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
     unlinked: List[Dict[str, Any]] = []
+    seen_refunds: set[Tuple[str, str]] = set()
     for row in rows:
         event = row["event"]
-        if event.get("type") != "refund":
+        if not _is_effective_refund(event):
             continue
-        if event.get("amount_minor") is None or not event.get("currency"):
+        refund_key = _refund_identity(event)
+        if refund_key in seen_refunds:
             continue
+        seen_refunds.add(refund_key)
         refund = {
             "external_id": event.get("external_id"),
             "order_id": event.get("order_id"),
@@ -552,18 +639,54 @@ def _bind_refunds(
     return bound, unlinked
 
 
-def _survey_for_user(surveys: List[Any], user_id: Optional[str], visitor_id: Optional[str], session_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def _parse_respondent_ref(ref: str) -> Tuple[Optional[str], Optional[str]]:
+    text = str(ref or "").strip()
+    if not text:
+        return None, None
+    if text.startswith("user:"):
+        return "user", text[5:]
+    if text.startswith("visitor:"):
+        return "visitor", text[8:]
+    if text.startswith("session:"):
+        return "session", text[8:]
+    return None, text
+
+
+def _survey_for_user(
+    surveys: List[Any],
+    user_id: Optional[str],
+    visitor_id: Optional[str],
+    session_id: Optional[str],
+    identity: Dict[str, Dict[str, str]],
+    as_of: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    visitor_to_user = identity.get("visitor", {})
+    session_to_user = identity.get("session", {})
+    as_of_dt = _parse_datetime(as_of)
     for raw in surveys or []:
         if not isinstance(raw, dict):
             continue
-        ref = str(raw.get("respondent_ref") or "")
-        tokens = {part for part in ref.replace("user:", "").replace("visitor:", "").replace("session:", "").split("/") if part}
-        if user_id and (ref in {"user:" + user_id, user_id} or user_id in tokens):
+        asked = _parse_datetime(raw.get("asked_at"))
+        if as_of_dt is not None and asked is not None and asked > as_of_dt:
+            continue
+        kind, value = _parse_respondent_ref(str(raw.get("respondent_ref") or ""))
+        if not value:
+            continue
+        if kind == "user" and user_id and value == user_id:
             return raw
-        if visitor_id and (ref in {"visitor:" + visitor_id, visitor_id} or visitor_id in tokens):
-            return raw
-        if session_id and (ref in {"session:" + session_id, session_id} or session_id in tokens):
-            return raw
+        if kind == "visitor":
+            if visitor_id and value == visitor_id:
+                return raw
+            if user_id and visitor_to_user.get(value) == user_id:
+                return raw
+        if kind == "session":
+            if session_id and value == session_id:
+                return raw
+            if user_id and session_to_user.get(value) == user_id:
+                return raw
+        if kind is None:
+            if user_id and value == user_id:
+                return raw
     return None
 
 
@@ -582,7 +705,10 @@ def _survey_channel(answer: Any) -> Optional[str]:
 
 def _timeline_for(rows: List[Dict[str, Any]], order: Dict[str, Any]) -> List[Dict[str, Any]]:
     matched = []
+    cutoff = order.get("occurred")
     for row in rows:
+        if cutoff is not None and not _on_or_before(row["occurred"], cutoff):
+            continue
         event = row["event"]
         if order.get("user_id") and row["user_id"] == order["user_id"]:
             matched.append(row)
@@ -645,10 +771,14 @@ def _build_views(
     paid_orders: List[Dict[str, Any]],
     surveys: List[Any],
     identity: Dict[str, Dict[str, str]],
+    as_of: Optional[str] = None,
+    survey_as_of: Optional[str] = None,
 ) -> Dict[str, Any]:
-    del identity
+    as_of_dt = _parse_datetime(as_of)
     views = _empty_views()
     for order in paid_orders:
+        if not _on_or_before(order.get("occurred"), as_of_dt) and as_of_dt is not None:
+            continue
         money = _money(order["amount_minor"], order["currency"])
         _add_money(views["order_total"], order["currency"], order["amount_minor"])
         first_channel = _first_observable_channel(rows, order)
@@ -663,7 +793,7 @@ def _build_views(
             channel_bucket = views["this_visit_source"]["by_channel"].setdefault(this_channel, {})
             _add_money(channel_bucket, order["currency"], order["amount_minor"])
             _add_money(views["this_visit_source"]["totals_by_currency"], order["currency"], order["amount_minor"])
-        survey = _survey_for_user(surveys, order.get("user_id"), order.get("visitor_id"), order.get("session_id"))
+        survey = _survey_for_user(surveys, order.get("user_id"), order.get("visitor_id"), order.get("session_id"), identity, survey_as_of)
         self_channel = _survey_channel((survey or {}).get("first_awareness"))
         if self_channel:
             channel_bucket = views["self_report"]["by_channel"].setdefault(self_channel, {})
@@ -681,6 +811,11 @@ def _build_views(
             "self_report": self_channel,
             "page_touch": page,
         }
+        views["orders"].append({
+            "order_id": order.get("order_id"), "external_id": order["external_id"],
+            "import_id": order["import_id"], "occurred_at": order["occurred_at"],
+            "money": money, "views": dict(order["view_channels"]),
+        })
     return views
 
 
@@ -691,10 +826,12 @@ def _cashflow(
     business_window: Optional[Dict[str, Any]],
     as_of: Optional[str],
 ) -> Dict[str, Any]:
-    del as_of
+    as_of_dt = _parse_datetime(as_of)
     movements: List[Dict[str, Any]] = []
     totals: Dict[str, Dict[str, Any]] = {}
     for order in paid_orders:
+        if as_of_dt is not None and not _on_or_before(order.get("occurred"), as_of_dt):
+            continue
         movements.append(
             {
                 "kind": "purchase",
@@ -707,6 +844,8 @@ def _cashflow(
         )
         _add_money(totals, order["currency"], order["amount_minor"])
         for refund in refunds_by_order.get(order["key"], []):
+            if as_of_dt is not None and not _on_or_before(refund.get("occurred"), as_of_dt):
+                continue
             movements.append(
                 {
                     "kind": "refund",
@@ -719,6 +858,8 @@ def _cashflow(
             )
             _add_money(totals, refund["currency"], -int(refund["amount_minor"]))
     for refund in unlinked_refunds:
+        if as_of_dt is not None and not _on_or_before(refund.get("occurred"), as_of_dt):
+            continue
         movements.append(
             {
                 "kind": "refund",
@@ -797,8 +938,13 @@ def _cohort_net(
         for order in paid_orders
         if cohort_start and cohort_end and _in_half_open(order["occurred"], cohort_start, cohort_end)
     ]
-    chosen = in_before if in_before else list(paid_orders)
+    if cohort_start and cohort_end:
+        chosen = in_before
+    else:
+        chosen = [order for order in paid_orders if as_of_dt is None or _on_or_before(order.get("occurred"), as_of_dt)]
     for order in chosen:
+        if as_of_dt is not None and not _on_or_before(order.get("occurred"), as_of_dt):
+            continue
         refunded = 0
         source = order["channel"]
         recorded_source = order.get("source_type_recorded")
@@ -880,11 +1026,21 @@ def _side_summary(
     paid_orders: List[Dict[str, Any]],
     refunds_by_order: Dict[Tuple[str, str], List[Dict[str, Any]]],
     metric_name: Optional[str],
+    as_of: Optional[str] = None,
 ) -> Dict[str, Any]:
     start = _parse_datetime(window.get("start"))
     end = _parse_datetime(window.get("end"))
-    in_rows = [row for row in rows if _in_half_open(row["occurred"], start, end)]
-    in_orders = [order for order in paid_orders if _in_half_open(order["occurred"], start, end)]
+    as_of_dt = _parse_datetime(as_of)
+    in_rows = [
+        row
+        for row in rows
+        if _in_half_open(row["occurred"], start, end) and (as_of_dt is None or _on_or_before(row["occurred"], as_of_dt))
+    ]
+    in_orders = [
+        order
+        for order in paid_orders
+        if _in_half_open(order["occurred"], start, end) and (as_of_dt is None or _on_or_before(order["occurred"], as_of_dt))
+    ]
     counts = _count_events(in_rows)
     money: Dict[str, Dict[str, Any]] = {}
     for order in in_orders:
@@ -910,6 +1066,8 @@ def _comparison(
     refunds_by_order: Dict[Tuple[str, str], List[Dict[str, Any]]],
     metric_name: Optional[str],
     business_window: Optional[Dict[str, Any]],
+    unresolved_ids: Optional[List[str]] = None,
+    as_of: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     ai_window = None
     baseline = experiment.get("baseline")
@@ -918,8 +1076,9 @@ def _comparison(
     if not selected_ids and not business_window:
         return None
     if business_window and business_window.get("before") and business_window.get("after"):
-        before = _side_summary("before", business_window["before"], rows, paid_orders, refunds_by_order, metric_name)
-        after = _side_summary("after", business_window["after"], rows, paid_orders, refunds_by_order, metric_name)
+        cutoff = as_of or business_window.get("as_of")
+        before = _side_summary("before", business_window["before"], rows, paid_orders, refunds_by_order, metric_name, cutoff)
+        after = _side_summary("after", business_window["after"], rows, paid_orders, refunds_by_order, metric_name, cutoff)
         before_end = _parse_datetime(business_window["before"].get("end"))
         after_start = _parse_datetime(business_window["after"].get("start"))
         double = False
@@ -965,8 +1124,31 @@ def _comparison(
             if batch.get("coverage") != "complete":
                 coverage_ok = False
                 reason = "所选业务批次不是完整覆盖，不能当作等长对照。"
+        before_covered = any(_window_covers(batch.get("window"), business_window.get("before")) for batch in selected_imports)
+        after_covered = any(_window_covers(batch.get("window"), business_window.get("after")) for batch in selected_imports)
+        if not before_covered or not after_covered:
+            coverage_ok = False
+            reason = reason or "改前或改后观察窗没有对应的完整业务批次，不能对照。"
+        mature_ok = True
+        if metric_name == "user_pay_rate" and mature is False:
+            mature_ok = False
+            reason = reason or explanation or "观察期未满，用户付费率不能对照。"
+        if unresolved_ids:
+            coverage_ok = False
+            reason = reason or "有选定的业务批次无法对应，不能对照。"
+        as_of_dt = _parse_datetime(cutoff)
+        after_end = _parse_datetime((business_window.get("after") or {}).get("end"))
+        if as_of_dt is not None and after_end is not None and as_of_dt < after_end:
+            coverage_ok = False
+            reason = reason or "改后观察窗尚未到声明的结束时间，不能当作完整等长对照。"
+        if metric_name == "paid_amount":
+            before_days = _window_days(business_window.get("before"))
+            after_days = _window_days(business_window.get("after"))
+            if before_days is not None and after_days is not None and before_days != after_days:
+                coverage_ok = False
+                reason = reason or "未归一化的付款金额只能比较等长窗口。"
         return {
-            "comparable": bool(coverage_ok and not double),
+            "comparable": bool(coverage_ok and not double and mature_ok),
             "reason": reason,
             "selected_import_ids": selected_ids,
             "selected_metric": metric_name,
@@ -1035,7 +1217,7 @@ def _limitations(
         lines.append("下一步是导入完整观察窗的业务记录。")
     elif measurement_status == "measured_zero":
         lines.append("完整窗口里成交是 0，这是实测零，不是未测。")
-        lines.append("下一步按内容和问题缺口继续，不必先补一笔收入。")
+        lines.append("下一步可继续处理已发现的内容和问题缺口。")
     if user_funnel is None:
         lines.append("没有身份标识时，只报事件次数，不计算用户比率。")
     if duplicate_skipped:
@@ -1047,14 +1229,13 @@ def _limitations(
     if any(order.get("natural_ai") for order in paid_orders):
         lines.append("来源关联金额可以报告。本项目没有 AI 回答样本时，AI 表现仍未测。")
     if comparison is None:
-        lines.append("没有显式选择业务批次或业务观察窗时，不自动取最早一批作对照。")
+        lines.append("尚未指定前后对比的数据与时间范围。")
     elif comparison.get("boundary_double_count"):
         lines.append("窗口边界出现了重复计入，对照不可直接使用。")
     elif comparison.get("cohort_maturity") and comparison["cohort_maturity"].get("explanation"):
         lines.append(comparison["cohort_maturity"]["explanation"])
     if comparison and comparison.get("ai_window") and comparison.get("business_window"):
         lines.append("AI 采样窗和业务前后观察窗分开计算，不拿采样时长当业务窗。")
-    lines.append("金额用主单位书写，比率写成分母，例如 1/1。")
     # unique preserve order
     seen = set()
     unique = []

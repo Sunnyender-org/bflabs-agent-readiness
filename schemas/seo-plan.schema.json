@@ -82,6 +82,31 @@
     },
     "official_sources": { "type": "array", "minItems": 1, "items": { "type": "string" } },
     "live_actions_not_performed": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-    "outcome_boundaries": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+    "outcome_boundaries": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "foundation_pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "purpose", "fact_placeholders", "action_entry"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "purpose": { "type": "string" },
+          "fact_placeholders": { "type": "array", "items": { "type": "string" } },
+          "action_entry": { "type": "string" }
+        }
+      }
+    },
+    "deployment_handoff": {
+      "type": "object",
+      "required": ["publish_target", "owner_approval", "verification", "rollback"],
+      "additionalProperties": false,
+      "properties": {
+        "publish_target": { "type": "string" },
+        "owner_approval": { "type": "string" },
+        "verification": { "type": "string" },
+        "rollback": { "type": "string" }
+      }
+    }
   }
 }

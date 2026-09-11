@@ -349,6 +349,10 @@ class GeoRoundTests(unittest.TestCase):
 
     def test_business_unequal_windows_are_not_comparable(self) -> None:
         experiment = json.loads((FIXTURES / "valid" / "experiment.json").read_text("utf-8"))
+        experiment.update(selected_import_ids=["imp_before", "imp_after"], selected_metric="paid_amount",
+                          business_window={"before": {"start": "2026-01-01T00:00:00Z", "end": "2026-01-08T00:00:00Z"},
+                                           "after": {"start": "2026-01-09T00:00:00Z", "end": "2026-01-23T00:00:00Z"},
+                                           "timezone": "UTC", "as_of": "2026-01-23T00:00:00Z"})
         analysis = analyze_business(
             _records_with_business(
                 _empty_import(import_id="imp_before"),
@@ -366,9 +370,7 @@ class GeoRoundTests(unittest.TestCase):
         comparison = analysis["comparison"]
         self.assertIsNotNone(comparison)
         self.assertFalse(comparison["comparable"])
-        self.assertEqual(comparison["reason"], "unequal window length")
-        self.assertEqual(comparison["before"]["import_id"], "imp_before")
-        self.assertEqual(comparison["after"]["import_id"], "imp_after")
+        self.assertIn("等长", comparison["reason"])
 
     def test_report_renders_without_measurement(self) -> None:
         markdown = render_report(FIXTURES / "valid", None)
@@ -383,7 +385,8 @@ class GeoRoundTests(unittest.TestCase):
         # amount_minor 1000 USD is ten dollars, and rates always show their counts
         self.assertIn("10.00 美元", body)
         self.assertNotIn("美元 1000", body)
-        self.assertIn("注册率为 100.0%（1 / 1）", body)
+        self.assertIn("仅展示事件次数", body)
+        self.assertNotIn("注册率为 100.0%", body)
 
     def test_report_derives_measurement_table_from_pairs_and_project_question(self) -> None:
         measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))
@@ -447,18 +450,20 @@ class GeoRoundTests(unittest.TestCase):
         self.assertIn("current_phase: change", output)
         self.assertIn(MISSING_BASELINE_BEFORE_CHANGE, output)
 
-    def test_valid_fixture_has_comparable_imported_baseline(self) -> None:
-        analysis = analyze_business(load_project(FIXTURES / "valid"))
-        comparison = analysis["comparison"]
-        self.assertIsNotNone(comparison)
+    def test_old_fixture_does_not_infer_business_window_from_ai_baseline(self) -> None:
+        records = load_project(FIXTURES / "valid")
+        self.assertIsNone(analyze_business(records)["comparison"])
+        imports = records["business_events"]["imports"]
+        records["experiment"].update(
+            selected_import_ids=[row["import_id"] for row in imports], selected_metric="paid_amount",
+            business_window={"before": {k: imports[0]["window"][k] for k in ("start", "end")},
+                             "after": {k: imports[1]["window"][k] for k in ("start", "end")},
+                             "timezone": "UTC", "as_of": imports[1]["window"]["end"]})
+        comparison = analyze_business(records)["comparison"]
         self.assertTrue(comparison["comparable"])
-        self.assertIsNone(comparison["reason"])
-        self.assertEqual(comparison["before"]["import_id"], "imp_baseline")
-        self.assertEqual(comparison["after"]["import_id"], "imp_after")
-        self.assertEqual(comparison["before"]["coverage"], "complete")
-        self.assertEqual(comparison["after"]["coverage"], "complete")
-        self.assertEqual(comparison["before"]["counts"]["visit"], 1)
-        self.assertEqual(comparison["after"]["counts"]["visit"], 1)
+        self.assertEqual(comparison["before"]["event_counts"]["visit"], 1)
+        self.assertEqual(comparison["after"]["event_counts"]["visit"], 1)
+
 
     def test_review_item_6_verified_public_without_release_evidence_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -535,18 +540,15 @@ class GeoRoundTests(unittest.TestCase):
             self.assertEqual(validate_project(project), [])
             analysis = analyze_business(load_project(project))
             comparison = analysis["comparison"]
-            self.assertIsNotNone(comparison)
-            self.assertFalse(comparison["comparable"])
-            self.assertEqual(comparison["reason"], "no business baseline import")
-            self.assertIsNone(comparison["before"])
-            self.assertEqual(comparison["after"]["status"], "data_incomplete")
-            self.assertEqual(comparison["after"]["counts"]["visit"], 1)
+            self.assertIsNone(comparison)
+            self.assertEqual(analysis["imports"][0]["status"], "data_incomplete")
+            self.assertEqual(analysis["imports"][0]["counts"]["visit"], 1)
             markdown = render_report(project, None)
             self.assertNotIn("两段等长且不重叠", markdown)
             self.assertNotIn("改前窗口：访问 0", markdown)
             self.assertNotIn("改前 访问 0", markdown)
-            self.assertIn("改前窗口没有导入数据", markdown)
-            self.assertIn("改后窗口：访问 1 次，注册 1 次", markdown)
+            self.assertIn("尚未指定前后对比", markdown)
+            self.assertIn("访问 1 次，注册 1 次", markdown)
 
     def test_review_item_8_old_and_duplicate_orders_do_not_inflate_revenue(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 — pre-practice candidate
+
+- Add the eight-module whitehat method, no-site planning and source-aware question backlog.
+- Support independent business analysis, identities, self-report, refunds and explicit business windows.
+- Use the same business calculations in standalone and round reports; retain old record readability.
+- Add portable business handoff to the existing GEO service and self-contained analysis resources.
+- Improve report language and keep missing evidence local to the affected conclusion.
+- Candidate validation does not establish real-site GEO effectiveness or publication.
+
+
 All notable changes to the public release candidate are documented here.
 
 ## 0.5.0 - 2026-09-09
