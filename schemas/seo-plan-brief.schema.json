@@ -10,7 +10,7 @@
     "captured_at": { "type": "string", "format": "date-time" },
     "language": { "enum": ["zh-CN", "en"] },
     "target": { "type": "string", "minLength": 1 },
-    "change_type": { "enum": ["migration", "indexing", "technical-seo", "international-seo"] },
+    "change_type": { "enum": ["migration", "indexing", "technical-seo", "international-seo", "site-foundation"] },
     "symptoms": { "type": "array", "items": { "type": "string" } },
     "constraints": { "type": "array", "items": { "type": "string" } },
     "observations": {
@@ -51,6 +51,6 @@
     }
   },
   "$defs": {
-    "category": { "enum": ["robots", "meta-robots", "canonical", "redirects", "sitemap", "indexnow", "structured-data", "cwv-lab", "cwv-field", "ai-crawlers", "hreflang"] }
+    "category": { "enum": ["robots", "meta-robots", "canonical", "redirects", "sitemap", "indexnow", "structured-data", "cwv-lab", "cwv-field", "ai-crawlers", "hreflang", "site-foundation"] }
   }
 }

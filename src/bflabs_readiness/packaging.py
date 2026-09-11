@@ -90,7 +90,7 @@ SKILLHUB_ROOT_FILES = {
     "THIRD_PARTY_NOTICES.md",
 }
 SKILLHUB_DIRS = {"assets", "references", "schemas", "skills", "templates"}
-SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md"}
+SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md", "scripts/analyze_business.py"}
 PRIVATE_PATTERNS = (
     (re.compile(rb"/(?:Users|home)/[^/\s]+/"), "private home path"),
     (re.compile(rb"[A-Za-z]:\\Users\\[^\\\s]+\\"), "private Windows home path"),
@@ -236,6 +236,9 @@ def skillhub_files(root: Optional[Path] = None) -> List[Tuple[PurePosixPath, byt
             raise PackageError("SkillHub package contains an unsupported file type: {}".format(relative))
         mode = 0o755 if relative.parts[0] == "skills" and relative.suffix == ".py" else 0o644
         entries.append((relative, path.read_bytes(), mode))
+    for module in ("business_attribution.py", "business_report.py"):
+        entries.append((PurePosixPath("scripts") / module,
+                        (base / "src" / "bflabs_readiness" / module).read_bytes(), 0o644))
     if len(entries) + 1 > SKILLHUB_MAX_FILES:
         raise PackageError("SkillHub package exceeds {} files".format(SKILLHUB_MAX_FILES))
     return sorted(entries, key=lambda item: item[0].as_posix())

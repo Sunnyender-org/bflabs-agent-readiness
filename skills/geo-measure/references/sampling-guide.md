@@ -19,7 +19,9 @@ Keep the four observation lines separate. Never merge them into one score.
 
 ## Platforms and sessions
 
-Use two platforms the target users actually use and that the operator can legally access. Collect 3 independent sessions per question per platform per round. Sampling sessions stay separate from implementation sessions. Do not inject project context, prior answers, or internal notes into the sampling account.
+First-round surfaces are ChatGPT, Perplexity, and Google Search. Use the surfaces the target users actually use and that the operator can legally access. Gemini chat, if collected, is an optional independent surface and does not replace Google Search. Collect 3 independent sessions per question per platform per terminal per round. Sampling sessions stay separate from implementation sessions. Do not inject project context, prior answers, or internal notes into the sampling account.
+
+API, App, and web are different terminals. Do not pair an API answer with a web measurement. Google Search observations are either an authorized Search export or a recorded AI Overview / AI Mode answer. An ordinary web search result is never a model answer. Google AI impressions are not clicks, queries, or order sources, and they must not be added to ordinary Search impression totals.
 
 Record platform, terminal, visible model, account alias (never credentials), language, region, network evidence, and personalization evidence. A "new chat" label alone does not prove a clean state. Record the actual personalization setting (`off`, `on`, or `unknown`).
 
@@ -45,11 +47,11 @@ Keep raw answers, cited URLs, capture time, and screenshots or exports. Label us
 
 Use one of:
 
-- `manual_export`: a person exported the answer through the product UI.
+- `manual_export`: a person exported the answer or official report through the product UI.
 - `approved_api`: an official, permitted API the operator is allowed to use.
 - `recorded_fixture`: a stored synthetic or replay fixture, not a live sample.
 
-If every valid observation is `recorded_fixture`, the report adds the limitation that it does not demonstrate live platform visibility.
+Official Search or webmaster numbers start as an authorized export. Do not build a generic scraper. If every valid observation is `recorded_fixture`, the report adds the limitation that it does not demonstrate live platform visibility.
 
 Reject any material obtained by bypassing login, CAPTCHA, anti-automation, or regional controls.
 

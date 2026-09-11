@@ -1,6 +1,6 @@
 ---
 name: geo-measure
-description: Aggregate user-supplied AI answer observations into denominator-explicit GEO visibility metrics, including optional before/after rounds of a frozen question set under identical conditions. Use for ChatGPT, Gemini, Tencent Yuanbao, Doubao, DeepSeek, Perplexity, Claude, Grok, Kimi, or Qwen observation batches in JSON, JSONL, or CSV. Not for platform scraping, login or CAPTCHA bypass, ordinary web search results disguised as model answers, causal claims, ranking guarantees, or traffic, conversion, and revenue attribution.
+description: Aggregate user-supplied AI answer observations into denominator-explicit GEO visibility metrics, including optional before/after rounds of a frozen question set under identical conditions. Use for ChatGPT, Perplexity, Google Search, Gemini, Tencent Yuanbao, Doubao, DeepSeek, Claude, Grok, Kimi, or Qwen observation batches in JSON, JSONL, or CSV. Not for platform scraping, login or CAPTCHA bypass, ordinary web search results disguised as model answers, treating API answers as web measurements, treating Google AI impressions as order sources, causal claims, ranking guarantees, or traffic, conversion, and revenue attribution.
 metadata:
   short-description: Aggregate supplied AI answer observations
   sunny_skill_type: library
@@ -8,7 +8,9 @@ metadata:
 
 # GEO Measure
 
-Measure only supplied observations. This Skill does not log in to platforms, sample them, browse on the user's behalf, or infer business outcomes.
+Measure only supplied observations. This Skill does not log in to platforms, sample them, browse on the user's behalf, scrape consoles, or infer business outcomes.
+
+First-round observation surfaces are ChatGPT, Perplexity, and Google Search. Keep API, App, and web as separate terminals. Official platform numbers start as an authorized export from the product UI or a permitted API. There is no generic scraper. Google AI impressions are not order sources. An API answer is not a web measurement. Ordinary web search links are not model answers.
 
 Read [references/measurement-boundary.md](references/measurement-boundary.md) before importing data. Follow [references/sampling-guide.md](references/sampling-guide.md) when collecting before/after rounds. Use [templates/measurement-input.json](templates/measurement-input.json) for JSON and [templates/observations.csv](templates/observations.csv) for CSV. A zero-valid-sample example is provided at [examples/measurement-input.json](examples/measurement-input.json). A labelled synthetic pairing example is at [examples/round-pairing-input.json](examples/round-pairing-input.json).
 
@@ -39,4 +41,4 @@ bflabs-readiness run --capability geo-measure --input observations.jsonl --outpu
 bflabs-readiness run --capability geo-measure --input observations.csv --output runs
 ```
 
-The output is descriptive for the supplied batch only. It is not proof of ranking, causality, traffic, conversion, or revenue. Three repetitions support process trial and direction only.
+The output is descriptive for the supplied batch only. It is not proof of ranking, causality, traffic, conversion, or revenue. Three repetitions support process trial and direction only. Source-association, on-site content-funnel tests, and GEO increment experiments stay separate. A small site may stop at a descriptive case. Do not emit a causal score without suitable comparison data.

@@ -10,6 +10,8 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 from .paths import repository_root
+from .business_attribution import analyze as analyze_attribution
+from .business_report import render_business_report
 from .providers.geo_measure import LINE_LABELS, TERMINAL_LABELS, format_stage_side
 from .schemas import SchemaValidationError, load_schema, validate_instance
 
@@ -32,7 +34,7 @@ ERR_VERIFIED_PUBLIC_REQUIRES_PASS = "verified_public requires public_recheck.res
 ERR_VERIFIED_PUBLIC_REQUIRES_NOTE = "verified_public requires non-empty public_recheck.note"
 ERR_VERIFIED_PUBLIC_RECHECK_NOT_AFTER_RELEASE = "verified_public requires checked_at after released_at"
 ERR_AI_EVENT_EVIDENCE = "ai event requires source_evidence_url and known attribution_method"
-ERR_MONEY_ONLY_ON_PURCHASE = "money is only allowed on purchase events"
+ERR_MONEY_ONLY_ON_PURCHASE = "money is only allowed on purchase or refund events"
 ERR_DUPLICATE_EVENT_ID = "duplicate event id within import"
 ERR_BASELINE_OBSERVATION_MISSING = "baseline observation file is missing"
 ERR_BASELINE_OBSERVATION_OUTSIDE_PROJECT = "baseline observation_file must stay inside the project directory"
@@ -65,6 +67,7 @@ RECORD_SPECS = (
     ("questions", "questions.json", "round-questions.schema.json", False),
     ("actions", "actions.json", "round-actions.schema.json", False),
     ("business_events", "business-events.json", "round-business-events.schema.json", False),
+    ("question_backlog", "question-backlog.json", "question-backlog.schema.json", False),
 )
 ACTION_STATUSES = ("planned", "changed_local", "released", "verified_public", "reverted")
 EVENT_TYPES = ("visit", "signup", "lead", "activation", "purchase")
@@ -300,10 +303,21 @@ def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str
                 not event.get("source_evidence_url") or event.get("attribution_method") == "unknown"
             ):
                 errors.append("{}: {} / {}".format(ERR_AI_EVENT_EVIDENCE, import_id, external_id))
-            if event.get("type") != "purchase" and (
+            if event.get("type") not in {"purchase", "refund"} and (
                 event.get("amount_minor") is not None or event.get("currency") is not None
             ):
                 errors.append("{}: {} / {}".format(ERR_MONEY_ONLY_ON_PURCHASE, import_id, external_id))
+    backlog = records.get("question_backlog")
+    if backlog is not None:
+        if backlog.get("questions_version") != experiment.get("questions_version"):
+            errors.append("question backlog does not match the frozen question version")
+        if set(backlog.get("frozen_question_ids", [])) != known_questions:
+            errors.append("question backlog must reference the unchanged frozen question set")
+        for candidate in backlog.get("next_round_pool", []):
+            if set(candidate.get("related_question_ids", [])) - known_questions:
+                errors.append("question backlog references an unknown frozen question")
+            if set(candidate.get("related_fact_ids", [])) - known_facts:
+                errors.append("question backlog references an unknown fact")
     return errors
 
 
@@ -560,50 +574,25 @@ def _event_in_window(event: Dict[str, Any], window: Dict[str, Any]) -> bool:
 
 
 def _summarize_events(events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    real_counts = _zero_counts()
-    test_counts = _zero_counts()
-    source_type_counts = _zero_sources()
-    revenue_by_currency: Dict[str, int] = {}
-    test_total = 0
+    """Compatibility projection; the attribution module owns calculations."""
+    events = list(events)
+    real = [event for event in events if not event.get("is_test")]
+    report = analyze_attribution({"imports": [{"events": real, "coverage": "unknown"}]})
+    counts = report["event_counts"]
+    tests = _zero_counts()
+    sources = _zero_sources()
     for event in events:
-        bucket = test_counts if event.get("is_test") else real_counts
-        event_type = event.get("type")
-        if event_type in bucket:
-            bucket[event_type] += 1
-        if event.get("is_test"):
-            test_total += 1
-            continue
-        source_type = event.get("source_type")
-        if source_type in source_type_counts:
-            source_type_counts[source_type] += 1
-        if event_type == "purchase" and event.get("amount_minor") is not None and event.get("currency"):
-            currency = event["currency"]
-            revenue_by_currency[currency] = revenue_by_currency.get(currency, 0) + int(event["amount_minor"])
-    visits = real_counts["visit"]
-    signups = real_counts["signup"]
-    purchases = real_counts["purchase"]
-    if visits > 0:
-        signup_rate: Optional[float] = signups / visits
-        signup_rate_reason: Optional[str] = None
-    else:
-        signup_rate = None
-        signup_rate_reason = "missing visits"
-    if signups > 0:
-        purchase_rate: Optional[float] = purchases / signups
-        purchase_rate_reason: Optional[str] = None
-    else:
-        purchase_rate = None
-        purchase_rate_reason = "missing signups"
+        if event.get("is_test") and event.get("type") in tests:
+            tests[event["type"]] += 1
+        elif not event.get("is_test") and event.get("source_type") in sources:
+            sources[event["source_type"]] += 1
     return {
-        "counts": real_counts,
-        "test_counts": test_counts,
-        "test_event_count": test_total,
-        "revenue_by_currency": revenue_by_currency,
-        "source_type_counts": source_type_counts,
-        "signup_rate": signup_rate,
-        "signup_rate_reason": signup_rate_reason,
-        "purchase_rate": purchase_rate,
-        "purchase_rate_reason": purchase_rate_reason,
+        "counts": counts, "test_counts": tests,
+        "test_event_count": sum(bool(event.get("is_test")) for event in events),
+        "revenue_by_currency": {code: item["amount_minor"] for code, item in report["views"]["order_total"].items()},
+        "source_type_counts": sources,
+        "signup_rate": None, "signup_rate_reason": "missing visits" if not counts["visit"] else "missing identity",
+        "purchase_rate": None, "purchase_rate_reason": "missing identity",
     }
 
 
@@ -671,82 +660,35 @@ def _overlapping_pairs(imports: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     return pairs
 
 
-def _comparison(experiment: Optional[Dict[str, Any]], analyzed: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    baseline = (experiment or {}).get("baseline")
-    if not isinstance(baseline, dict) or not analyzed:
-        return None
-    before_window = baseline.get("captured_window")
-    if not before_window:
-        return None
-    later = [
-        item
-        for item in analyzed
-        if item.get("window") and "start" in item["window"] and parse_datetime(item["window"]["start"]) >= parse_datetime(before_window["end"])
-    ]
-    if not later:
-        return None
-    after = sorted(later, key=lambda item: item["window"]["start"])[0]
-    before_match = next(
-        (
-            item
-            for item in analyzed
-            if item.get("window") and "start" in item["window"] and windows_equal(item["window"], before_window)
-        ),
-        None,
-    )
-    if before_match is None:
-        return {
-            "comparable": False,
-            "reason": "no business baseline import",
-            "before": None,
-            "after": after,
-        }
-    before = before_match
-    overlap = windows_overlap(before_window, after["window"])
-    before_duration = window_duration(before_window)
-    equal_length = before_duration.total_seconds() > 0 and before_duration == window_duration(after["window"])
-    if before.get("coverage") == "partial":
-        reason: Optional[str] = "baseline import coverage partial"
-    elif before.get("coverage") == "unknown":
-        reason = "baseline import coverage unknown"
-    elif after.get("coverage") == "partial":
-        reason = "after import coverage partial"
-    elif after.get("coverage") == "unknown":
-        reason = "after import coverage unknown"
-    elif overlap:
-        reason = "windows overlap"
-    elif not equal_length:
-        reason = "unequal window length"
-    else:
-        reason = None
-    return {
-        "comparable": reason is None,
-        "reason": reason,
-        "before": before,
-        "after": after,
-    }
-
-
 def analyze_business(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, Any]:
-    business_events = records.get("business_events")
-    imports = list((business_events or {}).get("imports") or [])
-    if business_events is None or not imports:
-        return {
-            "status": "not_measured",
-            "imports": [],
-            "flags": {"overlapping_windows": []},
-            "comparison": None,
-        }
+    """Read old records, but never infer business windows from AI sampling."""
+    document = records.get("business_events") or {"imports": []}
     experiment = records.get("experiment") or {}
-    site_domain = experiment.get("site_domain")
+    imports = list(document.get("imports") or [])
     seen_keys: Set[Tuple[Any, Any]] = set()
-    analyzed = [_analyze_import(batch, site_domain, seen_keys) for batch in imports]
-    overlap = _overlapping_pairs(imports)
+    analyzed = [_analyze_import(batch, experiment.get("site_domain"), seen_keys) for batch in imports]
+    # Keep the legacy import diagnostics, using them to exclude invalid rows once.
+    cleaned = []
+    for batch, summary in zip(imports, analyzed):
+        excluded = {row["external_id"] for row in summary["excluded_events"]}
+        local_seen = set()
+        events = []
+        for event in batch.get("events", []):
+            key = event.get("external_id")
+            if key not in excluded and key not in local_seen:
+                events.append(event)
+                local_seen.add(key)
+        cleaned.append({**batch, "events": events})
+    report = analyze_attribution({**document, "imports": cleaned}, experiment_doc=experiment)
+    labels = {"outside_window": "窗口外", "other_site": "其他站点", "duplicate_event": "重复记录"}
+    exclusions = {key: sum(item["excluded_counts"][key] for item in analyzed) for key in labels}
+    if any(exclusions.values()):
+        report["limitations"].append("未计入：" + "，".join(
+            "{} {} 条".format(labels[key], count) for key, count in exclusions.items() if count))
     return {
-        "status": "analyzed",
-        "imports": analyzed,
-        "flags": {"overlapping_windows": overlap},
-        "comparison": _comparison(experiment, analyzed),
+        "status": "analyzed" if imports else "not_measured", "imports": analyzed,
+        "flags": {"overlapping_windows": _overlapping_pairs(imports)},
+        "comparison": report["comparison"], "attribution": report,
     }
 
 
@@ -854,179 +796,6 @@ def _not_yet(records: Dict[str, Optional[Dict[str, Any]]]) -> str:
     if not lines:
         return "计划中的改动都已经出现在公开页，并完成核对。"
     return "\n".join(lines)
-
-
-def _zh_counts(counts: Dict[str, int]) -> str:
-    return "访问 {} 次，注册 {} 次，线索 {} 条，开通 {} 次，成交 {} 笔。".format(
-        counts.get("visit", 0),
-        counts.get("signup", 0),
-        counts.get("lead", 0),
-        counts.get("activation", 0),
-        counts.get("purchase", 0),
-    )
-
-
-def _zh_amount(code: str, amount_minor: int) -> str:
-    decimals = ZERO_DECIMAL_CURRENCIES.get(code, 2)
-    if decimals == 0:
-        return "{:,}".format(amount_minor)
-    major, minor = divmod(amount_minor, 10 ** decimals)
-    return "{:,}.{:0{width}d}".format(major, minor, width=decimals)
-
-
-def _zh_revenue(revenue: Dict[str, int]) -> str:
-    if not revenue:
-        return "没有计入真实收入的成交金额。"
-    parts = [
-        "{} {}".format(_zh_amount(code, amount), CURRENCY_LABELS.get(code, code))
-        for code, amount in sorted(revenue.items())
-    ]
-    return "成交金额按币种分开（未换算）：" + "；".join(parts) + "。"
-
-
-def _zh_rate(name: str, rate: Optional[float], reason: Optional[str], numerator: int, denominator: int) -> str:
-    if rate is None:
-        if reason == "missing visits":
-            return "没有访问次数，不能计算{}，只报注册 {} 次。".format(name, numerator)
-        if reason == "missing signups":
-            return "没有注册次数，不能计算{}，只报成交 {} 笔。".format(name, numerator)
-        return "{}未计算。".format(name)
-    return "{}为 {:.1%}（{} / {}）。".format(name, rate, numerator, denominator)
-
-
-def _excluded_text(item: Dict[str, Any]) -> Optional[str]:
-    counts = item.get("excluded_counts") or {}
-    outside = counts.get("outside_window") or 0
-    other = counts.get("other_site") or 0
-    duplicate = counts.get("duplicate_event") or 0
-    if not (outside or other or duplicate):
-        return None
-    return "未计入：窗口外 {} 条，其他站点 {} 条，重复事件 {} 条。".format(outside, other, duplicate)
-
-
-def _business_import_lines(item: Dict[str, Any]) -> List[str]:
-    status = item.get("status")
-    if status == "data_incomplete":
-        head = "这段窗口的数据不完整，不能当成零。"
-    elif status == "measured_zero":
-        head = "这段完整窗口里，可统计的访问、注册和购买都是 0。"
-    elif status == "partial":
-        head = "这段窗口只覆盖了部分数据，下面的数字不能当成全量。"
-    else:
-        head = "这段窗口按已导入的真实事件统计。"
-    lines = [head, "次数：" + _zh_counts(item.get("counts") or {})]
-    excluded = _excluded_text(item)
-    if excluded:
-        lines.append(excluded)
-    test_total = item.get("test_event_count") or 0
-    if test_total:
-        lines.append("另有 {} 条测试事件，不计入真实收入。".format(test_total))
-        lines.append("测试事件次数：" + _zh_counts(item.get("test_counts") or {}))
-    lines.append(_zh_revenue(item.get("revenue_by_currency") or {}))
-    sources = item.get("source_type_counts") or {}
-    if sources.get("social"):
-        lines.append("来自社交渠道的记录仍记为社交，不会改记成 AI。")
-    if sources.get("unknown"):
-        lines.append("来源不明的记录保持来源不明，不会记成 AI。")
-    return lines
-
-
-def _before_is_missing(before: Any) -> bool:
-    return before is None or (isinstance(before, dict) and before.get("status") == "not_measured")
-
-
-def _comparison_text(comparison: Optional[Dict[str, Any]]) -> List[str]:
-    if not comparison:
-        return []
-    before = comparison.get("before")
-    after = comparison.get("after") or {}
-    reason = comparison.get("reason")
-    if comparison.get("comparable"):
-        lines = ["有两段等长且不重叠的窗口，数字可以并排看，但不能据此判断是这次改动导致了业务变化。"]
-    elif reason == "no business baseline import":
-        lines = ["改前窗口没有导入数据，只列改后窗口的数字，不做前后增减。"]
-    elif reason == "baseline import coverage partial":
-        lines = ["改前窗口的导入不完整，不能做前后对比。"]
-    elif reason == "baseline import coverage unknown":
-        lines = ["改前窗口的覆盖范围不明，不能做前后对比。"]
-    elif reason == "after import coverage unknown":
-        lines = ["改后窗口的覆盖范围不明，不能做前后对比。"]
-    elif reason == "after import coverage partial":
-        lines = ["改后窗口的导入不完整，不能做前后对比。"]
-    elif reason == "windows overlap":
-        lines = ["两段窗口不能对比，因为两端窗口有重叠。"]
-    elif reason == "unequal window length":
-        lines = ["两段窗口不能对比，因为两端窗口长度不同。"]
-    else:
-        lines = ["两段窗口不能对比，因为两端窗口不能对齐。"]
-    if _before_is_missing(before):
-        if reason != "no business baseline import":
-            lines.append("改前窗口没有导入数据，只列改后窗口的数字，不做前后增减。")
-        lines.append("改后窗口：" + _zh_counts(after.get("counts") or {}))
-        return lines
-    lines.append("改前窗口：" + _zh_counts((before or {}).get("counts") or {}))
-    lines.append("改后窗口：" + _zh_counts(after.get("counts") or {}))
-    return lines
-
-
-def _business_section(analysis: Dict[str, Any]) -> str:
-    if analysis.get("status") == "not_measured":
-        return "没有业务数据。没有业务数据时，这一阶段的报告仍然完整。"
-    lines: List[str] = []
-    for item in analysis.get("imports") or []:
-        lines.extend(_business_import_lines(item))
-    if analysis.get("flags", {}).get("overlapping_windows"):
-        lines.append("有两段导入窗口重叠，重叠时段的数字不能当成互不干扰的两段。")
-    lines.extend(_comparison_text(analysis.get("comparison")))
-    return "\n".join(lines)
-
-
-def _denominators(analysis: Dict[str, Any]) -> str:
-    if analysis.get("status") == "not_measured":
-        return "没有业务数据，因此没有转化率。"
-    lines: List[str] = []
-    for item in analysis.get("imports") or []:
-        counts = item.get("counts") or {}
-        lines.append(
-            _zh_rate(
-                "注册率",
-                item.get("signup_rate"),
-                item.get("signup_rate_reason"),
-                counts.get("signup", 0),
-                counts.get("visit", 0),
-            )
-        )
-        lines.append(
-            _zh_rate(
-                "成交率",
-                item.get("purchase_rate"),
-                item.get("purchase_rate_reason"),
-                counts.get("purchase", 0),
-                counts.get("signup", 0),
-            )
-        )
-        if item.get("status") == "data_incomplete":
-            lines.append("覆盖范围不明，这些次数不能当成完整窗口里的零。")
-        if item.get("status") == "measured_zero":
-            lines.append("这是一段完整窗口，统计结果就是零。")
-    return "\n".join(lines) if lines else "没有可计算的转化率。"
-
-
-def _business_limits() -> str:
-    return "\n".join(
-        [
-            "覆盖范围不明时写未测或数据不完整，不当成零。",
-            "完整窗口里的零就是零。",
-            "注册率需要访问次数，成交率需要注册次数；缺了这些次数时只报个数。",
-            "测试事件不计入真实收入。",
-            "不同币种分开统计。",
-            "业务改前数字必须来自一段已导入、覆盖完整、且和改前观察同一起止时间的窗口，不能把缺数据当成零。",
-            "两端窗口都要覆盖完整，按实际时间计算一样长且不重叠，才能并排对比。",
-            "窗口外、其他站点或重复导入的事件不计入次数和收入。",
-            "这些数字不能证明是这次改动带来了业务变化。",
-            "只看这一站点、这一市场，不把其他语言或其他地区的结果加进来。",
-        ]
-    )
 
 
 def _stage_table(measurement_report: Optional[Dict[str, Any]]) -> str:
@@ -1239,11 +1008,11 @@ def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]]
             "pages_and_facts": _pages_and_facts(records),
             "ai_changes": _ai_changes(accepted),
             "not_yet": _not_yet(records),
-            "business": _business_section(analysis),
+            "business": render_business_report(analysis["attribution"]),
             "next_item": next_step,
             "stage_table": _stage_table(accepted),
-            "denominators": _denominators(analysis),
-            "business_limits": _business_limits(),
+            "denominators": "",
+            "business_limits": "",
             "next_step": next_step,
             "sources_footer": _sources_footer(records, accepted),
         }

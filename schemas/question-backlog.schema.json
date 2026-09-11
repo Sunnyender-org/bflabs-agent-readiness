@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bflabs.dev/schemas/question-backlog.schema.json",
+  "type": "object",
+  "required": ["schema_version", "questions_version", "frozen_question_ids", "next_round_pool"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.1.0" },
+    "questions_version": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 1 },
+    "frozen_question_ids": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^q_[a-z0-9_-]+$" }
+    },
+    "next_round_pool": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "text",
+        "source_kind",
+        "captured_at",
+        "market",
+        "redacted",
+        "selection_reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": { "type": "string", "pattern": "^cand_[a-z0-9_-]+$" },
+        "text": { "type": "string", "minLength": 1 },
+        "source_kind": { "$ref": "query-map.schema.json#/$defs/sourceKind" },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "market": { "type": "string", "minLength": 1 },
+        "redacted": { "type": "boolean" },
+        "selection_reason": { "type": "string", "minLength": 1 },
+        "related_question_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^q_[a-z0-9_-]+$" }
+        },
+        "related_fact_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^fact_[a-z0-9_-]+$" }
+        },
+        "replaces_frozen_set": { "const": false }
+      }
+    }
+  }
+}

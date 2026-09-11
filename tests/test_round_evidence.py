@@ -20,6 +20,17 @@ from bflabs_readiness.providers.geo_measure import run_geo_measure
 FIXTURES = repository_root() / "tests/fixtures/round"
 
 
+def selected_business_records():
+    records = load_project(FIXTURES / "valid")
+    batches = records["business_events"]["imports"]
+    records["experiment"].update(
+        selected_import_ids=[batch["import_id"] for batch in batches], selected_metric="paid_amount",
+        business_window={"before": {key: batches[0]["window"][key] for key in ("start", "end")},
+                         "after": {key: batches[1]["window"][key] for key in ("start", "end")},
+                         "timezone": "UTC", "as_of": batches[1]["window"]["end"]})
+    return records
+
+
 def read(path):
     return json.loads(path.read_text("utf-8"))
 
@@ -165,20 +176,20 @@ class RoundEvidenceTests(unittest.TestCase):
         for before, after in (("complete", "partial"), ("complete", "unknown"),
                               ("partial", "complete"), ("unknown", "complete")):
             with self.subTest(before=before, after=after):
-                records = load_project(FIXTURES / "valid")
+                records = selected_business_records()
                 records["business_events"]["imports"][0]["coverage"] = before
                 records["business_events"]["imports"][1]["coverage"] = after
                 self.assertFalse(analyze_business(records)["comparison"]["comparable"])
-        self.assertTrue(analyze_business(load_project(FIXTURES / "valid"))["comparison"]["comparable"])
+        self.assertTrue(analyze_business(selected_business_records())["comparison"]["comparable"])
 
     def test_business_uses_exact_instants_and_elapsed_duration(self):
-        records = load_project(FIXTURES / "valid")
+        records = selected_business_records()
         records["business_events"]["imports"][1]["window"]["start"] = "2026-01-09T23:59:00Z"
         self.assertFalse(analyze_business(records)["comparison"]["comparable"])
-        records = load_project(FIXTURES / "valid")
+        records = selected_business_records()
         records["business_events"]["imports"][0]["window"]["start"] = "2026-01-01T00:01:00Z"
-        self.assertEqual(analyze_business(records)["comparison"]["reason"], "no business baseline import")
-        records = load_project(FIXTURES / "valid")
+        self.assertFalse(analyze_business(records)["comparison"]["comparable"])
+        records = selected_business_records()
         for batch, start, end in zip(records["business_events"]["imports"], ("01", "09"), ("08", "16")):
             batch["window"] = {
                 "start": "2026-01-{}T08:00:00+08:00".format(start),

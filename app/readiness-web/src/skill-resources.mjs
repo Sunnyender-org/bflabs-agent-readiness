@@ -122,6 +122,16 @@ export async function listSkillResources(repositoryRoot) {
       });
     }
   }
+  for (const [relativePath, sourcePath] of [
+    ['scripts/analyze_business.py', 'scripts/analyze_business.py'],
+    ['scripts/business_attribution.py', 'src/bflabs_readiness/business_attribution.py'],
+    ['scripts/business_report.py', 'src/bflabs_readiness/business_report.py'],
+  ]) {
+    const buffer = await fs.readFile(path.join(repositoryRoot, sourcePath));
+    totalBytes += buffer.byteLength;
+    resources.push({ skillId: ROOT_SKILL_ID, relativePath, bytes: buffer.byteLength,
+      sha256: sha256Hex(buffer), body: buffer.toString('utf8') });
+  }
   if (totalBytes > MAX_EMBEDDED_RESOURCE_BYTES) {
     throw new Error(`Embedded Skill resources exceed 2 MiB (${totalBytes} bytes)`);
   }

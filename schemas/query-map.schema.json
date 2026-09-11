@@ -5,7 +5,7 @@
   "required": ["schema_version", "subject", "language", "queries"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "subject": { "type": "string" },
     "language": { "enum": ["zh-CN", "en"] },
     "queries": {
@@ -29,7 +29,8 @@
               "evidence_id": { "type": ["string", "null"] }
             }
           },
-          "assumptions": { "type": "array", "items": { "type": "string" } }
+          "assumptions": { "type": "array", "items": { "type": "string" } },
+          "provenance": { "$ref": "#/$defs/provenance" }
         }
       }
     }
@@ -37,6 +38,20 @@
   "$defs": {
     "dimension": {
       "enum": ["audience", "scenario", "comparison", "decision", "price-cost", "integration", "limitation"]
+    },
+    "sourceKind": {
+      "enum": ["user_reported", "support", "onsite_search", "platform_export", "agent_hypothesis"]
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_kind", "captured_at", "market", "redacted"],
+      "additionalProperties": false,
+      "properties": {
+        "source_kind": { "$ref": "#/$defs/sourceKind" },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "market": { "type": "string", "minLength": 1 },
+        "redacted": { "type": "boolean" }
+      }
     }
   }
 }

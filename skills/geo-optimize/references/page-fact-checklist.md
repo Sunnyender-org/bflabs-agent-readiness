@@ -2,12 +2,14 @@
 
 Use this checklist for one website and one frozen `questions_version`. The first-round default of three key pages is a starting sample, not full-site coverage. A single CLI receipt never marks a phase complete.
 
+Write facts a person can use. Link related pages in the ordinary way. Keep real sources and real dates. Do not hide a page from human navigation to manufacture an AI-source proof. Do not invent reviews. Do not scrub dates. A legal or policy page that is absent from the top menu is not a defect if a person can still reach it from the footer or a related page.
+
 ## Question → fact → page → action → evidence
 
 | Step | Record | Required fields | Rule |
 |---|---|---|---|
 | Question | `questions.json` | `question_id`, `observation_line` (`A` \| `B` \| `C` \| `D`), `intent_tag` (`brand` \| `category` \| `compare` \| `evaluate` \| `act`), `text`, `provides_url`, `asks_for_browsing`, `required_fact_ids[]`, `critical_error_fact_ids[]`, `partial_credit_rule`, `frozen_at` | Lines are never merged. The set is frozen before any site change. |
-| Fact | `facts.json` | `fact_id`, `statement`, `category` (`identity` \| `audience` \| `capability` \| `domain` \| `pricing` \| `integration` \| `limitation` \| `other`), `source_url`, `source_captured_at`, `source_hash`, `evidence_status` (`official` \| `third_party` \| `unverified` \| `conflict` \| `forbidden`), `conflict_note`, `last_reviewed_at` | `forbidden` and `conflict` never enter copy. `unverified` appears only as marked pending. A changed `source_hash` or source content makes prior verification stale. |
+| Fact | `facts.json` | `fact_id`, `statement`, `category` (`identity` \| `audience` \| `capability` \| `domain` \| `pricing` \| `integration` \| `limitation` \| `other`), `source_url`, `source_captured_at`, `source_hash`, `evidence_status` (`official` \| `third_party` \| `unverified` \| `conflict` \| `forbidden`), `conflict_note`, `last_reviewed_at` | `forbidden` and `conflict` never enter copy. `unverified` appears only as marked pending. A changed `source_hash` or source content makes prior verification stale. `last_reviewed_at` is verified time only. It is not content-updated time. |
 | Page | `experiment.json.representative_pages[]` | `url`, `purpose`, `selection_reason`, `fetch_status` (`ok` \| `failed` \| `unknown`) | Default three key pages, chosen from homepage navigation, sitemap, and internal links. Fewer or a different scope needs a stated reason. |
 | Action | `actions.json` | `action_id`, `page_url`, `question_ids[]`, `fact_ids[]`, `issue_type` (`fact` \| `structure` \| `source` \| `execution`), `summary`, `deliverable`, `status` (`planned` \| `changed_local` \| `released` \| `verified_public` \| `reverted`), `released_at`, `release_evidence`, `public_recheck` | One finding → one action. Status follows evidence, not local tests. |
 | Evidence | `release_evidence`, `public_recheck`, `observations.jsonl` | deploy log / live-branch commit / public fetch; `{checked_at, result pass\|fail\|unknown, note}`; observation rows tagged with line and intent | A CLI receipt or passing local test is not `released` or `verified_public`. Observation lines A–D stay separate. |
@@ -26,14 +28,15 @@ Use this checklist for one website and one frozen `questions_version`. The first
 | Schema matches body | Schema.org / JSON-LD restates body facts only | schema invents a fact absent from the body | `fact` |
 | Evidence status | copy uses `official` or `third_party`; `unverified` is marked pending; `forbidden` / `conflict` omitted | unevidenced or forbidden fact in copy | `source` if no usable source; `fact` if the published statement is wrong or conflicting |
 | Source freshness | `source_hash` and content match the last review | source changed after last review | `source` |
+| Time types kept separate | effective, verified, and content-updated dates are named as different times | re-verify rewrites a content-updated date; an old public body is treated as new content | `source` if only the date is wrong; `fact` if a current-price question still shows an old price |
 | Release | `released` has `released_at` and `release_evidence` | local change only | `execution` |
 | Public recheck | `verified_public` has a live-URL `public_recheck` | released but not rechecked | `execution` |
 
-## Six scenarios
+## Scenarios
 
 ### 1. One page answers several questions
 
-Keep one `representative_pages[]` row. List every served `question_id` on the actions and on the page checklist. Shared `fact_id`s may support several questions. Do not merge observation lines or intent tags because they share a URL.
+Keep one `representative_pages[]` row. List every served `question_id` on the actions and on the page checklist. Shared `fact_id`s may support several questions. Do not merge observation lines or intent tags because they share a URL. Six questions do not require six new pages.
 
 ### 2. A fact without evidence
 
@@ -54,6 +57,16 @@ Keep `status` at `changed_local`. Classify the gap as `execution`, not `fact`. A
 ### 6. A fact changed after release
 
 If `source_hash` or source content changed, prior verification is stale. Re-check the fact before reuse. Do not keep `verified_public` on dependent actions without a new public recheck. If the statement or the facts a frozen question depends on changed, create a new `questions_version` and a new baseline. Never ease the question. Never back-fill a baseline.
+
+### 7. Three time types
+
+Keep these times distinct:
+
+- **Effective**: when the business fact became true.
+- **Verified**: when someone last checked the source. This is `last_reviewed_at` on the current fact record.
+- **Content-updated**: when the public page body actually changed.
+
+Re-verifying a fact does not refresh content-updated. Publishing an old version is not publishing new content. Answering a current-price question with an old price is still currently inaccurate, even if the page shows an older date. Until the fact record grows extra date fields, write the distinction in the action note. Do not treat `last_reviewed_at` as a publication date.
 
 ## Phase completion
 

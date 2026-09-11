@@ -16,21 +16,9 @@
 
 {{business}}
 
-## 下一轮准备解决哪一项？
-
-{{next_item}}
-
 ## 前后对比
 
 {{stage_table}}
-
-## 转化率与未测原因
-
-{{denominators}}
-
-## 业务数字的限度
-
-{{business_limits}}
 
 ## 下一步
 

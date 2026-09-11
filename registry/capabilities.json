@@ -89,7 +89,7 @@
       "id": "seo-plan",
       "version": "1.0.0",
       "status": "active",
-      "intents": ["seo-plan", "migration-recovery", "technical-seo"],
+      "intents": ["seo-plan", "migration-recovery", "technical-seo", "site-foundation"],
       "languages": ["zh-CN", "en"],
       "entrypoint": "skills/seo-plan/SKILL.md",
       "execution": "offline",

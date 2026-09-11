@@ -39,6 +39,34 @@ class RouterTests(unittest.TestCase):
         self.assertTrue(decision["executable"])
         self.assertNotEqual(decision["kind"], "workflow")
 
+    def test_resume_stays_full_round_root_capability(self) -> None:
+        decision = route("继续上次的 GEO 轮次")
+        self.assertEqual(decision["kind"], "capability")
+        self.assertEqual(decision["selected"]["id"], "bflabs-agent-readiness")
+        self.assertTrue(decision["executable"])
+
+    def test_no_site_and_build_only_select_seo_plan(self) -> None:
+        for prompt in (
+            "我还没有网站，先帮我做网站基础",
+            "I don't have a website yet, plan the site foundation",
+            "只帮我建网站，先不要做 AI 采样",
+        ):
+            decision = route(prompt)
+            self.assertEqual(decision["kind"], "capability")
+            self.assertEqual(decision["selected"]["id"], "seo-plan")
+            self.assertTrue(decision["executable"])
+
+    def test_explain_and_attribution_do_not_start_execution(self) -> None:
+        for prompt in (
+            "解释一下来源归因怎么做，先不要执行",
+            "Explain GEO attribution but do not start a workflow",
+            "只分析我这份业务导出，不要开整轮",
+        ):
+            decision = route(prompt)
+            self.assertEqual(decision["kind"], "needs_clarification")
+            self.assertIsNone(decision["selected"])
+            self.assertFalse(decision["executable"])
+
 
 if __name__ == "__main__":
     unittest.main()

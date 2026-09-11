@@ -25,6 +25,9 @@ from .registry import CapabilityRegistry, RegistryError
 from .remote import scan_public_site
 from .router import route
 from .schemas import validate_all_schemas, validate_instance
+from .business_attribution import analyze as analyze_business_export
+from .business_report import render_business_report
+from .business_transfer import to_service, from_service
 
 
 def _load_json(path: Path) -> Dict[str, Any]:
@@ -73,12 +76,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     commands.add_parser("eval")
 
+    business = commands.add_parser("business", help="Analyze a supplied business export offline")
+    business.add_argument("--input", required=True, type=Path)
+    business.add_argument("--experiment", type=Path)
+    business.add_argument("--as-of")
+    business.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    business.add_argument("--output", type=Path)
+
     scan_parser = commands.add_parser("scan")
     scan_parser.add_argument("url")
     scan_parser.add_argument("--endpoint", default=os.environ.get("BFLABS_READINESS_ENDPOINT", "https://readiness.bflabs.cn"))
     scan_parser.add_argument("--format", choices=["json", "markdown"], default="json")
     scan_parser.add_argument("--publish-to-leaderboard", action="store_true")
     scan_parser.add_argument("--timeout", type=float, default=90.0)
+
+    transfer = commands.add_parser("business-transfer", help="Convert a portable export to/from the existing GEO service")
+    transfer.add_argument("--direction", choices=["to-service", "from-service"], required=True)
+    transfer.add_argument("--input", type=Path, required=True)
+    transfer.add_argument("--experiment", type=Path)
+    transfer.add_argument("--output", type=Path, required=True)
 
     package_parser = commands.add_parser("package")
     package_parser.add_argument("--target", required=True, choices=["source", "unified", "skillhub", *CAPABILITY_IDS])
@@ -245,6 +261,34 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 0
         if args.command == "round":
             return _run_round_command(args)
+        if args.command == "business-transfer":
+            value = _load_json(args.input)
+            if args.direction == "to-service":
+                validate_instance(value, "round-business-events.schema.json")
+                experiment = _load_json(args.experiment) if args.experiment else None
+                if experiment is not None:
+                    validate_instance(experiment, "round-experiment.schema.json")
+                output = {"imports": to_service(value, experiment)}
+            else:
+                output = from_service(value)
+                validate_instance(output["business_events"], "round-business-events.schema.json")
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", "utf-8")
+            return 0
+        if args.command == "business":
+            document = _load_json(args.input)
+            validate_instance(document, "round-business-events.schema.json")
+            experiment = _load_json(args.experiment) if args.experiment else None
+            if experiment is not None:
+                validate_instance(experiment, "round-experiment.schema.json")
+            report = analyze_business_export(document, experiment_doc=experiment, as_of=args.as_of)
+            output = json.dumps(report, ensure_ascii=False, indent=2) if args.format == "json" else render_business_report(report)
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(output + "\n", "utf-8")
+            else:
+                print(output)
+            return 0
     except (OSError, ValueError, RegistryError, PackageError, RuntimeError) as exc:
         print("FAIL: {}".format(exc), file=sys.stderr)
         return 1

@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "questions_version": "1",
   "language": "en",
   "questions": [
@@ -12,8 +12,14 @@
       "asks_for_browsing": false,
       "required_fact_ids": ["fact_example_name"],
       "critical_error_fact_ids": ["fact_example_name"],
-      "partial_credit_rule": "Credit a mention of the public brand name even if the product description is incomplete.",
-      "frozen_at": "2026-01-01T00:00:00Z"
+      "partial_credit_rule": "只要提到对外品牌名就可以给分，产品说明不完整也可以。",
+      "frozen_at": "2026-01-01T00:00:00Z",
+      "provenance": {
+        "source_kind": "user_reported",
+        "captured_at": "2026-01-01T00:00:00Z",
+        "market": "en-US",
+        "redacted": false
+      }
     }
   ]
 }

@@ -20,7 +20,7 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 
 `actions.json` is the only writable change list. Each action points at one page, question ids, fact ids, an issue type, a summary, optional deliverable, and release/recheck fields. `released` requires `released_at`, non-empty `release_evidence`, and a deliverable. `verified_public` requires all of that plus a public recheck that passed, has a non-empty note, and was checked after the release time. `reverted` may omit `released_at` when the change never went public; that case is never counted as public. Compared action ids on a round must exist.
 
-`business-events.json` is owner-supplied imports. Money (`amount_minor`, `currency`) is allowed only on `purchase`. An `ai` source requires a non-null `source_evidence_url` and a known `attribution_method`. `unknown` is never promoted to `ai`. Test events never count toward real revenue. The same `(source, external_id)` twice in one import is invalid. The same pair in a later import is kept on the record but excluded as a duplicate.
+`business-events.json` is owner-supplied imports. Money (`amount_minor`, `currency`) is allowed on `purchase` and `refund`. Refunds retain their transaction ID and original order association. An `ai` source requires a non-null `source_evidence_url` and a known `attribution_method`. `unknown` is never promoted to `ai`. Test events never count toward real revenue. The same `(source, external_id)` twice in one import is invalid. The same pair in a later import is kept on the record but excluded as a duplicate.
 
 ## How the files move
 
@@ -47,7 +47,7 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 - Signup rate needs visits. Purchase rate needs signups. Otherwise rates stay null and only counts are shown.
 - Separate currencies. Separate test events from real revenue.
 - Overlapping import windows are flagged.
-- Before/after comparison needs an imported baseline window whose timezone-aware start and end match the experiment baseline instants exactly. Both imports need complete coverage. The after window must have the same positive elapsed duration and must not overlap. Equivalent instants expressed with different UTC offsets compare equally; dropping hours or rounding dates does not make windows equal. Missing baseline import, partial or unknown coverage on either side, overlap, or unequal elapsed length are not comparable. The before side is the import or null, never a fabricated zero.
+- Before/after business comparison uses only explicit `business_window`, `selected_import_ids` and `selected_metric` from the experiment. It never infers those windows from AI baseline sampling. Missing coverage prevents a comparison but does not prevent a stage report. The same analyzer is available through the standalone `business` CLI; see `references/business-attribution.md`.
 - Events outside the import window, or whose page host is not the experiment site or a subdomain of it, are excluded. A missing page URL is allowed. Only included events feed counts, rates, and revenue. Excluded counts are shown when they are not zero.
 - No GEO causation claims. Chinese demo results and English market results are never merged.
 
@@ -66,3 +66,9 @@ bflabs-readiness round report --project DIR --measurement-report PATH --output D
 ```
 
 `validate` and `report` exit 1 when schema or cross-file checks fail. `report` also exits 1 when a supplied measurement report cannot be associated; it then prints `{"status":"failed","errors":[...]}` and does not write the report file. A valid measurement report is embedded after those checks; this module does not compute AI-answer metrics.
+
+## Hosted handoff
+
+For a one-time move to the existing GEO service, use `bflabs-readiness business-transfer --direction to-service --input business-events.json --experiment experiment.json --output transfer.json`. Import each emitted batch through `geo_business_import` into the same site project. Keep the source files until every batch is acknowledged; replay uses stable identifiers. Stop writing the local copy when the hosted project becomes authoritative. To exit, use `geo_project_export`, then `business-transfer --direction from-service --input export.json --output returned.json`. The result contains `business_events` and `experiment_business_fields` to apply to the portable project. This conversion preserves portable business evidence; native-only historical service records remain in their service snapshot instead of inventing missing fields.
+
+Optional `question-backlog.json` uses `schemas/question-backlog.schema.json`. Its version and frozen question IDs must match this round. Candidate questions never enter the current measurement denominator.

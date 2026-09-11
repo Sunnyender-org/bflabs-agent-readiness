@@ -34,6 +34,18 @@ Replacement rules are quality blockers, not silent exclusions: at most one repla
 
 ## Interpretation
 
-Aggregates remain descriptive and are stratified by platform and terminal. Observation lines A, B, C, and D are never merged. Small, user-supplied, or convenience samples do not support causal conclusions. Three repetitions support process trial and direction only. Readiness and answer observations do not establish traffic, conversion, or revenue.
+Aggregates remain descriptive and are stratified by platform and terminal. API, App, and web stay in separate strata. Observation lines A, B, C, and D are never merged. Small, user-supplied, or convenience samples do not support causal conclusions. Three repetitions support process trial and direction only. Readiness and answer observations do not establish traffic, conversion, or revenue. Google AI impressions are not order sources. An API answer is not a web measurement.
 
 Comparability requires known conditions that are unique inside each round group and equal between rounds. Missing or mixed versions, language, region, model, or personalization; unverified network; mismatched prompt fingerprints; reused sessions; or empty release evidence prevent comparison. Matching lists of mixed models or conditions do not qualify as equal conditions. `not_comparable` and `insufficient` pairs still pass quality. A `not_comparable` pair lists every failed condition; it is not a regression. Unjudged answers cannot turn a regression into an improvement.
+
+## Three experiment kinds
+
+Keep these designs separate. Do not merge them into one causal score.
+
+1. **Source-association**: authorized visit or order records that carry a source signal, a self-report, or a page touch. This can report associated counts or amounts in a named window. It does not prove the page change caused the money.
+2. **Content-funnel experiment**: after a person has already arrived, a test of which page or next step they complete. An on-site A/B after arrival does not prove that AI is more willing to recommend the site.
+3. **GEO increment experiment**: a comparison that can isolate the content or discovery change from brand, season, and other campaigns. A new answer page and a pricing page are not automatically a valid control. Shared brand and shared content can leak across pages.
+
+A small site may ship a descriptive case: what was asked, what was answered, what was observed, and what remains unmeasured. Do not invent a causal score when the design cannot support one.
+
+Official Google or Bing AI reports stay on their own evidence rows. They do not become arrival channels or paid sources.

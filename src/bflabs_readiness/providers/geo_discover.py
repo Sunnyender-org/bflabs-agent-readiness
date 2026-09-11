@@ -43,6 +43,51 @@ def _templates(brief: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
+def _seed_provenance_map(brief: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    mapping: Dict[str, Dict[str, Any]] = {}
+    for item in brief.get("seed_query_provenance") or []:
+        if isinstance(item, dict) and item.get("query"):
+            mapping[item["query"]] = item
+    return mapping
+
+
+def _query_provenance(
+    brief: Dict[str, Any],
+    source_type: str,
+    source_value: str,
+) -> Optional[Dict[str, Any]]:
+    doc = brief.get("provenance") if isinstance(brief.get("provenance"), dict) else None
+    matched = _seed_provenance_map(brief).get(source_value)
+    if doc is None and matched is None and source_type != "assumption":
+        return None
+    captured = None
+    market = None
+    redacted = False
+    source_kind = None
+    for item in (matched, doc):
+        if not item:
+            continue
+        captured = captured or item.get("captured_at")
+        market = market or item.get("market")
+        if "redacted" in item:
+            redacted = bool(item.get("redacted"))
+        source_kind = source_kind or item.get("source_kind")
+    captured = captured or brief.get("captured_at")
+    market = market or brief.get("market") or brief.get("language")
+    if not captured or not market:
+        return None
+    if source_type == "assumption":
+        source_kind = "agent_hypothesis"
+    elif not source_kind:
+        source_kind = "user_reported" if source_type == "input" else "platform_export"
+    return {
+        "source_kind": source_kind,
+        "captured_at": captured,
+        "market": market,
+        "redacted": redacted,
+    }
+
+
 def _trace_for_dimension(brief: Dict[str, Any], dimension: str, evidence_id: str) -> Tuple[str, str, Optional[str], List[str]]:
     if dimension == "audience":
         return "input", brief["audiences"][0], evidence_id, []
@@ -64,20 +109,28 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
     for dimension in DIMENSIONS:
         text = templates[dimension]
         source_type, source_value, evidence_id, assumptions = _trace_for_dimension(brief, dimension, first_evidence_id)
+        seeds = {str(item) for item in (brief.get("seed_queries") or []) if item}
+        if text not in seeds:
+            source_type = "assumption"
+            assumptions = assumptions or [
+                "由已记录的材料生成，不是用户原话：{}".format(source_value)
+            ]
         query_id = _id("qry", dimension + ":" + text)
-        queries.append(
-            {
-                "id": query_id,
-                "text": text,
-                "dimension": dimension,
-                "trace": {
-                    "source_type": source_type,
-                    "source_value": source_value,
-                    "evidence_id": evidence_id,
-                },
-                "assumptions": assumptions,
-            }
-        )
+        query = {
+            "id": query_id,
+            "text": text,
+            "dimension": dimension,
+            "trace": {
+                "source_type": source_type,
+                "source_value": source_value,
+                "evidence_id": evidence_id,
+            },
+            "assumptions": assumptions,
+        }
+        provenance = _query_provenance(brief, source_type, source_value)
+        if provenance is not None:
+            query["provenance"] = provenance
+        queries.append(query)
         claims.append(
             {
                 "id": stable_claim_id(text),
@@ -87,8 +140,39 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
             }
         )
 
+    seen_texts = {query["text"] for query in queries}
+    for seed in brief.get("seed_queries") or []:
+        text = str(seed)
+        if not text or text in seen_texts:
+            continue
+        query_id = _id("qry", "seed:" + text)
+        query = {
+            "id": query_id,
+            "text": text,
+            "dimension": "decision",
+            "trace": {
+                "source_type": "seed",
+                "source_value": text,
+                "evidence_id": first_evidence_id,
+            },
+            "assumptions": [],
+        }
+        provenance = _query_provenance(brief, "seed", text)
+        if provenance is not None:
+            query["provenance"] = provenance
+        queries.append(query)
+        seen_texts.add(text)
+        claims.append(
+            {
+                "id": stable_claim_id(text),
+                "text": text,
+                "evidence_ids": [first_evidence_id],
+                "support_level": "context-only",
+            }
+        )
+
     query_map = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0" if any("provenance" in query for query in queries) else "1.0.0",
         "subject": brief["subject"],
         "language": brief["language"],
         "queries": queries,

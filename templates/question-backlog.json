@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.1.0",
+  "questions_version": "1",
+  "language": "en",
+  "frozen_question_ids": ["q_example_brand"],
+  "next_round_pool": [
+    {
+      "candidate_id": "cand_current_price",
+      "text": "Example 现在每月多少钱？有没有年付？",
+      "source_kind": "user_reported",
+      "captured_at": "2026-01-20T00:00:00Z",
+      "market": "en-US",
+      "redacted": false,
+      "selection_reason": "新用户问了现价，本轮分母不变，留给下一轮。",
+      "related_question_ids": ["q_example_brand"],
+      "related_fact_ids": ["fact_example_name"],
+      "replaces_frozen_set": false
+    }
+  ]
+}

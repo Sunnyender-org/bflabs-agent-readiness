@@ -133,6 +133,56 @@ def run_seo_plan(brief: Dict[str, Any]) -> Dict[str, Any]:
         )
     checks.sort(key=lambda item: (item["priority"], CATEGORIES.index(item["category"])))
 
+    foundation_pages = []
+    deployment_handoff = None
+    if brief["change_type"] == "site-foundation":
+        foundation_pages = [
+            {
+                "id": "page-home",
+                "purpose": "首页：说明服务谁、解决什么问题",
+                "fact_placeholders": ["服务对象", "要解决的问题", "公开可核对的证据"],
+                "action_entry": "从首页能进入下一步，而不是停在介绍。",
+            },
+            {
+                "id": "page-facts",
+                "purpose": "事实页：价格、限制和出处",
+                "fact_placeholders": ["公开价格或计费单位", "限制与不可用场景", "事实来源日期"],
+                "action_entry": "看完事实后能回到行动入口。",
+            },
+            {
+                "id": "page-action",
+                "purpose": "行动入口：注册、试用或联系",
+                "fact_placeholders": ["下一步动作", "需要的账号或授权", "完成后能看见什么"],
+                "action_entry": "用户能完成一次真实下一步。",
+            },
+        ]
+        deployment_handoff = {
+            "publish_target": "由站点负责人指定可回滚的发布位置，本计划不代为上线。",
+            "owner_approval": "发布前确认页面事实、内链和 HTTPS。",
+            "verification": "发布后用同一组公开地址读回标题、正文和行动入口。",
+            "rollback": "保留上一版页面或关闭新入口，再复测同一地址。",
+        }
+        for page in foundation_pages:
+            implementation_actions.append(
+                {
+                    "id": "implement-" + page["id"],
+                    "category": "site-foundation",
+                    "priority": "P0",
+                    "action": "准备并发布{}。事实占位：{}。".format(page["purpose"], "；".join(page["fact_placeholders"])),
+                    "preconditions": [
+                        "owner approves the exact pages and public facts",
+                        "HTTPS and an ordinary internal link between the pages are available",
+                        "a reversible publish target exists",
+                    ],
+                    "authorization": "owner-approval-required",
+                    "rollback": [
+                        "restore the previous public pages or unpublish the new entry",
+                        "re-fetch the same public URLs",
+                        "stop rollout if facts, links, or the action entry regress",
+                    ],
+                }
+            )
+
     used_source_ids = sorted({source_id for item in checks for source_id in item["official_source_ids"]})
     plan = {
         "schema_version": "1.0.0",
@@ -157,6 +207,10 @@ def run_seo_plan(brief: Dict[str, Any]) -> Dict[str, Any]:
             "AI crawler controls remain distinct from search indexing and external AI answer visibility.",
         ],
     }
+    if foundation_pages:
+        plan["foundation_pages"] = foundation_pages
+    if deployment_handoff:
+        plan["deployment_handoff"] = deployment_handoff
 
     blockers: List[str] = []
     warnings: List[str] = []
