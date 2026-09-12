@@ -108,3 +108,5 @@ Latest local verification on 2026-08-23: 56 Python tests, 31 Node/Worker tests, 
 A real 2026-08-23 production scan of `https://beefapi.com` returned `100 / 100 / 75`, Agent Journey `pass`, AI visibility `not_measured`, and business outcome `not_measured`; the report still requires a compatible-browser task before WebMCP can become verified.
 
 The 2026-08-11 release-candidate receipt remains historical evidence for router p95 `127.146 ms` and deterministic workflow p95 `27.115 ms` / max `28.435 ms`. Re-run package verification after any further source change and again from the exact commit selected for publication.
+
+For 0.6.1 and later, `npm run deploy --prefix app/readiness-web` prepares the downloadable Skill ZIP with the canonical package builder before deployment. Upload that exact ZIP to GitHub/SkillHub and compare SHA-256. The diagnostic download is served on its own domain; it must not require a GitHub login or working GitHub connection. Generated `public/downloads` is excluded from source archives.

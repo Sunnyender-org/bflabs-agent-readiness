@@ -758,3 +758,45 @@ class E11Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FirstSuccessMetricTests(unittest.TestCase):
+    def test_explicit_first_success_metric_uses_events_not_money(self):
+        from bflabs_readiness.business_report import render_business_report
+        before = {"start": "2026-01-01T00:00:00Z", "end": "2026-01-15T00:00:00Z"}
+        after = {"start": "2026-01-15T00:00:00Z", "end": "2026-01-29T00:00:00Z"}
+        events = [_event(type="activation", external_id="ordinary", user_id="u1"),
+                  _event(type="first_success_call", external_id="first", user_id="u1"),
+                  _event(type="activation", first_success_call=True, external_id="second", user_id="u2", occurred_at="2026-01-16T10:00:00Z"),
+                  _event(type="first_success_call", external_id="test", is_test=True, occurred_at="2026-01-16T11:00:00Z")]
+        exp = _experiment(selected_metric="first_success_call", selected_import_ids=["i"],
+                          business_window={"before": before, "after": after, "timezone": "UTC", "as_of": "2026-01-30T00:00:00Z"})
+        validate_instance(exp, "round-experiment.schema.json")
+        report = analyze(_doc(_batch("i", events, covered_event_types=["first_success_call"])), experiment_doc=exp)
+        self.assertEqual(report["event_counts"]["first_success_call"], 2)
+        self.assertEqual(report["user_funnel"]["first_success_call_users"], 2)
+        self.assertTrue(report["comparison"]["comparable"])
+        text = render_business_report(report)
+        self.assertIn("改前：1 条", text)
+        self.assertIn("改后：1 条", text)
+        self.assertNotIn("业务前后对比（收款总额", text)
+
+    def test_payment_only_export_does_not_prove_zero_first_calls(self):
+        report = analyze(_doc(_batch("i", [], source="payments")),
+                         experiment_doc=_experiment(selected_import_ids=["i"], selected_metric="first_success_call"))
+        self.assertFalse(report["comparison"]["comparable"])
+        self.assertIn("未声明覆盖", report["comparison"]["reason"])
+
+        from bflabs_readiness.business_report import render_business_report
+        self.assertIsNone(report["first_success_call_records"])
+        self.assertNotIn("首次成功调用：0", render_business_report(report))
+
+    def test_mixed_imports_only_compare_declared_call_coverage(self):
+        before = {"start": "2026-01-01T00:00:00Z", "end": "2026-01-15T00:00:00Z"}
+        after = {"start": "2026-01-15T00:00:00Z", "end": "2026-01-29T00:00:00Z"}
+        exp = _experiment(selected_metric="first_success_call", selected_import_ids=["calls", "payment"],
+            business_window={"before":before,"after":after,"timezone":"UTC","as_of":"2026-01-30T00:00:00Z"})
+        report = analyze(_doc(_batch("calls", [_event(type="first_success_call")], covered_event_types=["first_success_call"]),
+            _batch("payment", [_event(external_id="x",type="first_success_call")], source="payments")), experiment_doc=exp)
+        self.assertEqual(report["first_success_call_records"], 1)
+        self.assertEqual(report["comparison"]["before"]["event_counts"]["first_success_call"],1)

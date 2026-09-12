@@ -41,6 +41,7 @@
         "window": { "$ref": "#/$defs/importWindow" },
         "coverage": { "enum": ["complete", "partial", "unknown"] },
         "export_filter": { "type": ["string", "null"] },
+        "covered_event_types": { "type": "array", "uniqueItems": true, "items": { "enum": ["visit", "signup", "lead", "activation", "purchase", "refund", "first_success_call"] } },
         "collection_method": { "$ref": "#/$defs/collectionMethod" },
         "rule_version": { "type": "string", "minLength": 1 },
         "events": {

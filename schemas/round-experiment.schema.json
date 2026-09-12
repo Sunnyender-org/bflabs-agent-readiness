@@ -72,7 +72,7 @@
       "items": { "type": "string", "minLength": 1 }
     },
     "selected_metric": {
-      "enum": ["paid_amount", "purchases", "visits", "signups", "user_pay_rate"]
+      "enum": ["paid_amount", "purchases", "visits", "signups", "user_pay_rate", "first_success_call"]
     },
     "selected_filters": { "$ref": "#/$defs/selectedFilters" }
   },

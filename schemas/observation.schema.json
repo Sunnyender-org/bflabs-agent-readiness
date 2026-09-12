@@ -41,7 +41,7 @@
     "attempt_index": { "type": "integer", "minimum": 1 },
     "execution_status": { "enum": ["valid", "technical_failure", "quota", "login_failed", "mode_mismatch"] },
     "replacement_of": { "type": ["string", "null"], "pattern": "^obs_[a-z0-9_-]+$" },
-    "collection_method": { "enum": ["manual_export", "approved_api", "recorded_fixture"] },
+    "collection_method": { "enum": ["manual_export", "approved_api", "recorded_fixture", "agent_browser_ui"] },
     "answer_verdict": { "enum": ["correct", "partially_correct", "wrong", "no_answer", "unknown"] },
     "fact_judgement": {
       "type": "array",
