@@ -13,3 +13,5 @@ runs/
 .grok-companion/
 coverage/
 *.receipt.json
+
+app/readiness-web/public/downloads/

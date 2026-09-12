@@ -27,3 +27,7 @@ If an experiment exists, add `--experiment experiment.json`. Its optional `busin
 - A before/after difference is descriptive unless a separate experiment supports an incremental claim. Missing or unmatched evidence restricts that conclusion, not unrelated work.
 
 Use `--format json` for an evidence export; present the concise Markdown result to the user. Keep technical field names and implementation instructions out of the final report. In a full round, `round report` uses the same analyzer.
+
+`selected_metric=first_success_call` selects explicitly recorded first-success events (event type or existing boolean flag), not all activation events. Reports show record counts and separately identified users when available; neither proves lifetime-first use unless the export establishes that scope. Never infer first success from payment, a missing earlier log, or an incomplete history. Tests and self-promotion follow the selected filters, and absent coverage stays unknown.
+
+For this metric, an import declares `covered_event_types: ["first_success_call"]` only when the export really covers that event. A payments-only export cannot establish zero first calls. Existing imports without this field remain compatible for other metrics. Complete time windows and the normal comparison rules still apply.

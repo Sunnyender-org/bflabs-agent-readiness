@@ -141,6 +141,8 @@ Return:
 8. `Business outcome: not measured` unless customer-authorized data was inspected.
 9. Service escalation categories, if the remaining work needs WebMCP/MCP implementation, cross-system implementation, real-platform sampling, monitoring, external distribution, or attribution. Read [service-boundary.md](references/service-boundary.md) before suggesting escalation.
 
+For human reports, use the reader’s language, explain the three axes in plain words, and lead with one evidence-backed priority. Preserve technical keys in the machine receipt; do not print routing or approval vocabulary as customer copy.
+
 Use [repair-receipt.json](templates/repair-receipt.json) when a machine-readable artifact is requested.
 
 ## Abort Conditions

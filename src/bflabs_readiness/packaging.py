@@ -70,6 +70,7 @@ IGNORED_PARTS = {
     ".receipts",
     ".venv",
     ".worker-build",
+    "downloads",
     ".wrangler",
     "__pycache__",
     "build",

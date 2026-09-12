@@ -31,7 +31,7 @@ Observation lines stay separate:
 - C: find the brand or official docs autonomously with browsing
 - D: a non-brand category or selection question
 
-Collection methods are `manual_export`, `approved_api`, or `recorded_fixture`. Pairing and release evidence require JSON input; JSONL carries observations only.
+Collection methods are `manual_export`, `approved_api`, `recorded_fixture`, or `agent_browser_ui`. Pairing and release evidence require JSON input; JSONL carries observations only.
 
 ## Commands
 

@@ -15,6 +15,9 @@ def render_business_report(report: dict[str, Any]) -> str:
     counts = report["event_counts"]
     lines = [f'访问 {counts["visit"]} 次，注册 {counts["signup"]} 次，付款事件 {counts["purchase"]} 次。',
              f'所选数据的现金净收款：{_amounts(report["cashflow"]["totals_by_currency"])}。']
+    first_records = report.get("first_success_call_records")
+    lines.append(f"导出中明确记录的首次成功调用：{first_records} 条。" if first_records is not None
+                 else "首次成功调用：导出覆盖范围未确认，不能记为零。")
     if report.get("as_of"):
         lines.append(f'统计截至：{report["as_of"]}。')
     funnel = report.get("user_funnel")
@@ -38,10 +41,25 @@ def render_business_report(report: dict[str, Any]) -> str:
         lines.append("\n同一订单可出现在多个来源视角中，各视角金额不能相加；来源关联不代表本轮优化带来的增量。")
     comparison = report.get("comparison")
     if comparison and comparison.get("comparable"):
-        lines.append("\n业务前后对比（收款总额，未扣退款）：")
-        for side, label in [("before", "改前"), ("after", "改后")]:
-            row = comparison[side]
-            lines.append(f'- {label}：{row["paid_orders"]} 笔，{_amounts(row["by_currency"])}。')
+        metric = comparison.get("selected_metric")
+        count_metrics = {"first_success_call": ("首次成功调用记录", "first_success_call"),
+                         "visits": ("访问记录", "visit"), "signups": ("注册记录", "signup")}
+        if metric in count_metrics:
+            title, key = count_metrics[metric]
+            lines.append(f"\n业务前后对比（{title}）：")
+            for side, label in [("before", "改前"), ("after", "改后")]:
+                lines.append(f'- {label}：{comparison[side]["event_counts"][key]} 条。')
+        elif metric == "purchases":
+            lines.append("\n业务前后对比（已付款订单）：")
+            for side, label in [("before", "改前"), ("after", "改后")]:
+                lines.append(f'- {label}：{comparison[side]["paid_orders"]} 笔。')
+        elif metric == "user_pay_rate":
+            lines.append("\n前后付费率尚无分别核对的用户分母，不以收款金额替代。")
+        else:
+            lines.append("\n业务前后对比（收款总额，未扣退款）：")
+            for side, label in [("before", "改前"), ("after", "改后")]:
+                row = comparison[side]
+                lines.append(f'- {label}：{row["paid_orders"]} 笔，{_amounts(row["by_currency"])}。')
     elif comparison:
         lines.append(f'\n暂不能比较前后变化：{comparison.get("reason") or "记录条件不完整"}')
     for note in report.get("limitations", []):

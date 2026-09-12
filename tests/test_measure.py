@@ -740,3 +740,22 @@ class MeasureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AgentBrowserCollectionTests(unittest.TestCase):
+    def test_browser_collection_validates_and_preserves_evidence(self):
+        row = make_obs("obs_browser", "Example is an API service.", collection_method="agent_browser_ui", evidence_refs=["screenshots/browser.png", "answers/browser.txt"])
+        validate_instance(row, "observation.schema.json")
+        self.assertEqual(row["evidence_refs"][0], "screenshots/browser.png")
+        for method in ("manual_export", "approved_api", "recorded_fixture"):
+            legacy = dict(row, collection_method=method)
+            validate_instance(legacy, "observation.schema.json")
+
+    def test_agent_browser_records_run_through_measurement_pipeline(self):
+        request = load_input()
+        for item in request["observations"]:
+            item["collection_method"] = "agent_browser_ui"
+            item["evidence_refs"] = ["screenshots/" + item["id"] + ".png"]
+        result = run_geo_measure(request)
+        self.assertEqual(result["quality_report"]["status"], "pass")
+        self.assertEqual(result["outputs"]["outputs/measurement-report.json"][0]["counts"]["valid"],6)

@@ -54,6 +54,7 @@ Keep raw answers, cited URLs, capture time, and screenshots or exports. Label us
 Use one of:
 
 - `manual_export`: a person exported the answer or official report through the product UI.
+- `agent_browser_ui`: an already-authorized host Agent operating the real platform browser UI. Retain the screenshot, full answer, citations, actual browser/model conditions and capture time through existing `evidence_refs`. This value grants no platform access and does not turn this offline Skill into a browser automation service.
 - `approved_api`: an official, permitted API the operator is allowed to use.
 - `recorded_fixture`: a stored synthetic or replay fixture, not a live sample.
 

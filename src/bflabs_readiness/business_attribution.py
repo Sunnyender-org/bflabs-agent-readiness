@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 
 SCHEMA_VERSION = "1.1.0"
-RULE_VERSION = "ba-1.1.0"
+RULE_VERSION = "ba-1.1.1"
 VIEW_WARNING = "各来源视角的金额不能相加。同一笔订单只计算一次。"
 EVENT_TYPES = (
     "visit",
@@ -51,6 +51,7 @@ RETURN_KEYS = (
     "as_of",
     "rule_version",
     "event_counts",
+    "first_success_call_records",
     "user_funnel",
     "session_funnel",
     "identity_conflicts",
@@ -181,11 +182,14 @@ def analyze(
         labels = {"outside_window": "窗口外", "other_site": "其他站点", "duplicate_event": "重复记录"}
         limitations.append("未计入：" + "，".join(f"{label} {excluded.count(reason)} 条"
             for reason, label in labels.items() if reason in excluded))
+    covered_ids = {batch.get("import_id") for batch in selected_imports if "first_success_call" in (batch.get("covered_event_types") or [])}
+    first_records = _count_events([row for row in visible_rows if row.get("import_id") in covered_ids])["first_success_call"] if covered_ids else None
     return {
         "schema_version": SCHEMA_VERSION,
         "as_of": resolved_as_of,
         "rule_version": RULE_VERSION,
         "event_counts": event_counts,
+        "first_success_call_records": first_records,
         "user_funnel": user_funnel,
         "session_funnel": session_funnel,
         "identity_conflicts": conflicts,
@@ -208,6 +212,7 @@ def _empty_result(as_of: Optional[str]) -> Dict[str, Any]:
         "as_of": as_of,
         "rule_version": RULE_VERSION,
         "event_counts": _zero_counts(),
+        "first_success_call_records": None,
         "user_funnel": None,
         "session_funnel": None,
         "identity_conflicts": [],
@@ -502,6 +507,7 @@ def _user_funnel(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         "users": len(users),
         "visited": len(visited),
         "signed_up": len(signed_up),
+        "first_success_call_users": len({row["user_id"] for row in rows if row["user_id"] and (row["event"].get("type") == "first_success_call" or row["event"].get("first_success_call"))}),
         "paid": len(paid),
         "pay_rate": _rate(len(paid), len(users)),
         "signup_rate": _rate(len(linked_signups), len(visited)) if visited else None,
@@ -1067,7 +1073,7 @@ def _side_summary(
     in_rows = [
         row
         for row in rows
-        if _in_half_open(row["occurred"], start, end) and (as_of_dt is None or _on_or_before(row["occurred"], as_of_dt))
+        if not row["event"].get("is_test") and _in_half_open(row["occurred"], start, end) and (as_of_dt is None or _on_or_before(row["occurred"], as_of_dt))
     ]
     in_orders = [
         order
@@ -1108,6 +1114,17 @@ def _comparison(
         ai_window = baseline["captured_window"]
     if not selected_ids and not business_window:
         return None
+    if metric_name == "first_success_call":
+        # A payment export cannot establish a zero-call window.
+        selected_imports = [batch for batch in selected_imports
+                            if "first_success_call" in (batch.get("covered_event_types") or [])]
+        if not selected_imports:
+            return {"comparable": False, "reason": "导出未声明覆盖首次成功调用，不能把缺数据当作零。",
+                    "selected_import_ids": selected_ids, "selected_metric": metric_name,
+                    "before": None, "after": None, "ai_window": ai_window}
+        covered_ids = {batch.get("import_id") for batch in selected_imports}
+        rows = [row for row in rows if row.get("import_id") in covered_ids]
+        paid_orders = [order for order in paid_orders if order.get("import_id") in covered_ids]
     if business_window and business_window.get("before") and business_window.get("after"):
         cutoff = as_of or business_window.get("as_of")
         before = _side_summary("before", business_window["before"], rows, paid_orders, refunds_by_order, metric_name, cutoff)

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1
+
+- Clarify crawler-purpose diagnosis, evidence-backed priorities and plain-language reports.
+- Accept authorized Agent-browser observations without relabeling API/export records.
+- Expose first-success-call comparison and add a direct same-version Skill download.
+
+
 ## 0.6.0 — pre-practice candidate
 
 - Add the eight-module whitehat method, no-site planning and source-aware question backlog.

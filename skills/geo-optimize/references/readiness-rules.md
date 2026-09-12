@@ -93,3 +93,11 @@ Report Agent Actionability separately from GEO readiness scoring. Inspect stable
 Protocol presence earns no Actionability result by itself. A bridge tag, MCP server card, or `tools/list` response is evidence of discovery, not proof that a useful task completes correctly.
 
 The public Actionable score uses a stable human fallback plus one structured Agent task path. A typed MCP path or a browser-verified WebMCP path can satisfy that second capability; exposing both does not earn duplicate points. Static WebMCP signals remain `present_unverified`, while `not_present` and `not_applicable` do not lower the score by themselves.
+
+## Focused diagnosis
+
+Choose one highest-value next action, grounded in a failed predicate and the affected user task. Prioritize readable, accurate public content over optional markup. Missing JSON-LD alone does not mean missing facts: inspect existing visible and machine-readable facts, then choose only an applicable type. Do not prescribe Organization, SoftwareApplication and Product together by default. Generic infrastructure improvements such as a longer HSTS lifetime are not GEO priorities without a demonstrated access problem.
+
+Distinguish crawler purposes before alleging a conflict. GPTBot controls potential training; OAI-SearchBot serves search discovery. Blocking GPTBot while allowing search or AI input can be intentional and consistent. Read the exact user-agent groups, current provider documentation and actual access evidence; do not auto-unblock training crawlers. References: https://help.openai.com/en/articles/12627856 and https://blog.cloudflare.com/content-signals-policy/ . Usage-purpose signals and crawler access controls are different layers.
+
+A server card, OpenAPI document or tools/list is discovery evidence only. Without a successful representative read-only call and source comparison, describe the action path as found but not verified; do not summarize it as strong or working. A diagnostic HTTP read does not prove tool execution.

@@ -151,3 +151,11 @@ The deterministic router returns one capability for a single intent. It returns 
 ## Local candidate and standalone business analysis
 
 When the root Skill is loaded from a local package, resolve companion references from that package first. Do not fetch an older public resource when the matching local file exists. For a supplied business export alone, read `references/business-attribution.md` and use its standalone analyzer; no experiment or AI baseline is required.
+
+## Human-readable diagnosis
+
+Lead with what the site can do, one important gap, and one next action. In Chinese reports use 能找到、能读懂、能完成操作; write 已验证、部分可用、还没验证 where appropriate. Keep schema keys, capability IDs, owner-gated and routing details in machine files or a technical appendix, not the main explanation. State the evidence scope beside the conclusion. A visible protocol is not a completed task; a checklist of generic enhancements is not a prioritized recommendation. Do not expand a read-only check into an implementation request.
+
+A website scan, readiness score, HTTP receipt or protocol inventory is never an AI-answer baseline. For an explicitly read-only site check, report AI visibility as unmeasured without requesting unrelated sampling. For a later effect comparison, require the separately recorded real answers.
+
+Only label a JSON report as conforming to this repository’s contract after validating the applicable schema. Otherwise deliver plain-language findings and clearly label any custom JSON; do not invent status enums or claim schema compatibility from a filename.

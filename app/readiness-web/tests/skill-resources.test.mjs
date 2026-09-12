@@ -44,3 +44,13 @@ test('contentTypeFor maps companion suffixes', () => {
   assert.equal(contentTypeFor('templates/public-facts.yaml'), 'text/yaml; charset=utf-8');
   assert.equal(contentTypeFor('templates/public-facts.yml'), 'text/yaml; charset=utf-8');
 });
+
+
+test('diagnostic download names the same version as the package builder', async () => {
+  const fs = await import('node:fs/promises');
+  const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const html = await fs.readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  const init = await fs.readFile(new URL('../../../src/bflabs_readiness/__init__.py', import.meta.url), 'utf8');
+  assert.ok(init.includes(`"${pkg.version}"`));
+  assert.ok(html.includes(`/downloads/bflabs-agent-readiness-skillhub-${pkg.version}.zip`));
+});
