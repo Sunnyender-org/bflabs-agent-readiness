@@ -16,6 +16,10 @@ Write facts a person can use. Link related pages in the ordinary way. Keep real 
 
 ## Page checks
 
+Before editing a page, save its rendered before screenshot and relevant text/HTML. Record URL, capture time, viewport, and the section or scroll position. Wait for content to settle and check that the saved image is readable. After the change, capture the same region at the same viewport; distinguish local preview from the public post-release capture. Link the pair from the action's existing evidence notes and explain the specific change. Capture mobile and desktop when the changed surface is responsive; do not introduce a full device matrix for a copy edit.
+
+Metadata or backend changes may look identical: show the actual HTML/field difference and readback rather than claiming a visible change. Missing before images stay marked missing; never substitute a reconstructed old page. Website screenshot differences prove the site changed, not that AI visibility or business results improved.
+
 | Check | Pass | Fail or stop | `issue_type` |
 |---|---|---|---|
 | Page selected | `purpose` and `selection_reason` recorded | Missing reason for a non-default scope | do not score until recorded |
