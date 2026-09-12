@@ -41,6 +41,12 @@ Report these together: `correct/judged`, `judged/valid`, `valid slots/planned sl
 
 ## What to retain
 
+For authorized browser collection, capture each completed answer before navigating away, closing the tab, or asking another question. Save the screenshot together with the full answer, citations, capture time, and its round/question/sample-slot identifier; verify the saved image is readable and matches that answer. Capture additional overlapping views when the answer or citations extend beyond one screen. A screenshot does not replace full text or citations. This guide does not grant platform access or turn the offline aggregation Skill into a live collector.
+
+Keep the same viewport and comparable answer region for before/after presentation. Put matched images side by side and identify the exact changed sentence, citation, or recommendation; report no change when none is visible. Preserve originals when adding highlights. Do not select only improved samples or change scale/cropping to exaggerate an effect.
+
+If an original image was missed, mark it missing. A later capture of the still-open original answer must carry its actual later capture time. Never re-ask to manufacture an original screenshot. API/export-only records may retain the original response or export instead; disclose that no browser screenshot exists and keep this separate from answer validity.
+
 Keep raw answers, cited URLs, capture time, and screenshots or exports. Label user-provided imports as such. Brand mention is judged with the brand's canonical name, aliases, and official domains from the project record (`facts.json` / `experiment.json.brand`). Unknown spellings go to pending, not to hit or miss. Report the full set. Never select only favorable screenshots.
 
 ## Collection methods
