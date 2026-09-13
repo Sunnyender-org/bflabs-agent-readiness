@@ -10,6 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = [
+    "templates/core-question-library.json",
+    "references/core-question-method.md",
     "SKILL.md",
     "agents/openai.yaml",
     "references/opportunity-method.md",
@@ -52,5 +54,12 @@ for path in ROOT.rglob("*"):
     windows_user_prefix = "C:" + "\\Users\\"
     if mac_user_prefix in content or windows_user_prefix in content:
         fail("private absolute path leaked in " + str(path.relative_to(ROOT)))
+
+
+library = json.loads((ROOT / "templates/core-question-library.json").read_text("utf-8"))
+assert len(library["questions"]) == 6
+assert all(item.get("purpose") and item.get("judgement") for item in library["questions"])
+assert "templates/core-question-library.json" in (ROOT / "SKILL.md").read_text("utf-8")
+assert "references/core-question-method.md" in (ROOT / "SKILL.md").read_text("utf-8")
 
 print("PASS: geo-discover package ({} positive routes, {} negative routes)".format(positive, negative))

@@ -81,10 +81,36 @@ def read_json(path, fallback):
     return json.loads(path.read_text('utf-8')) if path.exists() else fallback
 
 
+PURPOSE = {
+    'A': '品牌身份：能否认对，避免同名混淆',
+    'B': '页面理解：能否说清用途与受众',
+    'C': '主动发现：找到正确官网与接入说明',
+    'D': '自然候选：是否被提及或推荐',
+}
+
+
+def question_section(questions, backlog):
+    cards = []
+    for q in questions.get('questions', []):
+        purpose = q.get('purpose') or PURPOSE.get(q.get('observation_line'), '按本题判读标准核对')
+        cards.append(f'<article><h3>{esc(q.get("text"))}</h3><p>{esc(purpose)}</p>'
+                     f'<details><summary>本题如何判断</summary><p>{esc(q.get("partial_credit_rule"))}</p></details></article>')
+    candidates = []
+    for q in backlog.get('next_round_pool', []):
+        source = {'agent_hypothesis':'生成候选，未证明真实需求','support':'客服原话','onsite_search':'站内搜索记录','user_reported':'用户提供','platform_export':'平台导出'}.get(q.get('source_kind'),'来源待核对')
+        candidates.append(f'<li><b>{esc(q.get("text"))}</b><p class="meta">{esc(source)} · {esc(q.get("market"))}</p><p>{esc(q.get("selection_reason"))}</p></li>')
+    return ('<p class="intro">固定题用于本轮前后比较。新题留在下一轮候选，不改变已采样的题目。</p>'
+            + (''.join(cards) or '<p class="empty">尚未冻结题库</p>')
+            + '<details><summary>下一轮候选问题（' + str(len(candidates)) + '）</summary><ul>'
+            + ''.join(candidates) + '</ul></details>')
+
+
 def render(project, template):
     root = Path(project).resolve()
     exp = read_json(root / 'experiment.json', {})
     actions = read_json(root / 'actions.json', {}).get('actions', [])
+    questions = read_json(root / 'questions.json', {})
+    backlog = read_json(root / 'question-backlog.json', {})
     obs_path = root / 'observations.jsonl'
     rows = [json.loads(line) for line in obs_path.read_text('utf-8').splitlines() if line.strip()] if obs_path.exists() else []
     # Refuse silently mixed projects; this is a view of one experiment, not an importer.
@@ -134,12 +160,13 @@ def render(project, template):
         'SITE': esc(exp.get('site_url') or exp.get('site_domain')),
         'NEXT': esc(exp.get('next_step') or '补充本轮下一步'),
         'COUNTS': f'{len(actions)} 项网站改动 · {len(rows)} 条回答记录 · {len(rounds)} 个复测轮次',
+        'QUESTIONS': question_section(questions, backlog),
         'PAGES': ''.join(page_blocks) or '<p class="empty">尚无网站修改记录</p>',
         'AI': ''.join(ai_blocks) or '<p class="empty">尚无回答样本</p>',
         'BUSINESS': business,
         'PLATFORMS': ''.join(f'<option>{esc(x)}</option>' for x in platforms),
         'ROUNDS': ''.join(f'<option>{esc(x)}</option>' for x in rounds),
-        'SOURCES': ' · '.join(link(root,f) for f in ['experiment.json','actions.json','questions.json','observations.jsonl']),
+        'SOURCES': ' · '.join(link(root,f) for f in ['experiment.json','actions.json','questions.json','question-backlog.json','observations.jsonl']),
     }
     result = Path(template).read_text('utf-8')
     return re.sub(r'\{\{([A-Z]+)\}\}', lambda match: data[match[1]], result)

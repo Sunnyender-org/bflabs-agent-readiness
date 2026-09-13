@@ -82,3 +82,5 @@ Keep screenshots and raw text under existing evidence folders, convention `scree
 The HTML separates site changes, AI answers and business results. All attempts remain visible; a missing after-round stays pending. Pairing is visual navigation only; comparability and numerical verdicts come from the accepted geo-measure report, never from the screenshot renderer. Business details remain in the existing round report.
 
 For a Feishu handoff, use a readable report with: current result; site pairs; matched answer pairs; business windows; next action; evidence/history appendix. Each pair explains what changed and what it proves. Keep WB/tool acceptance separate from AI visibility. Use Base only for multi-project operational tracking; neither Feishu nor a hosted dashboard is required for the free Skill.
+
+The comparison view also reads `questions.json` (including optional `purpose`) and `question-backlog.json`. It displays the frozen question set separately from next-round candidates. Candidate provenance and selection reasons remain visible; the view does not edit or promote candidates into the experiment.

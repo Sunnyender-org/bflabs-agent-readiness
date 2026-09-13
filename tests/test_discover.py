@@ -99,6 +99,76 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(quality["status"], "blocked")
         self.assertIn("duplicate evidence ids", quality["blockers"])
 
+    def test_core_candidates_are_separate_from_named_brand_extensions(self):
+        brief = load_brief()
+        brief.update(brand="Northstar", brand_aliases=["北辰"], category="AI gateways",
+                     site_url="https://northstar.example", language="en",
+                     audiences=["developers"], scenarios=["building text and image features"])
+        validate_instance(brief, "discovery-brief.schema.json")
+        query_map = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+        validate_instance(query_map, "query-map.schema.json")
+        core = [q for q in query_map["queries"] if q.get("question_group") == "core"]
+        self.assertEqual(len(core), 6)
+        unprompted = [q for q in core if q["observation_line"] == "D"]
+        self.assertEqual(len(unprompted), 2)
+        for q in unprompted:
+            self.assertNotIn("northstar", q["text"].lower())
+            self.assertNotIn("北辰", q["text"])
+            self.assertEqual(q["provenance"]["source_kind"], "agent_hypothesis")
+            self.assertTrue(q["purpose"] and q["judgement"])
+        self.assertFalse(query_map["core_question_gaps"])
+
+    def test_nonbrand_leakage_and_missing_category_remain_gaps(self):
+        brief = load_brief()
+        brief.update(brand="Northstar", brand_aliases=["北辰"], category="AI gateways",
+                     site_url="https://northstar.example", scenarios=["迁移到北辰"])
+        result = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+        self.assertFalse(any(q.get("observation_line") == "D" for q in result["queries"]))
+        self.assertEqual(len([g for g in result["core_question_gaps"] if "leaked" in g["reason"]]), 2)
+        del brief["category"]
+        result = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+        self.assertTrue(any("category" in g["reason"] for g in result["core_question_gaps"]))
+
+    def test_real_seed_matching_core_keeps_original_provenance(self):
+        brief = load_brief()
+        seed = "What is Northstar and what does it do?"
+        brief.update(brand="Northstar", language="en", seed_queries=[seed],
+                     seed_query_provenance=[dict(query=seed, source_kind="support",
+                         captured_at=brief["captured_at"], market="en", redacted=True)])
+        result = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+        matches = [q for q in result["queries"] if q["text"] == seed]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["provenance"]["source_kind"], "support")
+        self.assertEqual(matches[0]["assumptions"], [])
+        self.assertEqual(matches[0]["trace"]["source_type"], "seed")
+
+    def test_nonbrand_www_and_compact_aliases(self):
+        for brand, url, category in [
+            ("Acme Cloud", "https://www.acme.io", "acme.io API gateways"),
+            ("North Star", "https://northstar.example", "northstar gateways"),
+            ("North-Star", "https://northstar.example", "North Star gateways"),
+        ]:
+            brief = load_brief()
+            brief.update(brand=brand, site_url=url, category=category,
+                         audiences=["developers"], scenarios=["building agents"], language="en")
+            result = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+            self.assertFalse(any(q.get("observation_line") == "D" for q in result["queries"]))
+            self.assertEqual(len([g for g in result["core_question_gaps"] if "leaked" in g["reason"]]), 2)
+
+    def test_actual_upstream_requirement_is_not_target_brand_priming(self):
+        brief = load_brief()  # Preserves the original audience needing GPT-5.6.
+        brief.update(brand="BeefAPI", category="模型 API 平台", site_url="https://www.beefapi.com")
+        result = run_geo_discover(brief)["outputs"]["outputs/query-map.json"][0]
+        unprompted = [q for q in result["queries"] if q.get("observation_line") == "D"]
+        self.assertEqual(len(unprompted), 2)
+        self.assertTrue(all("BeefAPI" not in q["text"] for q in unprompted))
+        self.assertTrue(all("GPT-5.6" in q["text"] for q in unprompted))
+
+    def test_short_brand_does_not_match_inside_unrelated_words(self):
+        from bflabs_readiness.question_library import mentions
+        self.assertFalse(mentions("trail planning", "AI"))
+        self.assertTrue(mentions("AI gateways", "AI"))
+
 
 if __name__ == "__main__":
     unittest.main()

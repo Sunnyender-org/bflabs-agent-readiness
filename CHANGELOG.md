@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.5
+
+- Add six bilingual core question patterns with purpose and judgement guidance.
+- Separate unprompted category questions from named-brand business questions and preserve supplied-seed provenance.
+- Display frozen questions and next-round candidates in the existing offline comparison view.
+
+
 ## 0.6.4
 
 - Add an offline comparison view generated from existing round records.
