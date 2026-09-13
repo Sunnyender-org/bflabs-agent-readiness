@@ -64,6 +64,40 @@ class ComparisonViewTests(unittest.TestCase):
             result=view.render(p,ROOT/'templates/comparison.html')
             self.assertIn('不能当作线上发布前后验证',result)
 
+    def test_coverage_rows_link_to_page_evidence_and_keep_missing_images(self):
+        coverage = {
+            "rows": [
+                {
+                    "question_cluster": "品牌身份",
+                    "priority": "P0",
+                    "question_ids": ["q_a"],
+                    "url": "https://example.com/",
+                    "evidence_ref": "screenshots/r0/q_a.png",
+                    "disposition": "keep_existing",
+                    "status": "planned",
+                    "note": "沿用首页。",
+                },
+                {
+                    "question_cluster": "价格蓝图",
+                    "priority": "P0",
+                    "question_ids": ["q_b"],
+                    "url": None,
+                    "evidence_ref": None,
+                    "disposition": "new_page",
+                    "status": "blueprint_ready",
+                    "note": "还没有公开页。",
+                },
+            ]
+        }
+        questions = {"questions": [{"question_id": "q_a", "text": "What is Example?"}, {"question_id": "q_b", "text": "How much?"}]}
+        html = view.coverage_section(coverage, questions)
+        self.assertIn("品牌身份", html)
+        self.assertIn("What is Example?", html)
+        self.assertIn("https://example.com/", html)
+        self.assertIn("没有视觉改动", html)
+        self.assertIn("公开页还没有", html)
+        self.assertNotIn("补造改前画面", html)
+
     def test_question_plan_does_not_promote_new_candidates(self):
         questions = {"questions":[{"text":"Frozen question", "purpose":"Find official site", "partial_credit_rule":"Check domain"}]}
         backlog = {"next_round_pool":[{"text":"New candidate", "source_kind":"agent_hypothesis", "selection_reason":"Explore next round"}]}

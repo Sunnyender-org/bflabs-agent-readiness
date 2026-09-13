@@ -68,8 +68,26 @@ RECORD_SPECS = (
     ("actions", "actions.json", "round-actions.schema.json", False),
     ("business_events", "business-events.json", "round-business-events.schema.json", False),
     ("question_backlog", "question-backlog.json", "question-backlog.schema.json", False),
+    ("coverage", "coverage.json", "round-coverage.schema.json", False),
 )
 ACTION_STATUSES = ("planned", "changed_local", "released", "verified_public", "reverted")
+COVERAGE_PAGE_DISPOSITIONS = ("keep_existing", "update_existing", "new_page")
+COVERAGE_DEFERRED_DISPOSITIONS = ("deferred", "not_applicable")
+CONSTRUCTION_UNVERIFIED = "unverified"
+CONSTRUCTION_COMPLETE = "complete"
+CONSTRUCTION_INCOMPLETE = "incomplete"
+BATCH_COMPLETE = "complete"
+BATCH_INCOMPLETE = "incomplete"
+BATCH_EMPTY = "empty"
+EFFECT_COMPLETE = "complete"
+EFFECT_INCOMPLETE = "incomplete"
+EFFECT_UNVERIFIED = "unverified"
+EFFECT_NOT_MEASURED = "not_measured"
+ERR_COVERAGE_QUESTIONS_VERSION = "coverage questions_version does not match experiment"
+ERR_UNKNOWN_COVERAGE_QUESTION_ID = "unknown question_id in coverage"
+ERR_UNKNOWN_COVERAGE_FACT_ID = "unknown fact_id in coverage"
+ERR_UNKNOWN_COVERAGE_ACTION_ID = "unknown action_id in coverage"
+ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE = "new questions cannot inherit old baseline improvement"
 EVENT_TYPES = ("visit", "signup", "lead", "activation", "purchase")
 SOURCE_TYPES = ("ai", "search", "social", "direct", "unknown")
 EXCLUDED_EVENT_REASONS = ("outside_window", "other_site", "duplicate_event")
@@ -131,6 +149,8 @@ def load_project(project_dir: Any) -> Dict[str, Optional[Dict[str, Any]]]:
         "questions": _optional_record(root, "questions.json"),
         "actions": _optional_record(root, "actions.json"),
         "business_events": _optional_record(root, "business-events.json"),
+        "question_backlog": _optional_record(root, "question-backlog.json"),
+        "coverage": _optional_record(root, "coverage.json"),
     }
 
 
@@ -318,6 +338,21 @@ def _cross_file_errors(records: Dict[str, Optional[Dict[str, Any]]]) -> List[str
                 errors.append("question backlog references an unknown frozen question")
             if set(candidate.get("related_fact_ids", [])) - known_facts:
                 errors.append("question backlog references an unknown fact")
+    coverage = records.get("coverage")
+    if coverage is not None:
+        if coverage.get("questions_version") != experiment.get("questions_version"):
+            errors.append(ERR_COVERAGE_QUESTIONS_VERSION)
+        for row in coverage.get("rows") or []:
+            cluster = row.get("question_cluster") or "?"
+            for question_id in row.get("question_ids") or []:
+                if known_questions and question_id not in known_questions:
+                    errors.append("{}: {} -> {}".format(ERR_UNKNOWN_COVERAGE_QUESTION_ID, cluster, question_id))
+            for fact_id in row.get("fact_ids") or []:
+                if known_facts and fact_id not in known_facts:
+                    errors.append("{}: {} -> {}".format(ERR_UNKNOWN_COVERAGE_FACT_ID, cluster, fact_id))
+            for action_id in row.get("action_ids") or []:
+                if known_actions and action_id not in known_actions:
+                    errors.append("{}: {} -> {}".format(ERR_UNKNOWN_COVERAGE_ACTION_ID, cluster, action_id))
     return errors
 
 
@@ -488,6 +523,313 @@ def validate_project(project_dir: Any) -> List[str]:
     return errors
 
 
+def _coverage_rows(coverage: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not coverage:
+        return []
+    return [row for row in coverage.get("rows") or [] if isinstance(row, dict)]
+
+
+def _p0_rows(coverage: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [row for row in _coverage_rows(coverage) if row.get("priority") == "P0"]
+
+
+def _row_needs_live_page(row: Dict[str, Any]) -> bool:
+    return row.get("disposition") in COVERAGE_PAGE_DISPOSITIONS
+
+
+def _row_has_live_page(row: Dict[str, Any]) -> bool:
+    return _nonempty(row.get("url"))
+
+
+def _row_is_pending_implementation(row: Dict[str, Any]) -> bool:
+    return row.get("status") == "blueprint_ready" and not _row_has_live_page(row)
+
+
+def _row_construction_ready(row: Dict[str, Any]) -> bool:
+    if not _nonempty(row.get("disposition")):
+        return False
+    if row.get("status") == "unmapped":
+        return False
+    if _row_is_pending_implementation(row):
+        return False
+    if _row_needs_live_page(row) and not _row_has_live_page(row):
+        return False
+    return True
+
+
+def _covered_question_ids(coverage: Optional[Dict[str, Any]]) -> Set[str]:
+    covered: Set[str] = set()
+    for row in _coverage_rows(coverage):
+        covered.update(row.get("question_ids") or [])
+    return covered
+
+
+def assess_construction(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, Any]:
+    coverage = records.get("coverage")
+    questions = _question_ids(records.get("questions"))
+    if coverage is None:
+        uncovered = sorted(questions)
+        return {
+            "status": CONSTRUCTION_UNVERIFIED,
+            "complete": False,
+            "pending_implementation": [],
+            "uncovered_clusters": uncovered,
+            "uncovered_question_ids": uncovered,
+            "gaps": ["还没有记下哪些问题对应哪一页，不能把已发布的改动当成整站已经建完。"],
+        }
+    p0 = _p0_rows(coverage)
+    pending = [row.get("question_cluster") or "?" for row in p0 if _row_is_pending_implementation(row)]
+    incomplete = [row for row in p0 if not _row_construction_ready(row)]
+    covered = _covered_question_ids(coverage)
+    uncovered = sorted(questions - covered) if questions else []
+    gaps: List[str] = []
+    if not p0:
+        gaps.append("还没有记下优先要回答的问题对应哪一页，首轮建设未完成。")
+    for row in incomplete:
+        cluster = row.get("question_cluster") or "一组问题"
+        if row.get("status") == "unmapped":
+            gaps.append("{} 还没有对应页面。".format(cluster))
+        elif _row_is_pending_implementation(row):
+            gaps.append("{} 已有内容蓝图，公开页还没有。".format(cluster))
+        elif _row_needs_live_page(row) and not _row_has_live_page(row):
+            gaps.append("{} 还没有对应页面。".format(cluster))
+        else:
+            gaps.append("{} 还没有写清怎么处理。".format(cluster))
+    for question_id in uncovered:
+        gaps.append("问题 {} 还没有对应到页面。".format(question_id))
+    complete = bool(p0) and not incomplete and not uncovered
+    return {
+        "status": CONSTRUCTION_COMPLETE if complete else CONSTRUCTION_INCOMPLETE,
+        "complete": complete,
+        "pending_implementation": pending,
+        "uncovered_clusters": [row.get("question_cluster") for row in incomplete] + uncovered,
+        "uncovered_question_ids": uncovered,
+        "gaps": gaps,
+    }
+
+
+def assess_batch(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, Any]:
+    actions = (records.get("actions") or {}).get("actions") or []
+    if not actions:
+        return {
+            "status": BATCH_EMPTY,
+            "complete": False,
+            "gaps": ["还没有登记本批要改的内容。"],
+            "release_days": [],
+        }
+    incomplete: List[str] = []
+    release_days: List[str] = []
+    for action in actions:
+        summary = action.get("summary") or action.get("action_id") or "一项改动"
+        status = action.get("status")
+        if action.get("released_at"):
+            try:
+                release_days.append(parse_datetime(str(action["released_at"])).date().isoformat())
+            except (TypeError, ValueError):
+                release_days.append(str(action["released_at"])[:10])
+        if status == "verified_public":
+            if not _is_verified_public(action):
+                incomplete.append("公开页核对尚未通过：{}。".format(summary))
+        elif status == "released":
+            if not _is_released(action):
+                incomplete.append("已经写了发布，但还缺发布凭据：{}。".format(summary))
+        elif status == "changed_local":
+            incomplete.append("本地已改、公开页还看不到：{}。".format(summary))
+        elif status == "planned":
+            incomplete.append("还没开始改：{}。".format(summary))
+        elif status == "reverted":
+            incomplete.append("曾经改过，后来撤回了：{}。".format(summary))
+        else:
+            incomplete.append("还没完成：{}。".format(summary))
+    unique_days = sorted(set(release_days))
+    return {
+        "status": BATCH_COMPLETE if not incomplete else BATCH_INCOMPLETE,
+        "complete": not incomplete,
+        "gaps": incomplete,
+        "release_days": unique_days,
+        "multi_batch": len(unique_days) > 1,
+    }
+
+
+def _after_round_ids(experiment: Dict[str, Any]) -> Set[str]:
+    return {
+        item.get("round_id")
+        for item in experiment.get("rounds") or []
+        if item.get("phase") in {"after_release", "retest", "follow_up"}
+    }
+
+
+def assess_effect(
+    records: Dict[str, Optional[Dict[str, Any]]],
+    measurement_report: Optional[Dict[str, Any]] = None,
+    *,
+    project_dir: Optional[Any] = None,
+) -> Dict[str, Any]:
+    experiment = records.get("experiment") or {}
+    analysis = analyze_business(records)
+    business_status = analysis.get("status")
+    comparison = analysis.get("comparison")
+    business_ok = business_status == "not_measured" or (
+        isinstance(comparison, dict) and comparison.get("comparable")
+    )
+    business_explicit_unmeasured = business_status == "not_measured"
+    current_questions = _question_ids(records.get("questions"))
+    inherit_blocked: List[str] = []
+    comparable_retest = False
+    retest_gaps: List[str] = []
+
+    if measurement_report is not None:
+        report_version = measurement_report.get("questions_version")
+        if report_version and report_version != experiment.get("questions_version"):
+            inherit_blocked.append(ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE)
+            retest_gaps.append("新题库不能沿用旧基线的改善结论。")
+        pair_ids = {
+            pair.get("prompt_id")
+            for pair in measurement_report.get("pairs") or []
+            if isinstance(pair, dict)
+        }
+        extra = sorted(current_questions - pair_ids)
+        if extra:
+            inherit_blocked.append(ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE)
+            retest_gaps.append("新问题没有自己的改前记录，不能沿用旧题库的改善结论：{}。".format("、".join(extra)))
+        comparable_pairs = [
+            pair
+            for pair in measurement_report.get("pairs") or []
+            if isinstance(pair, dict) and pair.get("verdict") not in {None, "not_comparable", "insufficient"}
+        ]
+        comparable_retest = bool(comparable_pairs) and not inherit_blocked
+        if not measurement_report.get("pairs"):
+            retest_gaps.append("还没有可核对的前后对比。")
+    else:
+        if not _after_round_ids(experiment):
+            retest_gaps.append("还没有用同一批问题做复测。")
+        if project_dir is not None and isinstance(experiment.get("baseline"), dict):
+            missing = [
+                error
+                for error in baseline_evidence_errors(
+                    _as_dir(project_dir), experiment, records.get("questions")
+                )
+                if error.startswith(MISSING_BASELINE_QUESTIONS_PREFIX)
+            ]
+            if missing:
+                inherit_blocked.append(ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE)
+                retest_gaps.extend(missing)
+
+    if not business_ok and not business_explicit_unmeasured:
+        retest_gaps.append("业务窗口还不能和改前对照，或覆盖不完整。")
+
+    if inherit_blocked:
+        status = EFFECT_INCOMPLETE
+    elif comparable_retest and (business_ok or business_explicit_unmeasured):
+        status = EFFECT_COMPLETE
+    elif measurement_report is None and not _after_round_ids(experiment) and business_explicit_unmeasured:
+        status = EFFECT_NOT_MEASURED
+    elif measurement_report is None and (_after_round_ids(experiment) or business_status == "analyzed"):
+        status = EFFECT_UNVERIFIED
+    else:
+        status = EFFECT_INCOMPLETE
+
+    return {
+        "status": status,
+        "complete": status == EFFECT_COMPLETE,
+        "comparable_retest": comparable_retest,
+        "business_status": business_status,
+        "business_comparable": bool(isinstance(comparison, dict) and comparison.get("comparable")),
+        "inherit_old_baseline": not inherit_blocked,
+        "gaps": retest_gaps,
+        "inherit_errors": inherit_blocked,
+    }
+
+
+def assess_scopes(
+    records: Dict[str, Optional[Dict[str, Any]]],
+    measurement_report: Optional[Dict[str, Any]] = None,
+    *,
+    project_dir: Optional[Any] = None,
+) -> Dict[str, Any]:
+    construction = assess_construction(records)
+    batch = assess_batch(records)
+    effect = assess_effect(records, measurement_report, project_dir=project_dir)
+    return {
+        "construction": construction,
+        "batch": batch,
+        "effect": effect,
+    }
+
+
+def coverage_handoff_from_content(
+    brief: Dict[str, Any],
+    *,
+    live_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Record topic → evidence → keep/update/new → host implementation → live readback."""
+    discovery = brief.get("discovery_context") if isinstance(brief.get("discovery_context"), dict) else {}
+    evidence_ids = []
+    for fact in brief.get("facts") or []:
+        evidence_ids.extend(fact.get("evidence_ids") or [])
+    if discovery.get("evidence_id"):
+        evidence_ids.append(discovery["evidence_id"])
+    unique_evidence = list(dict.fromkeys(str(item) for item in evidence_ids if item))
+    disposition = "update_existing" if brief.get("mode") in {"refine", "article-friendly"} else "new_page"
+    if brief.get("source_markdown") and brief.get("mode") != "page-blueprint":
+        disposition = "update_existing"
+    status = "blueprint_ready" if not _nonempty(live_url) else "changed_local"
+    note = "内容蓝图已通过，公开页还没有。等宿主实现后再做线上读回。" if status == "blueprint_ready" else "宿主已改本地页，等待公开读回。"
+    return {
+        "question_cluster": brief.get("subject") or brief.get("intent") or "content-handoff",
+        "priority": "P0",
+        "question_ids": [
+            item for item in discovery.get("query_ids") or [] if str(item).startswith("q_")
+        ],
+        "fact_ids": [fact.get("id") for fact in brief.get("facts") or [] if fact.get("id")],
+        "url": live_url if _nonempty(live_url) else None,
+        "evidence_ref": unique_evidence[0] if unique_evidence else None,
+        "disposition": disposition,
+        "status": status,
+        "action_ids": [],
+        "note": note,
+        "topic": brief.get("subject"),
+        "evidence_ids": unique_evidence,
+        "host_implementation": "pending" if status == "blueprint_ready" else "local",
+        "live_readback": None,
+        "pending_implementation": status == "blueprint_ready",
+    }
+
+
+def coverage_rows_from_discovery(
+    query_map: Dict[str, Any],
+    opportunity_map: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    queries = {item.get("id"): item for item in query_map.get("queries") or [] if item.get("id")}
+    rows: List[Dict[str, Any]] = []
+    for item in opportunity_map.get("opportunities") or []:
+        query_ids = item.get("query_ids") or []
+        texts = [queries.get(query_id, {}).get("text") or query_id for query_id in query_ids]
+        missing = item.get("coverage_state") != "covered"
+        rows.append(
+            {
+                "question_cluster": item.get("dimension") or (texts[0] if texts else item.get("id") or "opportunity"),
+                "priority": "P0" if missing and item.get("priority_score", 0) >= 4 else ("P1" if missing else "P2"),
+                "question_ids": [],
+                "fact_ids": [],
+                "url": None,
+                "evidence_ref": (item.get("trace") or {}).get("source_query_ids", [None])[0]
+                if (item.get("trace") or {}).get("source_query_ids")
+                else None,
+                "disposition": "new_page" if missing else "keep_existing",
+                "status": "unmapped" if missing else "planned",
+                "action_ids": [],
+                "note": "；".join(str(part) for part in ((item.get("trace") or {}).get("basis") or texts) if part),
+                "topic": texts[0] if texts else item.get("dimension"),
+                "evidence_ids": list((item.get("trace") or {}).get("source_query_ids") or []),
+                "host_implementation": "pending",
+                "live_readback": None,
+                "pending_implementation": False,
+            }
+        )
+    return rows
+
+
 def project_status(project_dir: Any) -> Dict[str, Any]:
     root = _as_dir(project_dir)
     records = load_project(root)
@@ -502,6 +844,7 @@ def project_status(project_dir: Any) -> Dict[str, Any]:
     missing: List[str] = []
     if experiment.get("current_phase") in BASELINE_REQUIRED_PHASES:
         missing.extend(evidence_errors)
+    scopes = assess_scopes(records, project_dir=root)
     return {
         "current_phase": experiment.get("current_phase"),
         "next_step": experiment.get("next_step"),
@@ -509,6 +852,20 @@ def project_status(project_dir: Any) -> Dict[str, Any]:
         "baseline_present": not evidence_errors,
         "missing_preconditions": missing,
         "last_updated": experiment.get("updated_at"),
+        "construction_status": scopes["construction"]["status"],
+        "batch_status": scopes["batch"]["status"],
+        "effect_status": scopes["effect"]["status"],
+        "construction_complete": scopes["construction"]["complete"],
+        "batch_complete": scopes["batch"]["complete"],
+        "effect_complete": scopes["effect"]["complete"],
+        "pending_implementation": scopes["construction"]["pending_implementation"],
+        "uncovered_clusters": scopes["construction"]["uncovered_clusters"],
+        "construction_gaps": scopes["construction"]["gaps"],
+        "batch_gaps": scopes["batch"]["gaps"],
+        "effect_gaps": scopes["effect"]["gaps"],
+        "inherit_old_baseline": scopes["effect"]["inherit_old_baseline"],
+        "inherit_errors": scopes["effect"]["inherit_errors"],
+        "release_days": scopes["batch"]["release_days"],
     }
 
 
@@ -829,6 +1186,8 @@ def _sources_footer(records: Dict[str, Optional[Dict[str, Any]]], measurement_re
         names.append("actions.json")
     if records.get("business_events") is not None:
         names.append("business-events.json")
+    if records.get("coverage") is not None:
+        names.append("coverage.json")
     names.append("report.md")
     lines = [
         "本报告根据同目录下的实验、事实、问题、改动和业务事件记录生成。",
@@ -993,6 +1352,88 @@ def accept_measurement_report(
     return {**report, "stage_table": _derived_measurement_table(report, experiment, questions)}
 
 
+def _scope_label(status: str) -> str:
+    return {
+        CONSTRUCTION_UNVERIFIED: "尚未核对",
+        CONSTRUCTION_COMPLETE: "已完成",
+        CONSTRUCTION_INCOMPLETE: "未完成",
+        BATCH_EMPTY: "还没有本批改动",
+        BATCH_COMPLETE: "已完成",
+        BATCH_INCOMPLETE: "未完成",
+        EFFECT_COMPLETE: "已完成",
+        EFFECT_INCOMPLETE: "未完成",
+        EFFECT_UNVERIFIED: "尚未核对",
+        EFFECT_NOT_MEASURED: "未测",
+    }.get(status, "尚未核对")
+
+
+def _batch_scope_text(batch: Dict[str, Any], records: Dict[str, Optional[Dict[str, Any]]]) -> str:
+    lines = ["本批修改：{}。".format(_scope_label(batch["status"]))]
+    pages = _pages_and_facts(records)
+    if pages:
+        lines.append(pages)
+    if batch.get("multi_batch"):
+        lines.append(
+            "实际发布时间：{}。这不是同一天一次发布，不能当成单一窗口的效果。".format(
+                "、".join(batch.get("release_days") or [])
+            )
+        )
+    elif batch.get("release_days"):
+        lines.append("实际发布时间：{}。".format("、".join(batch["release_days"])))
+    return "\n".join(lines)
+
+
+def _construction_scope_text(construction: Dict[str, Any]) -> str:
+    lines = ["首轮建设：{}。".format(_scope_label(construction["status"]))]
+    if construction["status"] == CONSTRUCTION_UNVERIFIED:
+        lines.append("还没有记下哪些问题对应哪一页，不能把某一页已发布当成整站已经建完。")
+    elif construction["complete"]:
+        lines.append("优先要回答的问题都已经对应到页面。多题可以共用同一页。")
+    if construction.get("pending_implementation"):
+        lines.append(
+            "已有内容蓝图、公开页还没有：{}。".format("、".join(construction["pending_implementation"]))
+        )
+    if construction.get("gaps"):
+        lines.extend(construction["gaps"])
+    return "\n".join(lines)
+
+
+def _effect_scope_text(effect: Dict[str, Any], measurement_report: Optional[Dict[str, Any]]) -> str:
+    lines = ["效果复盘：{}。".format(_scope_label(effect["status"]))]
+    lines.append("效果复盘看同一批问题的复测，以及你提供的业务窗口；没有统一分数。")
+    if not effect.get("inherit_old_baseline"):
+        lines.append("新题库不能沿用旧基线的改善结论。新问题要单独冻结，并先留下自己的改前记录。")
+    if effect.get("gaps"):
+        lines.extend(effect["gaps"])
+    lines.append(_ai_changes(measurement_report))
+    return "\n".join(lines)
+
+
+def _remaining_gaps_text(
+    construction: Dict[str, Any],
+    batch: Dict[str, Any],
+    effect: Dict[str, Any],
+    records: Dict[str, Optional[Dict[str, Any]]],
+) -> str:
+    lines: List[str] = []
+    if construction.get("gaps"):
+        lines.append("首轮建设还缺：")
+        lines.extend(construction["gaps"])
+    if batch.get("gaps"):
+        lines.append("本批修改还缺：")
+        lines.extend(batch["gaps"])
+    if effect.get("gaps"):
+        lines.append("效果复盘还缺：")
+        lines.extend(effect["gaps"])
+    leftover = _not_yet(records)
+    if leftover and leftover != "计划中的改动都已经出现在公开页，并完成核对。":
+        if leftover not in "\n".join(lines):
+            lines.append(leftover)
+    if not lines:
+        return "这一轮已经记下的缺口都已处理。整站是否建完，仍只看重要问题是不是都有对应页面，不看本批是否已发布。"
+    return "\n".join(lines)
+
+
 def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]] = None) -> str:
     records = load_project(project_dir)
     experiment = records["experiment"] or {}
@@ -1002,9 +1443,20 @@ def render_report(project_dir: Any, measurement_report: Optional[Dict[str, Any]]
         if accepted.get("pairs") and records.get("questions") is None:
             raise MeasurementReportError(["project questions are required for a measurement comparison"])
     analysis = analyze_business(records)
+    scopes = assess_scopes(records, accepted, project_dir=project_dir)
     next_step = experiment.get("next_step") or "先查看当前进度，再决定下一件要改的事。"
+    if scopes["construction"]["status"] != CONSTRUCTION_COMPLETE:
+        uncovered = scopes["construction"].get("uncovered_clusters") or []
+        if uncovered:
+            next_step = "先补齐还没对应到页面的问题，再判断整站是否建完。当前缺口：{}。".format(
+                "、".join(str(item) for item in uncovered[:8])
+            )
     return _fill_template(
         {
+            "batch_scope": _batch_scope_text(scopes["batch"], records),
+            "construction_scope": _construction_scope_text(scopes["construction"]),
+            "effect_scope": _effect_scope_text(scopes["effect"], accepted),
+            "remaining_gaps": _remaining_gaps_text(scopes["construction"], scopes["batch"], scopes["effect"], records),
             "pages_and_facts": _pages_and_facts(records),
             "ai_changes": _ai_changes(accepted),
             "not_yet": _not_yet(records),

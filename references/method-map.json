@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-09-11",
+  "updated_at": "2026-09-13",
   "method_source": "references/whitehat-method.md",
   "evidence_log": "references/method-evidence.md",
   "review_template": "templates/method-review.md",
@@ -94,6 +94,10 @@
         {
           "id": "M5-public-sources",
           "pointers": ["S01", "S04", "E09"]
+        },
+        {
+          "id": "M5-citation-sources",
+          "pointers": ["S01", "S04", "S06", "E09"]
         },
         {
           "id": "M5-page-change",

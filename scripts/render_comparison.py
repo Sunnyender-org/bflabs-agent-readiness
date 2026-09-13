@@ -89,6 +89,50 @@ PURPOSE = {
 }
 
 
+DISPOSITION = {
+    'keep_existing': '沿用现有页',
+    'update_existing': '改现有页',
+    'new_page': '需要新页',
+    'deferred': '本轮不做',
+    'not_applicable': '不适用',
+}
+COVERAGE_STATUS = {
+    'unmapped': '还没有对应页面',
+    'planned': '已规划',
+    'blueprint_ready': '蓝图已有，公开页还没有',
+    'changed_local': '本地已改',
+    'released': '已发布',
+    'verified_public': '公开页已核对',
+    'deferred': '本轮不做',
+}
+
+
+def coverage_section(coverage, questions):
+    question_text = {item.get('question_id'): item.get('text') for item in questions.get('questions', [])}
+    cards = []
+    for row in coverage.get('rows', []):
+        urls = row.get('url')
+        page = urls if urls else '还没有公开页'
+        topics = [question_text.get(qid) or qid for qid in row.get('question_ids', [])]
+        evidence = row.get('evidence_ref')
+        visual = ''
+        if row.get('disposition') == 'keep_existing':
+            visual = '<p class="note">这一页按原样保留，没有视觉改动。</p>'
+        elif row.get('status') == 'blueprint_ready' and not urls:
+            visual = '<p class="note">内容蓝图已有，公开页还没有。不算已经建完。</p>'
+        cards.append(
+            f'<article><p class="eyebrow">{esc(page)}</p><h3>{esc(row.get("question_cluster"))}</h3>'
+            f'<p>{esc(DISPOSITION.get(row.get("disposition"), row.get("disposition")))} · '
+            f'{esc(COVERAGE_STATUS.get(row.get("status"), row.get("status")))}</p>'
+            f'<p>{"；".join(esc(item) for item in topics) or "尚未绑定冻结问题"}</p>'
+            + (f'<p class="meta">证据 {esc(evidence)}</p>' if evidence else '<p class="empty">尚未留下页面或回答证据</p>')
+            + visual + f'<p>{esc(row.get("note"))}</p></article>'
+        )
+    if not cards:
+        return '<p class="empty">还没有记下哪些问题对应哪一页。某一页已发布，不等于整站已经建完。</p>'
+    return '<p class="intro">优先问题是否都有对应页面。多题可以共用同一页。</p>' + ''.join(cards)
+
+
 def question_section(questions, backlog):
     cards = []
     for q in questions.get('questions', []):
@@ -111,6 +155,7 @@ def render(project, template):
     actions = read_json(root / 'actions.json', {}).get('actions', [])
     questions = read_json(root / 'questions.json', {})
     backlog = read_json(root / 'question-backlog.json', {})
+    coverage = read_json(root / 'coverage.json', {})
     obs_path = root / 'observations.jsonl'
     rows = [json.loads(line) for line in obs_path.read_text('utf-8').splitlines() if line.strip()] if obs_path.exists() else []
     # Refuse silently mixed projects; this is a view of one experiment, not an importer.
@@ -161,12 +206,13 @@ def render(project, template):
         'NEXT': esc(exp.get('next_step') or '补充本轮下一步'),
         'COUNTS': f'{len(actions)} 项网站改动 · {len(rows)} 条回答记录 · {len(rounds)} 个复测轮次',
         'QUESTIONS': question_section(questions, backlog),
+        'COVERAGE': coverage_section(coverage, questions),
         'PAGES': ''.join(page_blocks) or '<p class="empty">尚无网站修改记录</p>',
         'AI': ''.join(ai_blocks) or '<p class="empty">尚无回答样本</p>',
         'BUSINESS': business,
         'PLATFORMS': ''.join(f'<option>{esc(x)}</option>' for x in platforms),
         'ROUNDS': ''.join(f'<option>{esc(x)}</option>' for x in rounds),
-        'SOURCES': ' · '.join(link(root,f) for f in ['experiment.json','actions.json','questions.json','question-backlog.json','observations.jsonl']),
+        'SOURCES': ' · '.join(link(root,f) for f in ['experiment.json','actions.json','questions.json','question-backlog.json','coverage.json','observations.jsonl']),
     }
     result = Path(template).read_text('utf-8')
     return re.sub(r'\{\{([A-Z]+)\}\}', lambda match: data[match[1]], result)

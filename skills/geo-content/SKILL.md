@@ -29,6 +29,7 @@ Read [references/content-contract.md](references/content-contract.md) before pro
 3. Apply the selected mode contract. Comparison requires symmetric dimensions; ranking requires a disclosed method and dataset scope.
 4. Emit `content-spec.json`, `content-evidence-units.json`, and `content.md` through Artifact Protocol 1.0.
 5. Keep publication behind `owner-approval-required`. A passing artifact pack is not permission to edit a site, deploy, or bulk publish.
+6. Record the handoff: topic → evidence → keep, update, or new page → host implementation → live readback. Write that row into the project coverage ledger. A successful blueprint with no live page is pending implementation, not a finished page. Do not build another generator.
 
 ## Boundaries
 

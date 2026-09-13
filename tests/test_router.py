@@ -45,6 +45,19 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(decision["selected"]["id"], "bflabs-agent-readiness")
         self.assertTrue(decision["executable"])
 
+    def test_whole_site_completion_stays_on_root_skill(self) -> None:
+        for prompt in ("整站做完整", "修完首页后整体完成了吗", "is the whole site done"):
+            decision = route(prompt)
+            self.assertEqual(decision["kind"], "capability")
+            self.assertEqual(decision["selected"]["id"], "bflabs-agent-readiness")
+            self.assertTrue(decision["executable"])
+
+    def test_single_price_page_repair_stays_geo_optimize(self) -> None:
+        decision = route("只修一下价格页")
+        self.assertEqual(decision["kind"], "capability")
+        self.assertEqual(decision["selected"]["id"], "geo-optimize")
+        self.assertTrue(decision["executable"])
+
     def test_no_site_and_build_only_select_seo_plan(self) -> None:
         for prompt in (
             "我还没有网站，先帮我做网站基础",

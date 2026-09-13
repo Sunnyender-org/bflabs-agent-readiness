@@ -122,6 +122,9 @@ def _print_round_status(status: Dict[str, Any], output_format: str) -> None:
     print("next_step: {}".format(status["next_step"]))
     print("baseline_present: {}".format(str(status["baseline_present"]).lower()))
     print("last_updated: {}".format(status["last_updated"]))
+    print("batch_status: {}".format(status.get("batch_status")))
+    print("construction_status: {}".format(status.get("construction_status")))
+    print("effect_status: {}".format(status.get("effect_status")))
     counts = status["actions_by_status"]
     print("actions_by_status: {}".format(", ".join("{}={}".format(name, counts[name]) for name in counts)))
     if status["missing_preconditions"]:

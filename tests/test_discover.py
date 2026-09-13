@@ -24,6 +24,10 @@ class DiscoverTests(unittest.TestCase):
         self.assertTrue(all(query["trace"]["source_type"] in {"seed", "input", "assumption"} for query in query_map["queries"]))
         self.assertTrue(all(item["search_volume"] == {"status": "not_measured", "value": None} for item in opportunity_map["opportunities"]))
         self.assertEqual(result["quality_report"]["status"], "pass")
+        handoff = result["coverage_handoff"]
+        self.assertTrue(handoff)
+        self.assertTrue(any(row["status"] == "unmapped" and row["url"] is None for row in handoff))
+        self.assertTrue(all("topic" in row and "evidence_ids" in row for row in handoff))
 
     def test_priority_scores_use_only_declared_formula(self) -> None:
         result = run_geo_discover(load_brief())

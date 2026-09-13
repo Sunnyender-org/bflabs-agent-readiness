@@ -31,6 +31,8 @@ Markdown uses internal claim markers that map to the evidence ledger. They prove
 
 Publishing, deployment, CMS writes, and bulk generation require separate approval and are not performed by this Skill.
 
+Record each topic with its evidence, the keep/update/new decision, the host implementation step, and later live readback on the project coverage ledger. Blueprint success with no live URL stays pending implementation. This Skill does not create another page generator.
+
 ## Facts From A Round Record
 
 When a content brief draws facts from a project-record `facts.json`:

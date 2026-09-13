@@ -46,7 +46,8 @@ Keep two lists. `questions.json` is the frozen set for this `questions_version`.
 
 - A newly heard user question goes into `next_round_pool`. It does not join, replace, or rewrite the frozen set.
 - This-round mention, correctness, and rate denominators stay the frozen `question_id`s. Adding a candidate does not change those denominators.
-- The next round creates a new `questions_version`, copies only the selected candidates, and takes a new baseline under the comparison rules. Old questions and their results stay on the previous version.
+- The next round creates a new `questions_version`, copies only the selected candidates, and takes a new baseline under the comparison rules. Old questions and their results stay on the previous version. New questions cannot inherit improvement from the old frozen set. They must be measured before their own content change.
+- Record each selected cluster on the coverage ledger: topic, evidence, keep/update/new, host implementation, and later live readback. Unmapped important questions keep first-round construction incomplete.
 - Record `source_kind`, `captured_at`, `market`, and `redacted` on both frozen questions and backlog candidates. `agent_hypothesis` items are not real search volume.
 - Asking the current price and receiving an old price is still inaccurate against the current fact. Re-verifying a fact does not move `content_updated_at`. A facts or questions version change is a new comparability decision, not an in-place edit.
 

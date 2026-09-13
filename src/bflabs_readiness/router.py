@@ -66,6 +66,11 @@ FULL_ROUND_PATTERNS: PatternGroup = _patterns(
     r"(?:继续|接着).{0,8}(?:我的|这个)?(?:GEO|geo)\s*(?:轮次|整轮|闭环)",
     r"(?:full|complete|entire).{0,20}geo.{0,20}(?:round|loop|cycle)",
     r"(?:continue|resume).{0,28}(?:my|the|this|our)?\s*geo.{0,16}(?:round|loop|cycle)",
+    r"(?:整站|全站).{0,16}(?:做完整|做完|覆盖完|完整覆盖|建完整)",
+    r"(?:整体|整站|全站).{0,12}(?:完成了吗|做完了吗|做好了吗|建完了吗)",
+    r"(?:is|has).{0,16}(?:the )?(?:whole|entire|full) site.{0,20}(?:done|complete|finished)",
+    r"(?:whole|entire|full)[- ]site.{0,20}(?:done|complete|finished|coverage)",
+    r"修完.{0,16}(?:首页|主页).{0,24}(?:整体|整站|全站).{0,8}完成",
 )
 
 WORKFLOW_PATTERNS: List[Tuple[str, PatternGroup]] = [

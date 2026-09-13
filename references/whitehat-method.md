@@ -59,7 +59,7 @@ Do not raise maturity because one case looked good. A later practice may refute 
 ### M1-whitehat
 
 - **question**: 怎样写内容和做页面，才是在帮人和 AI 核验真实信息，而不是在制造信号？
-- **principle**: 白帽建立在真实产品、经验和可核对数据上。人和 AI 看到同一批事实。独立、相关、可信的第三方引用有价值；购买排名链接不是本方法。
+- **principle**: 白帽建立在真实产品、经验和可核对数据上。人和 AI 看到同一批事实。独立、相关、可信的第三方引用有价值；购买排名链接不是本方法。先诊断引用从哪来：自己的身份材料、可核对的公开产物，以及第三方证据缺口。第三方不适用时写明不适用。不编评价。有可核对的第一方页面时，不要因为还缺第三方而挡住发布。
 - **applicable_when**: 规划页面、写正文、加来源或日期时。
 - **actions**: 先整理企业事实，再写对真人有用的内容。保留真实来源和实际变更日期。用正常内链连接相关页。
 - **counterexample**: 伪造测评或口碑；给机器单独藏一套和真人不同的断言；要求答案页离开所有人类导航，再把无来源访问当成 AI。
@@ -213,6 +213,17 @@ Do not raise maturity because one case looked good. A later practice may refute 
 - **counterexample**: 结构化数据写出正文没有的评分；或把作者转述的合同金额当成我们的成效。
 - **acceptance_evidence**: 每条对外断言都能跟到公开来源；作者案例没有被写成我们的结果。
 - **sources**: [Yao HTML/Schema 合同](https://github.com/yaojingang/yao-geo-skills/blob/201c0c45dcf09bb37bc46a467b4baf4d721db205/skills/yao-geo-page-blueprint/references/schema-html-cms-contract.md)；[姚金刚 2026-09-11 知识库案例](https://x.com/yaojingang/status/2098227639593148422)
+- **maturity**: `general_method`
+
+### M5-citation-sources
+
+- **question**: 这条陈述的核验来源是自己的身份材料、公开产物，还是第三方？缺哪一层？
+- **principle**: 先诊断引用从哪来。自己的身份页、可核对的公开文档和真实产物可以先发布。独立第三方有价值，但不是每一轮的前提。第三方不适用时写明不适用。不编评价、口碑或权威。
+- **applicable_when**: 整理来源、写身份页、补公开证据，或有人要求先有第三方评价才能上线时。
+- **actions**: 分开记录第一方身份材料、已发布的公开产物、第三方证据和明确不适用的项。缺口记为缺口。有可核对的第一方页面时继续发布，不因为还缺第三方而停住。
+- **counterexample**: 伪造测评或评论；或因为还没有第三方报道，就挡住已经能核对的官方说明页。
+- **acceptance_evidence**: 来源层级可区分；伪造评价为零；第一方可核对页没有被第三方缺口挡住。
+- **sources**: [Google 垃圾内容政策](https://developers.google.com/search/docs/essentials/spam-policies)；[Google 生成式搜索优化指南](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 - **maturity**: `general_method`
 
 ### M5-page-change

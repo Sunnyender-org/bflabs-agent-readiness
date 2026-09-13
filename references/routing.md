@@ -8,8 +8,8 @@ Classify every request as exactly one of:
 2. **existing-site** — a real site or public URL is in scope. Pick the smallest matching capability, or an explicit full round if that is what was asked.
 3. **explain-only** — a definition or method explanation, including “how attribution works” with do-not-execute. Answer and stop. The router returns `needs_clarification`. Do not start a capability, workflow, or round.
 4. **single-item** — one child Skill, one registered CLI workflow, or one offline analysis of a supplied export. Never escalate into a full round. Attribution-only analysis does not select `bflabs-agent-readiness`.
-5. **full-round** — an explicit request to run the free method end to end for one existing site. Select `bflabs-agent-readiness`. The two CLI workflows are not a full round.
-6. **resume** — an explicit request to continue an existing project record. Select `bflabs-agent-readiness`. Start at `next_step`. Do not redo already-released actions.
+5. **full-round** — an explicit request to run the free method end to end for one existing site, or to finish / judge whole-site coverage. Select `bflabs-agent-readiness`. The two CLI workflows are not a full round. “整站做完整”, “整体完成了吗”, and “is the whole site done” belong here or in resume. They must not shrink to a single-page `geo-optimize` repair.
+6. **resume** — an explicit request to continue an existing project record, including asking whether the current site work is finished. Select `bflabs-agent-readiness`. Start at `next_step`. Do not redo already-released actions. After a homepage-only verified action, “整体完成了吗” must surface uncovered clusters from the coverage ledger.
 
 Older records remain readable. Do not fabricate identity, survey, refund, or business-window fields that the record does not contain.
 
@@ -73,9 +73,9 @@ External enablement and production mutations are explicit-only. A local audit do
 
 ## Full round and resume
 
-Route an explicit full-round request, or an explicit resume of an existing round, to the root Skill's guidance. The selected capability is `bflabs-agent-readiness`. Follow `references/root-agent-contract.md` and `references/round-contract.md`.
+Route an explicit full-round request, a whole-site completion question, or an explicit resume of an existing round, to the root Skill's guidance. The selected capability is `bflabs-agent-readiness`. Follow `references/root-agent-contract.md` and `references/round-contract.md`.
 
-Resume starts at the recorded `next_step`. It does not redo an action whose status is already `released` or `verified_public`, and it does not recapture a baseline that already exists for the same frozen questions.
+Resume starts at the recorded `next_step`. It does not redo an action whose status is already `released` or `verified_public`, and it does not recapture a baseline that already exists for the same frozen questions. A verified homepage action is only that batch. It is not first-round construction and not the effect loop.
 
 The two CLI workflows remain the only automatic multi-capability executions. A full round is not `discover-diagnose` and is not `discover-content`. Do not claim those workflows captured a baseline, released a change, retested public answers, compared AI answers, or reviewed business data.
 

@@ -10,7 +10,11 @@ from pathlib import Path
 
 from bflabs_readiness.cli import main
 from bflabs_readiness.geo_round import (
+    CONSTRUCTION_COMPLETE,
+    CONSTRUCTION_INCOMPLETE,
+    CONSTRUCTION_UNVERIFIED,
     ERR_AI_EVENT_EVIDENCE,
+    ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE,
     ERR_BASELINE_OBSERVATION_FORMAT,
     ERR_BASELINE_ROUND_ID,
     ERR_DUPLICATE_EVENT_ID,
@@ -50,6 +54,7 @@ TEMPLATE_SCHEMAS = (
     ("templates/round-actions.json", "round-actions.schema.json"),
     ("templates/round-business-events.json", "round-business-events.schema.json"),
     ("templates/question-backlog.json", "question-backlog.schema.json"),
+    ("templates/round-coverage.json", "round-coverage.schema.json"),
 )
 
 
@@ -714,6 +719,228 @@ class GeoRoundTests(unittest.TestCase):
             status = project_status(project)
             self.assertFalse(status["baseline_present"])
             self.assertTrue(status["missing_preconditions"])
+
+    def test_old_fixture_without_coverage_stays_valid_and_construction_unverified(self) -> None:
+        project = FIXTURES / "valid"
+        self.assertFalse((project / "coverage.json").exists())
+        self.assertEqual(validate_project(project), [])
+        status = project_status(project)
+        self.assertEqual(status["construction_status"], CONSTRUCTION_UNVERIFIED)
+        self.assertFalse(status["construction_complete"])
+        markdown = render_report(project, None)
+        self.assertIn("本批修改", markdown)
+        self.assertIn("首轮建设", markdown)
+        self.assertIn("效果复盘", markdown)
+        self.assertIn("尚未核对", markdown)
+        self.assertNotIn("GEO 总分", markdown)
+        self.assertNotIn("统一分数", markdown.split("效果复盘", 1)[0])
+
+    def test_verified_actions_with_incomplete_p0_coverage_are_not_construction_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            actions = json.loads((project / "actions.json").read_text("utf-8"))
+            for action in actions["actions"]:
+                action["status"] = "verified_public"
+                action["released_at"] = "2026-01-08T18:00:00Z"
+                action["release_evidence"] = action.get("page_url") or "https://example.com/"
+                action["deliverable"] = action.get("deliverable") or "Public copy updated."
+                action["public_recheck"] = {
+                    "checked_at": "2026-01-09T12:00:00Z",
+                    "result": "pass",
+                    "note": "Public page shows the intended change.",
+                }
+            _write_json(project / "actions.json", actions)
+            _write_json(
+                project / "coverage.json",
+                {
+                    "schema_version": "1.0.0",
+                    "questions_version": "1",
+                    "rows": [
+                        {
+                            "question_cluster": "价格",
+                            "priority": "P0",
+                            "question_ids": ["q_price"],
+                            "fact_ids": ["fact_price"],
+                            "url": None,
+                            "evidence_ref": None,
+                            "disposition": "new_page",
+                            "status": "unmapped",
+                            "action_ids": [],
+                            "note": "重要价格问题还没有页面。",
+                        }
+                    ],
+                },
+            )
+            self.assertEqual(validate_project(project), [])
+            status = project_status(project)
+            self.assertTrue(status["batch_complete"])
+            self.assertEqual(status["construction_status"], CONSTRUCTION_INCOMPLETE)
+            self.assertFalse(status["construction_complete"])
+            markdown = render_report(project, None)
+            self.assertIn("还没有对应页面", markdown)
+            self.assertNotIn("优先要回答的问题都已经对应到页面", markdown)
+
+    def test_six_questions_on_two_pages_can_complete_construction(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            questions = json.loads((project / "questions.json").read_text("utf-8"))
+            extra = []
+            for index in range(3, 7):
+                extra.append(
+                    {
+                        "question_id": "q_extra_{}".format(index),
+                        "observation_line": "B",
+                        "intent_tag": "evaluate",
+                        "text": "Extra question {}?".format(index),
+                        "provides_url": False,
+                        "asks_for_browsing": False,
+                        "required_fact_ids": ["fact_name"],
+                        "critical_error_fact_ids": ["fact_name"],
+                        "partial_credit_rule": "Credit a correct identity sentence.",
+                        "frozen_at": "2026-01-01T00:00:00Z",
+                    }
+                )
+            questions["questions"].extend(extra)
+            _write_json(project / "questions.json", questions)
+            experiment = json.loads((project / "experiment.json").read_text("utf-8"))
+            experiment["baseline"] = None
+            experiment["current_phase"] = "setup"
+            _write_json(project / "experiment.json", experiment)
+            _write_json(
+                project / "coverage.json",
+                {
+                    "schema_version": "1.0.0",
+                    "questions_version": "1",
+                    "rows": [
+                        {
+                            "question_cluster": "品牌与首页",
+                            "priority": "P0",
+                            "question_ids": ["q_brand", "q_extra_3", "q_extra_4"],
+                            "fact_ids": ["fact_name"],
+                            "url": "https://example.com/",
+                            "evidence_ref": "https://example.com/",
+                            "disposition": "update_existing",
+                            "status": "planned",
+                            "action_ids": ["act_home_name"],
+                            "note": "三题共用首页。",
+                        },
+                        {
+                            "question_cluster": "价格与文档",
+                            "priority": "P0",
+                            "question_ids": ["q_price", "q_extra_5", "q_extra_6"],
+                            "fact_ids": ["fact_price"],
+                            "url": "https://example.com/pricing",
+                            "evidence_ref": "https://example.com/pricing",
+                            "disposition": "update_existing",
+                            "status": "planned",
+                            "action_ids": ["act_price_copy"],
+                            "note": "三题共用价格页。",
+                        },
+                    ],
+                },
+            )
+            self.assertEqual(validate_project(project), [])
+            status = project_status(project)
+            self.assertEqual(status["construction_status"], CONSTRUCTION_COMPLETE)
+            self.assertTrue(status["construction_complete"])
+            self.assertFalse(status["batch_complete"])
+
+    def test_p0_question_without_page_is_not_construction_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            _write_json(
+                project / "coverage.json",
+                {
+                    "schema_version": "1.0.0",
+                    "questions_version": "1",
+                    "rows": [
+                        {
+                            "question_cluster": "品牌",
+                            "priority": "P0",
+                            "question_ids": ["q_brand"],
+                            "fact_ids": ["fact_name"],
+                            "url": "https://example.com/",
+                            "evidence_ref": None,
+                            "disposition": "keep_existing",
+                            "status": "planned",
+                            "action_ids": [],
+                            "note": "",
+                        },
+                        {
+                            "question_cluster": "价格",
+                            "priority": "P0",
+                            "question_ids": ["q_price"],
+                            "fact_ids": ["fact_price"],
+                            "url": None,
+                            "evidence_ref": None,
+                            "disposition": "new_page",
+                            "status": "planned",
+                            "action_ids": [],
+                            "note": "重要价格问题还没有页面。",
+                        },
+                    ],
+                },
+            )
+            status = project_status(project)
+            self.assertEqual(status["construction_status"], CONSTRUCTION_INCOMPLETE)
+            self.assertFalse(status["construction_complete"])
+
+    def test_blueprint_ready_without_live_url_is_pending_implementation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            _write_json(
+                project / "coverage.json",
+                {
+                    "schema_version": "1.0.0",
+                    "questions_version": "1",
+                    "rows": [
+                        {
+                            "question_cluster": "价格蓝图",
+                            "priority": "P0",
+                            "question_ids": ["q_price", "q_brand"],
+                            "fact_ids": ["fact_price"],
+                            "url": None,
+                            "evidence_ref": "content-spec",
+                            "disposition": "new_page",
+                            "status": "blueprint_ready",
+                            "action_ids": [],
+                            "note": "蓝图已有，公开页还没有。",
+                        }
+                    ],
+                },
+            )
+            status = project_status(project)
+            self.assertIn("价格蓝图", status["pending_implementation"])
+            self.assertFalse(status["construction_complete"])
+            markdown = render_report(project, None)
+            self.assertIn("已有内容蓝图，公开页还没有", markdown)
+
+    def test_new_question_set_cannot_inherit_old_baseline_improvement(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            project = _copy_fixture("valid", Path(temp) / "project")
+            questions = json.loads((project / "questions.json").read_text("utf-8"))
+            questions["questions"].append(
+                {
+                    "question_id": "q_new_compare",
+                    "observation_line": "D",
+                    "intent_tag": "compare",
+                    "text": "Which tools should a buyer compare now?",
+                    "provides_url": False,
+                    "asks_for_browsing": False,
+                    "required_fact_ids": [],
+                    "critical_error_fact_ids": [],
+                    "partial_credit_rule": "Score comparison dimensions separately.",
+                    "frozen_at": "2026-01-20T00:00:00Z",
+                }
+            )
+            _write_json(project / "questions.json", questions)
+            measurement = json.loads((FIXTURES / "measurement-report.json").read_text("utf-8"))
+            markdown = render_report(project, measurement)
+            self.assertIn("新问题没有自己的改前记录，不能沿用旧题库的改善结论", markdown)
+            self.assertIn("q_new_compare", markdown)
+            status = project_status(project)
+            self.assertFalse(status["inherit_old_baseline"])
+            self.assertIn(ERR_NEW_QUESTIONS_INHERIT_OLD_BASELINE, status["inherit_errors"])
 
 
 if __name__ == "__main__":

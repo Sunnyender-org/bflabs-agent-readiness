@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "questions_version": "1",
+  "rows": [
+    {
+      "question_cluster": "品牌身份",
+      "priority": "P0",
+      "question_ids": ["q_example_brand"],
+      "fact_ids": ["fact_example_name"],
+      "url": "https://example.com/",
+      "evidence_ref": null,
+      "disposition": "update_existing",
+      "status": "planned",
+      "action_ids": [],
+      "note": "首页承担品牌身份。多题可以共用这一页。"
+    }
+  ]
+}

@@ -61,13 +61,13 @@ An external diagnosis report is optional. When one is supplied, validate that it
 
 ## Single-Site Round
 
-When the work is one website and one frozen question set, use a project record directory. The record holds `experiment.json`, `facts.json`, `questions.json`, `actions.json`, `observations.jsonl`, `business-events.json`, and `report.md`. Field names and enums match the root Skill's round-record reference (served at `https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/round-record.md`). Read [page-fact-checklist.md](references/page-fact-checklist.md) before scoring a page.
+When the work is one website and one frozen question set, use a project record directory. The record holds `experiment.json`, `facts.json`, `questions.json`, `actions.json`, `coverage.json`, `observations.jsonl`, `business-events.json`, and `report.md`. Field names and enums match the root Skill's round-record reference (served at `https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/round-record.md`). Read [page-fact-checklist.md](references/page-fact-checklist.md) before scoring a page. `coverage.json` is optional for old records; without it, first-round construction stays unverified.
 
 ### Representative pages
 
 First-round default is three key pages: usually the homepage, one key first-level page (product, pricing, or docs), and one key second-level page. Choose them from homepage navigation, the sitemap, and internal links. Record `url`, `purpose`, `selection_reason`, and `fetch_status` (`ok` | `failed` | `unknown`) on `experiment.json.representative_pages[]`.
 
-Fewer than three pages, or a different scope, is allowed only with a stated reason. A page that cannot be fetched is recorded with `fetch_status` `failed` and treated as evidence missing. Never score it. The three-page default is not full-site coverage.
+Fewer than three pages, or a different scope, is allowed only with a stated reason. A page that cannot be fetched is recorded with `fetch_status` `failed` and treated as evidence missing. Never score it. The three-page default is not full-site coverage. Keep writing `coverage.json` as later pages and clusters are decided. First-round construction is complete only when every P0 coverage row has a disposition, no P0 row is unmapped, and every P0 row that keeps, updates, or adds a page has a live URL. Six questions may share two pages. A P0 question with no page is not construction-complete. Released homepage actions are not whole-site done.
 
 ### Per-page fact checklist
 

@@ -1,6 +1,6 @@
 # Per-Page Fact Checklist
 
-Use this checklist for one website and one frozen `questions_version`. The first-round default of three key pages is a starting sample, not full-site coverage. A single CLI receipt never marks a phase complete.
+Use this checklist for one website and one frozen `questions_version`. The first-round default of three key pages is a starting sample, not full-site coverage. Keep a continuous coverage ledger for later clusters. A single CLI receipt never marks a phase complete. Released actions are only that batch.
 
 Write facts a person can use. Link related pages in the ordinary way. Keep real sources and real dates. Do not hide a page from human navigation to manufacture an AI-source proof. Do not invent reviews. Do not scrub dates. A legal or policy page that is absent from the top menu is not a defect if a person can still reach it from the footer or a related page.
 
@@ -11,7 +11,8 @@ Write facts a person can use. Link related pages in the ordinary way. Keep real 
 | Question | `questions.json` | `question_id`, `observation_line` (`A` \| `B` \| `C` \| `D`), `intent_tag` (`brand` \| `category` \| `compare` \| `evaluate` \| `act`), `text`, `provides_url`, `asks_for_browsing`, `required_fact_ids[]`, `critical_error_fact_ids[]`, `partial_credit_rule`, `frozen_at` | Lines are never merged. The set is frozen before any site change. |
 | Fact | `facts.json` | `fact_id`, `statement`, `category` (`identity` \| `audience` \| `capability` \| `domain` \| `pricing` \| `integration` \| `limitation` \| `other`), `source_url`, `source_captured_at`, `source_hash`, `evidence_status` (`official` \| `third_party` \| `unverified` \| `conflict` \| `forbidden`), `conflict_note`, `last_reviewed_at` | `forbidden` and `conflict` never enter copy. `unverified` appears only as marked pending. A changed `source_hash` or source content makes prior verification stale. `last_reviewed_at` is verified time only. It is not content-updated time. |
 | Page | `experiment.json.representative_pages[]` | `url`, `purpose`, `selection_reason`, `fetch_status` (`ok` \| `failed` \| `unknown`) | Default three key pages, chosen from homepage navigation, sitemap, and internal links. Fewer or a different scope needs a stated reason. |
-| Action | `actions.json` | `action_id`, `page_url`, `question_ids[]`, `fact_ids[]`, `issue_type` (`fact` \| `structure` \| `source` \| `execution`), `summary`, `deliverable`, `status` (`planned` \| `changed_local` \| `released` \| `verified_public` \| `reverted`), `released_at`, `release_evidence`, `public_recheck` | One finding → one action. Status follows evidence, not local tests. |
+| Action | `actions.json` | `action_id`, `page_url`, `question_ids[]`, `fact_ids[]`, `issue_type` (`fact` \| `structure` \| `source` \| `execution`), `summary`, `deliverable`, `status` (`planned` \| `changed_local` \| `released` \| `verified_public` \| `reverted`), `released_at`, `release_evidence`, `public_recheck` | One finding → one action. Status follows evidence, not local tests. Released or verified actions complete this batch only. |
+| Coverage | `coverage.json` | `question_cluster`, `priority`, `question_ids[]`, `fact_ids[]`, `url`, `evidence_ref`, `disposition` (`keep_existing` \| `update_existing` \| `new_page` \| `deferred` \| `not_applicable`), `status` (`unmapped` \| `planned` \| `blueprint_ready` \| `changed_local` \| `released` \| `verified_public` \| `deferred`), `action_ids[]`, `note` | The single construction ledger. First-round construction is complete only when every P0 row has a disposition, no P0 row is `unmapped`, and every P0 keep/update/new row has a live URL. Sharing one page across many questions is allowed. A P0 question with no page is not complete. `blueprint_ready` without a live URL is pending implementation. Missing `coverage.json` keeps construction `unverified`. |
 | Evidence | `release_evidence`, `public_recheck`, `observations.jsonl` | deploy log / live-branch commit / public fetch; `{checked_at, result pass\|fail\|unknown, note}`; observation rows tagged with line and intent | A CLI receipt or passing local test is not `released` or `verified_public`. Observation lines A–D stay separate. |
 
 ## Page checks
@@ -40,7 +41,7 @@ Metadata or backend changes may look identical: show the actual HTML/field diffe
 
 ### 1. One page answers several questions
 
-Keep one `representative_pages[]` row. List every served `question_id` on the actions and on the page checklist. Shared `fact_id`s may support several questions. Do not merge observation lines or intent tags because they share a URL. Six questions do not require six new pages.
+Keep one `representative_pages[]` row. List every served `question_id` on the actions, the coverage row, and the page checklist. Shared `fact_id`s may support several questions. Do not merge observation lines or intent tags because they share a URL. Six questions do not require six new pages. Six P0 questions mapped to two pages can pass first-round construction if every P0 row has a URL and a disposition.
 
 ### 2. A fact without evidence
 
@@ -74,4 +75,4 @@ Re-verifying a fact does not refresh content-updated. Publishing an old version 
 
 ## Phase completion
 
-`current_phase` on `experiment.json` moves only with the matching record evidence. A single CLI receipt never completes `baseline`, `change`, `release`, `retest`, or `verified_public`.
+`current_phase` on `experiment.json` moves only with the matching record evidence. A single CLI receipt never completes `baseline`, `change`, `release`, `retest`, or `verified_public`. First-round construction follows `coverage.json`, not the action list. The three-page default remains the first sample; later clusters stay on the same ledger.

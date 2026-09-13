@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from ..evidence import stable_claim_id
+from ..geo_round import coverage_handoff_from_content
 from ..quality import evaluate_content
 
 
@@ -133,6 +134,7 @@ def run_geo_content(brief: Dict[str, Any]) -> Dict[str, Any]:
         ],
     }
     quality = evaluate_content(brief, content_spec, markdown, ledger)
+    handoff = coverage_handoff_from_content(brief)
     return {
         "outputs": {
             "outputs/content-spec.json": (content_spec, "content-spec.schema.json"),
@@ -141,4 +143,5 @@ def run_geo_content(brief: Dict[str, Any]) -> Dict[str, Any]:
         },
         "evidence_ledger": ledger,
         "quality_report": quality,
+        "coverage_handoff": handoff,
     }
