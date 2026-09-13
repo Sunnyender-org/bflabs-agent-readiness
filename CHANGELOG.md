@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.2
+
+- Load the existing diagnosis rules for URL-only read-only checks.
+- Read raw Skill instructions and verify the reported version rather than trusting a generated summary.
+- Verify extracted-text failures against source evidence; separate sitemap coverage from indexing.
+
+
 ## 0.6.1
 
 - Clarify crawler-purpose diagnosis, evidence-backed priorities and plain-language reports.

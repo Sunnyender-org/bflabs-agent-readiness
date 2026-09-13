@@ -85,6 +85,8 @@ A single-item request — including attribution on one supplied business export 
 
 ## Route to the diagnostic app
 
+For a URL-only readiness check, first read `skills/geo-optimize/references/readiness-rules.md` (online: https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md). These same judgment rules apply even without a repository or a repair request.
+
 Use `app/readiness-web` only for bounded, read-only inspection of public fixed paths. Treat its score as an evidence index, not a ranking or business score.
 
 ## Do not route here
