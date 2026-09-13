@@ -54,7 +54,7 @@ class ContentTests(unittest.TestCase):
                 self.assertEqual(handoff["status"], "blueprint_ready")
                 self.assertIsNone(handoff["url"])
                 self.assertIn(handoff["disposition"], {"new_page", "update_existing"})
-                self.assertIn("公开页还没有", handoff["note"])
+                self.assertIn("仍需宿主实现和公开内容核对", handoff["note"])
                 validate_instance(
                     {
                         "schema_version": "1.0.0",

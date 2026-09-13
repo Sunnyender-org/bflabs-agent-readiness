@@ -959,3 +959,17 @@ class ConstructionReleaseBoundaryTests(unittest.TestCase):
         self.assertTrue(assess_construction(records)["complete"])
         row["evidence_ref"] = None
         self.assertFalse(assess_construction(records)["complete"])
+
+
+class EffectAndHandoffBoundaryTests(unittest.TestCase):
+    def test_partial_pairs_do_not_complete_effect(self):
+        from bflabs_readiness.geo_round import assess_effect
+        records = {"experiment": {"questions_version": "1"}, "questions": {"questions": [{"question_id": "q_brand"}, {"question_id": "q_price"}]}}
+        report = {"questions_version": "1", "pairs": [{"prompt_id": "q_brand", "verdict": "improved"}, {"prompt_id": "q_price", "verdict": "insufficient"}]}
+        self.assertFalse(assess_effect(records, report)["complete"])
+
+    def test_target_url_is_not_implementation_and_ids_are_explicit(self):
+        from bflabs_readiness.geo_round import coverage_handoff_from_content
+        row = coverage_handoff_from_content({"subject": "Pricing", "question_ids": ["q_price"], "discovery_context": {"query_ids": ["qry_123"]}}, live_url="https://example.com/pricing")
+        self.assertEqual(row["question_ids"], ["q_price"])
+        self.assertEqual(row["status"], "blueprint_ready")

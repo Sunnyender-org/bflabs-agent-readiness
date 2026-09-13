@@ -802,19 +802,14 @@ def coverage_handoff_from_content(
     disposition = "update_existing" if brief.get("mode") in {"refine", "article-friendly"} else "new_page"
     if brief.get("source_markdown") and brief.get("mode") != "page-blueprint":
         disposition = "update_existing"
-    status = "blueprint_ready" if not _nonempty(live_url) else "changed_local"
-    if status == "blueprint_ready":
-        note = "内容蓝图已通过，公开页还没有。等宿主实现后再做线上读回。"
-    else:
-        note = "宿主已改本地页，等待公开读回。"
+    status = "blueprint_ready"
+    note = "内容蓝图已通过，仍需宿主实现和公开内容核对；目标URL不证明已经修改。"
     if unique_evidence:
         note = "{} 证据：{}。".format(note, "、".join(unique_evidence))
     return _coverage_row(
         question_cluster=brief.get("subject") or brief.get("intent") or "content-handoff",
         priority="P0",
-        question_ids=[
-            item for item in discovery.get("query_ids") or [] if str(item).startswith("q_")
-        ],
+        question_ids=list(brief.get("question_ids") or []),
         fact_ids=[fact.get("id") for fact in brief.get("facts") or [] if fact.get("id")],
         url=live_url if _nonempty(live_url) else None,
         evidence_ref=unique_evidence[0] if unique_evidence else None,
@@ -850,7 +845,7 @@ def coverage_rows_from_discovery(
                 disposition="new_page" if missing else "keep_existing",
                 status="unmapped" if missing else "planned",
                 action_ids=[],
-                note="；".join(note_parts),
+                note="；".join(note_parts) + "；宿主须把发现问句对应到本轮冻结question_id后写入覆盖表，不自动转换qry标识。",
             )
         )
     return rows
