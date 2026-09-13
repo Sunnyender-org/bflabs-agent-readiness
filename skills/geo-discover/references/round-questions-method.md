@@ -2,6 +2,8 @@
 
 Build `questions.json` for one website, one language, and one `questions_version`. Freeze the set before any site change. Field names match the root Skill's round-record reference (served at `https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/round-record.md`).
 
+First read [core-question-method.md](core-question-method.md) for the core library, business extensions and supplied-question pool. The host fills evidence-backed inputs, selects candidates and binds the actual fact-based judgement rule before freezing.
+
 Observation lines are never merged:
 
 - `A`: brand recognition without a URL and without browsing

@@ -33,6 +33,8 @@
         "question_id": { "type": "string", "pattern": "^q_[a-z0-9_-]+$" },
         "observation_line": { "enum": ["A", "B", "C", "D"] },
         "intent_tag": { "enum": ["brand", "category", "compare", "evaluate", "act"] },
+        "purpose": {"type": "string"},
+        "question_group": {"enum": ["core", "business_extension", "supplied_seed"]},
         "text": { "type": "string", "minLength": 1 },
         "provides_url": { "type": "boolean" },
         "asks_for_browsing": { "type": "boolean" },

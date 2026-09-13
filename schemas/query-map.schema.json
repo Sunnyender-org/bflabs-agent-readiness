@@ -8,6 +8,7 @@
     "schema_version": { "enum": ["1.0.0", "1.1.0"] },
     "subject": { "type": "string" },
     "language": { "enum": ["zh-CN", "en"] },
+    "core_question_gaps": {"type": "array", "items": {"type": "object", "required": ["question_type", "reason"], "additionalProperties": false, "properties": {"question_type": {"type": "string"}, "reason": {"type": "string"}}}},
     "queries": {
       "type": "array",
       "minItems": 7,
@@ -30,6 +31,11 @@
             }
           },
           "assumptions": { "type": "array", "items": { "type": "string" } },
+          "question_group": {"enum": ["core", "business_extension", "supplied_seed"]},
+          "observation_line": {"enum": ["A", "B", "C", "D"]},
+          "intent_tag": {"enum": ["brand", "category", "compare", "evaluate", "act"]},
+          "purpose": {"type": "string"},
+          "judgement": {"type": "string"},
           "provenance": { "$ref": "#/$defs/provenance" }
         }
       }

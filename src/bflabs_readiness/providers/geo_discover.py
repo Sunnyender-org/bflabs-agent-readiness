@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..evidence import stable_claim_id
 from ..quality import evaluate_discovery
+from ..question_library import core_candidates
 
 
 DIMENSIONS = ["audience", "scenario", "comparison", "decision", "price-cost", "integration", "limitation"]
@@ -120,6 +121,7 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
             "id": query_id,
             "text": text,
             "dimension": dimension,
+            "question_group": "business_extension",
             "trace": {
                 "source_type": source_type,
                 "source_value": source_value,
@@ -140,6 +142,24 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
             }
         )
 
+    core, core_gaps = core_candidates(brief)
+    for item in core:
+        key = item.pop("key")
+        item.update(id=_id("qry", "core:" + key + ":" + item["text"]),
+                    trace={"source_type": "assumption", "source_value": key, "evidence_id": first_evidence_id},
+                    assumptions=["Generated candidate, not an observed user query or search-volume claim."])
+        if item["text"] in brief.get("seed_queries", []):
+            item["trace"].update(source_type="seed", source_value=item["text"])
+            item["assumptions"] = []
+            provenance = _query_provenance(brief, "seed", item["text"])
+        else:
+            provenance = _query_provenance(brief, "assumption", key)
+        if provenance is not None:
+            item["provenance"] = provenance
+        queries.append(item)
+        claims.append({"id": stable_claim_id(item["text"]), "text": item["text"],
+                       "evidence_ids": [first_evidence_id], "support_level": "context-only"})
+
     seen_texts = {query["text"] for query in queries}
     for seed in brief.get("seed_queries") or []:
         text = str(seed)
@@ -150,6 +170,7 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
             "id": query_id,
             "text": text,
             "dimension": "decision",
+            "question_group": "supplied_seed",
             "trace": {
                 "source_type": "seed",
                 "source_value": text,
@@ -176,6 +197,7 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
         "subject": brief["subject"],
         "language": brief["language"],
         "queries": queries,
+        "core_question_gaps": core_gaps,
     }
 
     covered = set(brief["covered_dimensions"])

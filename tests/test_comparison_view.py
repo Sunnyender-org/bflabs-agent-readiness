@@ -63,3 +63,14 @@ class ComparisonViewTests(unittest.TestCase):
             (p/'actions.json').write_text(json.dumps({'actions':[{'visual_evidence':[{'before':{'environment':'public','viewport':'375x812'},'after':{'environment':'local','viewport':'375x812'}}]}]}))
             result=view.render(p,ROOT/'templates/comparison.html')
             self.assertIn('不能当作线上发布前后验证',result)
+
+    def test_question_plan_does_not_promote_new_candidates(self):
+        questions = {"questions":[{"text":"Frozen question", "purpose":"Find official site", "partial_credit_rule":"Check domain"}]}
+        backlog = {"next_round_pool":[{"text":"New candidate", "source_kind":"agent_hypothesis", "selection_reason":"Explore next round"}]}
+        html = view.question_section(questions, backlog)
+        self.assertIn("Frozen question", html)
+        self.assertIn("Find official site", html)
+        self.assertIn("Check domain", html)
+        self.assertIn("下一轮候选问题（1）", html)
+        self.assertIn("生成候选，未证明真实需求", html)
+        self.assertEqual(questions["questions"][0]["text"], "Frozen question")

@@ -2,6 +2,8 @@
 
 This guide is for agents collecting or importing observations. It is not a live sampling tool.
 
+For question design, use the [core question method](https://readiness.bflabs.cn/skills/geo-discover/references/core-question-method.md). It prepares candidates, not observations; keep generated ideas distinct from recorded user questions.
+
 ## Freeze the question set first
 
 Write the question texts, facts, and rubric, then leave them unchanged while the site or content changes. Changing question text creates a new `question_version` and needs a new baseline. Never ease a question to produce a hit.
