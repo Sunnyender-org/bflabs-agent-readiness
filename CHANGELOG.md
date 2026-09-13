@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.3
+
+- Make direct HTTP reading explicit in the starter prompt.
+- Keep full-round setup requirements out of URL-only read-only audits; use public evidence and continue with unknowns.
+
+
 ## 0.6.2
 
 - Load the existing diagnosis rules for URL-only read-only checks.

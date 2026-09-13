@@ -1,7 +1,7 @@
 ---
 name: bflabs-agent-readiness
 slug: bflabs-agent-readiness
-version: 0.6.2
+version: 0.6.3
 displayName: BFLabs Agent Readiness
 summary: 免费诊断网站是否对 AI Agent 可发现、可理解、可操作，并把证据与唯一下一步交给 Agent。
 tags: [GEO, Agent Readiness, Website Audit, MCP, SEO]
@@ -82,7 +82,7 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 复制下面这段话，发给你正在用的 Agent，把最后一行换成你要做的事。
 
 ```
-请先阅读 https://readiness.bflabs.cn/skills/bflabs-agent-readiness。请读取原文，不用搜索摘要代替；只读诊断也先读 https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md。其他配套说明见同地址下 manifest.json。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
+请用 HTTP GET 直接读取 https://readiness.bflabs.cn/skills/bflabs-agent-readiness 的原始正文，不用网页摘要代替；只读诊断也用同样方式读取 https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md。其他配套说明见同地址下 manifest.json。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
 我要做的事：（写下网站地址和你想解决的问题。如果已经做过一部分，写上项目文件夹的位置。）
 ```
 
