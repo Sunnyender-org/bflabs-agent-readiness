@@ -79,7 +79,7 @@ IGNORED_PARTS = {
     "runs",
 }
 TEXT_SUFFIXES = {"", ".css", ".csv", ".html", ".js", ".json", ".md", ".mjs", ".py", ".toml", ".txt", ".yaml", ".yml"}
-SKILLHUB_ALLOWED_SUFFIXES = {".csv", ".json", ".md", ".py", ".svg", ".yaml", ".yml"}
+SKILLHUB_ALLOWED_SUFFIXES = {".html", ".csv", ".json", ".md", ".py", ".svg", ".yaml", ".yml"}
 SKILLHUB_MAX_FILES = 200
 SKILLHUB_ROOT_FILES = {
     "CHANGELOG.md",
@@ -91,7 +91,7 @@ SKILLHUB_ROOT_FILES = {
     "THIRD_PARTY_NOTICES.md",
 }
 SKILLHUB_DIRS = {"assets", "references", "schemas", "skills", "templates"}
-SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md", "scripts/analyze_business.py"}
+SKILLHUB_EXTRA_FILES = {"app/readiness-web/README.md", "scripts/analyze_business.py", "scripts/render_comparison.py"}
 PRIVATE_PATTERNS = (
     (re.compile(rb"/(?:Users|home)/[^/\s]+/"), "private home path"),
     (re.compile(rb"[A-Za-z]:\\Users\\[^\\\s]+\\"), "private Windows home path"),

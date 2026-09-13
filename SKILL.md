@@ -1,7 +1,7 @@
 ---
 name: bflabs-agent-readiness
 slug: bflabs-agent-readiness
-version: 0.6.3
+version: 0.6.4
 displayName: BFLabs Agent Readiness
 summary: 免费诊断网站是否对 AI Agent 可发现、可理解、可操作，并把证据与唯一下一步交给 Agent。
 tags: [GEO, Agent Readiness, Website Audit, MCP, SEO]
@@ -36,7 +36,7 @@ metadata:
 5. 你确认修改范围后，Agent 才开始改。由你决定何时部署。
 6. 部署后再次检查。用同一批问题再问一遍，对比回答。
 7. 如果你有业务数据，比较优化前后两段等长、不重叠时段的结果。没有业务数据，就先交付阶段报告，把业务结果标为未测。
-8. 写清这一轮改了什么、回答有没有变化、下一步做什么。
+8. 交付一份可离线打开的前后对照页：网站、AI回答、业务结果分开看，原图和原文一起保留。写清变化和下一步。
 
 中途停下也没关系。下次从还没做完的那一步继续。已经公开上线的改动，不要重做。
 

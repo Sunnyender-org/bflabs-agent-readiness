@@ -56,7 +56,7 @@ This requirement applies to the full before/after experiment, not to drafts, dia
 
 Never fabricate a baseline. Never back-fill one after the site has already changed for this purpose.
 
-When inspecting a page in a browser for an approved edit, save its before-change rendered screenshot before editing. When collecting an AI answer in an already-authorized browser session, save its screenshot, full text, and citations before leaving the page. Follow `skills/geo-optimize/references/page-fact-checklist.md` and `skills/geo-measure/references/sampling-guide.md`; retain missing-image disclosures rather than recreating historical evidence. Missing browser screenshots do not invalidate API/export records, block their baseline, or justify requesting new platform access.
+When inspecting a page in a browser for an approved edit, save its before-change rendered screenshot before editing. When collecting an AI answer in an already-authorized browser session, save its screenshot, full text, and citations before leaving the page. Follow `skills/geo-optimize/references/page-fact-checklist.md` and `skills/geo-measure/references/sampling-guide.md`; retain missing-image disclosures rather than recreating historical evidence. Deliver a readable comparison view as described in `references/round-record.md`, not just a folder of unpaired images. Missing browser screenshots do not invalidate API/export records, block their baseline, or justify requesting new platform access.
 
 ## Resume from the project record
 
