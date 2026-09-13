@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.6
+
+- Distinguish this-batch changes, first-round construction, and the effect loop.
+- Add an optional coverage ledger so released homepage actions are not treated as whole-site done.
+- Route whole-site completion questions to the root Skill; keep single-page repairs on geo-optimize.
+- Record content and discovery handoffs as pending implementation until a live page exists.
+- Keep those handoff rows schema-legal so they can be written into `coverage.json` without stripping extra keys.
+- Keep new question sets from inheriting an older baseline, and record actual multi-batch release times.
+
+
 ## 0.6.5
 
 - Add six bilingual core question patterns with purpose and judgement guidance.

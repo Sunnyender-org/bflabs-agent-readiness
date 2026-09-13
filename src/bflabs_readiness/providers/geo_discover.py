@@ -6,6 +6,7 @@ import hashlib
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..evidence import stable_claim_id
+from ..geo_round import coverage_rows_from_discovery
 from ..quality import evaluate_discovery
 from ..question_library import core_candidates
 
@@ -253,4 +254,5 @@ def run_geo_discover(brief: Dict[str, Any]) -> Dict[str, Any]:
         },
         "evidence_ledger": ledger,
         "quality_report": quality,
+        "coverage_handoff": coverage_rows_from_discovery(query_map, opportunity_map),
     }

@@ -1,5 +1,21 @@
 # 这一轮
 
+## 本批修改
+
+{{batch_scope}}
+
+## 首轮建设
+
+{{construction_scope}}
+
+## 效果复盘
+
+{{effect_scope}}
+
+## 还缺什么
+
+{{remaining_gaps}}
+
 ## 改了哪几页、哪些事实？
 
 {{pages_and_facts}}

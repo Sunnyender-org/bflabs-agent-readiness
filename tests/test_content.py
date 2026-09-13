@@ -50,6 +50,19 @@ class ContentTests(unittest.TestCase):
                 self.assertEqual(result["quality_report"]["status"], "pass")
                 self.assertTrue(all(unit["claim_id"] in markdown for unit in units["units"]))
                 self.assertEqual(spec["publication_gate"], "owner-approval-required")
+                handoff = result["coverage_handoff"]
+                self.assertEqual(handoff["status"], "blueprint_ready")
+                self.assertIsNone(handoff["url"])
+                self.assertIn(handoff["disposition"], {"new_page", "update_existing"})
+                self.assertIn("仍需宿主实现和公开内容核对", handoff["note"])
+                validate_instance(
+                    {
+                        "schema_version": "1.0.0",
+                        "questions_version": "1",
+                        "rows": [handoff],
+                    },
+                    "round-coverage.schema.json",
+                )
 
     def test_changed_canonical_snapshot_marks_old_fact_bindings_stale(self) -> None:
         brief = load_brief()

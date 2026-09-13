@@ -8,12 +8,12 @@ The free surface is the complete method for one website, not a preview of a paid
 
 - facts, goals, and a frozen question set;
 - a real baseline of how AI answers before any change meant to affect those answers;
-- finding issues and the pages that own them;
-- owner-gated local change and release;
+- finding issues and the pages that own them, including first-round construction coverage;
+- owner-gated local change and release for the current batch;
 - public retest of the same questions;
-- AI-answer comparison;
+- AI-answer comparison and the effect loop, kept separate from construction;
 - the method and templates for reviewing owner-supplied business data;
-- a stage report and the next-round step;
+- a stage report that separates 本批修改, 首轮建设, and 效果复盘;
 - checks, templates, and the report format.
 
 It also includes:
@@ -53,9 +53,11 @@ A missing capability in the free method is not permission to pull paid execution
 
 免费方法和付费工作用同一套做法。中途没有付费墙。没有网站时，也可以只要网站基础方案。
 
-**付费首轮**由团队承担：整理事实、按约定改页面或采集、发布、真实复测，以及写出这一轮做了什么、依据是什么、还缺什么。通常交付事实包、问题与页面清单、改动和发布证据、复测、已有的业务依据，以及下一轮建议。价格、工期和具体改哪些页按当时范围另定。
+**付费首轮**由团队承担：整理事实、按约定改页面或采集、发布、真实复测，以及写出这一轮做了什么、依据是什么、还缺什么。通常交付事实包、问题与页面清单、改动和发布证据、复测、已有的业务依据，以及下一轮建议。价格、工期和具体改哪些页按当时范围另定。免费方法本身已经完整；付费是代做执行、采样和维护，不是解锁方法。
 
 **付费持续服务**覆盖约定期内的数据接入、持续采样、维护、复盘和下一轮执行。服务期、频次、访问权限和可交付内容以合同为准，不默认无限代维。
+
+本批改完、某一页已发布，都不等于首轮建设完成，也不等于效果闭环。效果闭环要看同一批问题的复测，以及你提供的业务窗口。不要把市场上架同步说成已经完成。
 
 **网站基础按需纳入**。已有网站先补缺口，不重建。还没有网站时，给最小可实施网站和部署交接。实际搭建由使用者的 Agent 或既有建站工具完成。
 

@@ -31,6 +31,8 @@ Markdown uses internal claim markers that map to the evidence ledger. They prove
 
 Publishing, deployment, CMS writes, and bulk generation require separate approval and are not performed by this Skill.
 
+Record each topic with its evidence, the keep/update/new decision, the host implementation step, and later live readback on the project coverage ledger. Blueprint success with no live URL stays pending implementation. This Skill does not create another page generator.
+
 ## Facts From A Round Record
 
 When a content brief draws facts from a project-record `facts.json`:
@@ -40,3 +42,5 @@ When a content brief draws facts from a project-record `facts.json`:
 - `unverified` may appear only as clearly marked pending.
 - If `source_hash` or the source content changed, prior verification is stale; re-check before reuse.
 
+
+When a project already has frozen questions, pass their explicit `question_ids` in the content brief. Discovery `qry_*` identifiers are a different namespace and are never guessed into round IDs. A handoff is a blueprint, even when a target URL is supplied; the host links and verifies the implemented page.

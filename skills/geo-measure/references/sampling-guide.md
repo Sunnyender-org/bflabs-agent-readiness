@@ -8,6 +8,8 @@ For question design, use the [core question method](https://readiness.bflabs.cn/
 
 Write the question texts, facts, and rubric, then leave them unchanged while the site or content changes. Changing question text creates a new `question_version` and needs a new baseline. Never ease a question to produce a hit.
 
+The original frozen questions stay the denominator for this batch. New questions freeze as their own set and must be measured before their content changes. They cannot claim improvement from an older six-question baseline. Multi-batch releases record each action's actual `released_at`. If changes landed on different days, do not call them a single-window effect.
+
 ## What each line can prove this time
 
 Keep the four observation lines separate. Never merge them into one score.

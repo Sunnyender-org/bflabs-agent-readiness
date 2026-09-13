@@ -22,8 +22,8 @@ Classify every request as exactly one of:
 2. **existing-site** — a real site or public URL is in scope. Select the smallest matching child Skill unless the user explicitly asked for a full round.
 3. **explain-only** — a definition or method explanation, including attribution how-to with do-not-execute. Answer and stop. Do not start a round, workflow, or child Skill.
 4. **single-item** — one child Skill, one registered CLI workflow (`discover-diagnose` or `discover-content`), or one offline analysis of a supplied export. Never escalate into a full round. Attribution-only does not select `bflabs-agent-readiness`.
-5. **full-round** — an explicit request to run the free method end to end for one existing site. Select `bflabs-agent-readiness`.
-6. **resume** — an explicit request to continue an existing project record. Select `bflabs-agent-readiness`. Start at `next_step`. Do not redo already-released actions.
+5. **full-round** — an explicit request to run the free method end to end for one existing site, or to finish / judge whole-site coverage. Select `bflabs-agent-readiness`. Whole-site asks such as 整站做完整, 整体完成了吗, or “is the whole site done” are full-round or resume. They are not a single-page `geo-optimize` shrink.
+6. **resume** — an explicit request to continue an existing project record, including asking whether the current site work is finished. Select `bflabs-agent-readiness`. Start at `next_step`. Do not redo already-released actions. After a homepage-only verified action, “整体完成了吗” must read the coverage ledger and surface uncovered clusters. Released actions are not whole-site construction.
 
 The two CLI workflows remain the only automatic multi-capability executions. They are not a full round. They cover discovery-then-diagnose or discovery-then-content, not baseline, public retest, comparison, business review, or the next-round gate. The root Skill still adds the same six child Skills; do not add a seventh.
 

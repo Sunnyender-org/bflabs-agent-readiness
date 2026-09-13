@@ -6,9 +6,9 @@ Phase workflow lives in `references/round-contract.md`. Observation capture live
 
 ## Project directory
 
-The owner chooses the directory (convention: `geo-round/`). Required file: `experiment.json`. Optional until the stage needs them: `facts.json`, `questions.json`, `actions.json`, `business-events.json`. `observations.jsonl` is the geo-measure input, not this module. `report.md` is generated.
+The owner chooses the directory (convention: `geo-round/`). Required file: `experiment.json`. Optional until the stage needs them: `facts.json`, `questions.json`, `actions.json`, `business-events.json`, `coverage.json`. `observations.jsonl` is the geo-measure input, not this module. `report.md` is generated.
 
-Start from the flat templates: `templates/round-experiment.json`, `templates/round-facts.json`, `templates/round-questions.json`, `templates/round-actions.json`, `templates/round-business-events.json`. Schemas are `schemas/round-*.schema.json`.
+Start from the flat templates: `templates/round-experiment.json`, `templates/round-facts.json`, `templates/round-questions.json`, `templates/round-actions.json`, `templates/round-business-events.json`, `templates/round-coverage.json`. Schemas are `schemas/round-*.schema.json`. Old projects without `coverage.json` remain valid; first-round construction is then `unverified`, not complete and not failed.
 
 ## Files and fields
 
@@ -18,13 +18,15 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 
 `questions.json` is the frozen prompt list for this `questions_version`. Each question names an observation line, intent, text, URL/browsing flags, required and critical fact ids, a partial-credit rule, and `frozen_at`. Versions must match the experiment.
 
-`actions.json` is the only writable change list. Each action points at one page, question ids, fact ids, an issue type, a summary, optional deliverable, and release/recheck fields. `released` requires `released_at`, non-empty `release_evidence`, and a deliverable. `verified_public` requires all of that plus a public recheck that passed, has a non-empty note, and was checked after the release time. `reverted` may omit `released_at` when the change never went public; that case is never counted as public. Compared action ids on a round must exist.
+`actions.json` is the only writable change list. Each action points at one page, question ids, fact ids, an issue type, a summary, optional deliverable, and release/recheck fields. `released` requires `released_at`, non-empty `release_evidence`, and a deliverable. `verified_public` requires all of that plus a public recheck that passed, has a non-empty note, and was checked after the release time. `reverted` may omit `released_at` when the change never went public; that case is never counted as public. Compared action ids on a round must exist. Listed actions are complete only after `verified_public` and their public recheck pass; `released` still needs readback. They do not make first-round construction complete.
+
+`coverage.json` is the single construction ledger. Each row is one question cluster: `question_cluster`, `priority`, `question_ids[]`, `fact_ids[]`, `url` (nullable), `evidence_ref` (nullable), `disposition` (`keep_existing` | `update_existing` | `new_page` | `deferred` | `not_applicable`), `status` (`unmapped` | `planned` | `blueprint_ready` | `changed_local` | `released` | `verified_public` | `deferred`), `action_ids[]`, and `note`. First-round construction is complete only when every P0 page row is verified_public with a URL and a nonempty evidence_ref documenting content verification. Planned, blueprint_ready, changed_local, released, and deferred work is not complete even with a URL. A not_applicable disposition requires an evidence reference and a reason; deferring a P0 requirement does not complete it. Sharing pages is allowed, but each important question must be covered by a verified row. Do not add these fields to `experiment.json`.
 
 `business-events.json` is owner-supplied imports. Money (`amount_minor`, `currency`) is allowed on `purchase` and `refund`. Refunds retain their transaction ID and original order association. An `ai` source requires a non-null `source_evidence_url` and a known `attribution_method`. `unknown` is never promoted to `ai`. Test events never count toward real revenue. The same `(source, external_id)` twice in one import is invalid. The same pair in a later import is kept on the record but excluded as a duplicate.
 
 ## How the files move
 
-1. Setup: copy templates, fill site/market/brand, write facts, freeze questions, leave actions planned.
+1. Setup: copy templates, fill site/market/brand, write facts, freeze questions, start `coverage.json` rows for the important clusters, leave actions planned.
 2. Baseline: add a baseline round, capture observations with geo-measure, set `baseline` and `current_phase`.
 3. Change: add or update actions; `changed_local` means the public page does not have it yet.
 4. Release: set `released` plus `released_at`, evidence, and a deliverable. Do not treat `changed_local` as released.
@@ -37,7 +39,8 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 1. Run `bflabs-readiness round status --project DIR` first.
 2. Do not redo released actions.
 3. `changed_local` is not released and is not a public recheck.
-4. A declared baseline must be resolvable: the observation file stays inside the project and parses as JSONL or JSON with observations. Each row must satisfy the observation schema and answer hash, match a frozen question text and observation line, and have a capture time inside the baseline window and no earlier than question freezing. Round, phase, question/fact/rubric versions and any supplied site/experiment identity must match. Missing answers or incomplete/failed captures require explicit exclusion reasons; those attempts remain evidence of a gap, not successful answers. The file may also contain observations appended for other declared rounds: their round/phase must agree with the experiment, and they never replace the frozen baseline set. Every frozen question must be represented in that baseline set. This is a precondition for change and all later phases; a later phase does not waive it.
+4. Read `construction_status`, `batch_status`, and `effect_status` separately. A verified homepage action is only this batch. Missing `coverage.json` keeps first-round construction `unverified`. Uncovered P0 clusters stay incomplete.
+5. A declared baseline must be resolvable: the observation file stays inside the project and parses as JSONL or JSON with observations. Each row must satisfy the observation schema and answer hash, match a frozen question text and observation line, and have a capture time inside the baseline window and no earlier than question freezing. Round, phase, question/fact/rubric versions and any supplied site/experiment identity must match. Missing answers or incomplete/failed captures require explicit exclusion reasons; those attempts remain evidence of a gap, not successful answers. The file may also contain observations appended for other declared rounds: their round/phase must agree with the experiment, and they never replace the frozen baseline set. Every frozen question must be represented in that baseline set. This is a precondition for change and all later phases; a later phase does not waive it.
 
 ## Business import rules
 
@@ -50,6 +53,7 @@ Start from the flat templates: `templates/round-experiment.json`, `templates/rou
 - Before/after business comparison uses only explicit `business_window`, `selected_import_ids` and `selected_metric` from the experiment. It never infers those windows from AI baseline sampling. Missing coverage prevents a comparison but does not prevent a stage report. The same analyzer is available through the standalone `business` CLI; see `references/business-attribution.md`.
 - Events outside the import window, or whose page host is not the experiment site or a subdomain of it, are excluded. A missing page URL is allowed. Only included events feed counts, rates, and revenue. Excluded counts are shown when they are not zero.
 - No GEO causation claims. Chinese demo results and English market results are never merged.
+- Prefer existing fields: `is_test` is a known exclusion; import `coverage` `unknown` or `partial` is unclassified or incomplete, not zero; `identity_links` are the only confirmed person links. Ordinary site permission is not a confirmed external customer. Historical visits without a market tag stay `unknown`. A later payment after a page touch does not explain earlier orders. Do not add a required `experiment.json` field for this.
 
 ## Measurement report association
 
@@ -79,7 +83,7 @@ Deliver `comparison.html` beside `report.md`. Generate it with `python3 scripts/
 
 Keep screenshots and raw text under existing evidence folders, convention `screenshots/<round>/<question>-<slot>.png` and `observations/`. Do not rename existing baseline files merely to adopt this convention. Add screenshot paths to observation `evidence_refs`. Optional `actions[].visual_evidence` holds page before/after image paths, actual capture time, viewport, local/public environment, a specific change explanation and source-diff refs. It belongs to the existing action record, not a separate writable comparison ledger. Missing captures are null. Do not pair different viewport shots as equivalent, do not use a local preview as a released screenshot, and preserve originals when highlighting changes.
 
-The HTML separates site changes, AI answers and business results. All attempts remain visible; a missing after-round stays pending. Pairing is visual navigation only; comparability and numerical verdicts come from the accepted geo-measure report, never from the screenshot renderer. Business details remain in the existing round report.
+The HTML separates site changes, AI answers and business results, and now also shows the coverage ledger. Link each coverage row to the page or answer evidence that already exists. All attempts remain visible; a missing after-round stays pending. Missing images stay missing. If a page was kept as-is, say there was no visual change. Do not invent old screenshots. Pairing is visual navigation only; comparability and numerical verdicts come from the accepted geo-measure report, never from the screenshot renderer. Business details remain in the existing round report. Never emit a unified GEO score.
 
 For a Feishu handoff, use a readable report with: current result; site pairs; matched answer pairs; business windows; next action; evidence/history appendix. Each pair explains what changed and what it proves. Keep WB/tool acceptance separate from AI visibility. Use Base only for multi-project operational tracking; neither Feishu nor a hosted dashboard is required for the free Skill.
 

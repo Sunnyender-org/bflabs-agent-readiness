@@ -41,7 +41,7 @@ Read [opportunity-method.md](references/opportunity-method.md) before scoring.
 
 ## Frozen Question Set For A Round
 
-When the user is preparing a single-site GEO round, build and freeze `questions.json` before any site change. Read [round-questions-method.md](references/round-questions-method.md). Map the seven dimensions onto the four observation lines (`A`, `B`, `C`, `D`) and five intent tags (`brand`, `category`, `compare`, `evaluate`, `act`). Lines are never merged. Changing a question's text, or the facts or rubric it depends on, creates a new `questions_version` and needs a new baseline.
+When the user is preparing a single-site GEO round, build and freeze `questions.json` before any site change. Read [round-questions-method.md](references/round-questions-method.md). Map the seven dimensions onto the four observation lines (`A`, `B`, `C`, `D`) and five intent tags (`brand`, `category`, `compare`, `evaluate`, `act`). Lines are never merged. Changing a question's text, or the facts or rubric it depends on, creates a new `questions_version` and needs a new baseline. Also record each topic → evidence → keep/update/new → host implementation → live readback on the project coverage ledger. Missing pages stay unmapped until a live URL exists.
 
 ## Evidence And Scoring Rules
 
