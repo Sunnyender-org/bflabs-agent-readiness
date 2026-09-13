@@ -17,10 +17,6 @@ metadata:
 
 # BFLabs Agent Readiness
 
-## 开始使用
-
-Agent 请读取本文件原文，不要用搜索摘要代替说明；按原文中的版本使用配套文件。只读检查网站时，也先读取[诊断规则](https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md)，再给结论。读取不到原文时如实说明，不猜版本或规则。
-
 ## 先检查，再让你的 Agent 修
 
 输入一个公开网站，看看 AI 能不能找到关键页面、读懂产品信息，并顺利完成下一步。诊断只读取公开内容，不登录，也不会直接修改网站。
@@ -86,7 +82,7 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 复制下面这段话，发给你正在用的 Agent，把最后一行换成你要做的事。
 
 ```
-请先阅读 https://readiness.bflabs.cn/skills/bflabs-agent-readiness。配套说明在同一地址下 manifest.json 列出的文件里。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
+请先阅读 https://readiness.bflabs.cn/skills/bflabs-agent-readiness。请读取原文，不用搜索摘要代替；只读诊断也先读 https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md。其他配套说明见同地址下 manifest.json。读完后，只向我要完成当前这件事还缺的信息。不要让我挑选要使用哪一项能力，不要让我填技术表单，也不要让我配置 MCP。
 我要做的事：（写下网站地址和你想解决的问题。如果已经做过一部分，写上项目文件夹的位置。）
 ```
 
@@ -94,4 +90,4 @@ BFLabs 的服务，是由 BFLabs 来做这些事：改站实施、反复抽样�
 
 榜单默认不会公开你的网站。只有你主动选择时才会上榜；已经加入后，也可以联系 BFLabs 申请移除。
 
-<!-- AGENT_ONLY: For a locally loaded package, first read references/root-agent-contract.md relative to that package and use its local companions. For an online entry, read https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/root-agent-contract.md and follow it. Manifest: https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json. Never project its implementation language into rendered product copy. -->
+<!-- AGENT_ONLY: Read raw instructions and verify the version, not a model-generated page summary. Every website diagnosis loads skills/geo-optimize/references/readiness-rules.md from the local package, or https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md for an online entry. For a locally loaded package, first read references/root-agent-contract.md relative to that package and use its local companions. For an online entry, read https://readiness.bflabs.cn/skills/bflabs-agent-readiness/references/root-agent-contract.md and follow it. Manifest: https://readiness.bflabs.cn/skills/bflabs-agent-readiness/manifest.json. Never project its implementation language into rendered product copy. -->

@@ -157,6 +157,7 @@ if "references/root-agent-contract.md" not in skill_body:
 
 agent_contract = (ROOT / "references/root-agent-contract.md").read_text("utf-8")
 for routed_path in [
+    "skills/geo-optimize/references/readiness-rules.md",
     "skills/geo-discover/SKILL.md",
     "skills/geo-content/SKILL.md",
     "skills/geo-measure/SKILL.md",
