@@ -12,7 +12,7 @@ export const SKILL_IDS = [
 ];
 
 export const ROOT_SKILL_ID = 'bflabs-agent-readiness';
-export const SKILLHUB_ALLOWED_SUFFIXES = new Set(['.csv', '.json', '.md', '.py', '.svg', '.yaml', '.yml']);
+export const SKILLHUB_ALLOWED_SUFFIXES = new Set(['.html', '.csv', '.json', '.md', '.py', '.svg', '.yaml', '.yml']);
 export const ROOT_RESOURCE_DIRS = ['references', 'templates', 'schemas'];
 export const CHILD_RESOURCE_DIRS = ['references', 'templates', 'examples', 'scripts'];
 export const MAX_EMBEDDED_RESOURCE_BYTES = 2 * 1024 * 1024;
@@ -23,6 +23,7 @@ const CONTENT_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8',
   '.py': 'text/plain; charset=utf-8',
+  '.html': 'text/plain; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.yaml': 'text/yaml; charset=utf-8',
   '.yml': 'text/yaml; charset=utf-8',
@@ -124,6 +125,7 @@ export async function listSkillResources(repositoryRoot) {
   }
   for (const [relativePath, sourcePath] of [
     ['scripts/analyze_business.py', 'scripts/analyze_business.py'],
+    ['scripts/render_comparison.py', 'scripts/render_comparison.py'],
     ['scripts/business_attribution.py', 'src/bflabs_readiness/business_attribution.py'],
     ['scripts/business_report.py', 'src/bflabs_readiness/business_report.py'],
   ]) {

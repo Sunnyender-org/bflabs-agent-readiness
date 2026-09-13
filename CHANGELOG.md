@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.4
+
+- Add an offline comparison view generated from existing round records.
+- Keep page capture pairs on actions, show all AI attempts and pending retests, and link existing business reporting.
+- Document a readable Feishu handoff without requiring Feishu or a hosted dashboard.
+
+
 ## 0.6.3
 
 - Make direct HTTP reading explicit in the starter prompt.

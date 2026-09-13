@@ -63,9 +63,88 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         },
+        "visual_evidence": { "type": "array", "items": { "$ref": "#/$defs/visualPair" } },
         "method_ids": {
           "type": "array",
           "items": { "type": "string", "pattern": "^M[1-8]-[a-z0-9-]+$" }
+        }
+      }
+    },
+    "visualCapture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image",
+        "captured_at",
+        "viewport",
+        "environment"
+      ],
+      "properties": {
+        "image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "viewport": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "public"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "visualPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "before",
+        "after",
+        "change_note"
+      ],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "before": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/visualCapture"
+            }
+          ]
+        },
+        "after": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/visualCapture"
+            }
+          ]
+        },
+        "change_note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
