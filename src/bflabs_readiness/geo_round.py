@@ -546,21 +546,22 @@ def _row_is_pending_implementation(row: Dict[str, Any]) -> bool:
 
 
 def _row_construction_ready(row: Dict[str, Any]) -> bool:
-    if not _nonempty(row.get("disposition")):
+    if row.get("disposition") == "not_applicable":
+        return bool(_nonempty(row.get("note")) and _nonempty(row.get("evidence_ref")))
+    if not _row_needs_live_page(row):
         return False
-    if row.get("status") == "unmapped":
-        return False
-    if _row_is_pending_implementation(row):
-        return False
-    if _row_needs_live_page(row) and not _row_has_live_page(row):
-        return False
-    return True
+    return bool(
+        row.get("status") == "verified_public"
+        and _row_has_live_page(row)
+        and _nonempty(row.get("evidence_ref"))
+    )
 
 
 def _covered_question_ids(coverage: Optional[Dict[str, Any]]) -> Set[str]:
     covered: Set[str] = set()
     for row in _coverage_rows(coverage):
-        covered.update(row.get("question_ids") or [])
+        if _row_construction_ready(row):
+            covered.update(row.get("question_ids") or [])
     return covered
 
 
@@ -594,7 +595,7 @@ def assess_construction(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[st
         elif _row_needs_live_page(row) and not _row_has_live_page(row):
             gaps.append("{} 还没有对应页面。".format(cluster))
         else:
-            gaps.append("{} 还没有写清怎么处理。".format(cluster))
+            gaps.append("{} 还没有完成公开页面内容核验，或仍在延期处理。".format(cluster))
     for question_id in uncovered:
         gaps.append("问题 {} 还没有对应到页面。".format(question_id))
     complete = bool(p0) and not incomplete and not uncovered
@@ -631,8 +632,7 @@ def assess_batch(records: Dict[str, Optional[Dict[str, Any]]]) -> Dict[str, Any]
             if not _is_verified_public(action):
                 incomplete.append("公开页核对尚未通过：{}。".format(summary))
         elif status == "released":
-            if not _is_released(action):
-                incomplete.append("已经写了发布，但还缺发布凭据：{}。".format(summary))
+            incomplete.append("已发布，尚未完成公开读回：{}。".format(summary))
         elif status == "changed_local":
             incomplete.append("本地已改、公开页还看不到：{}。".format(summary))
         elif status == "planned":
@@ -697,7 +697,9 @@ def assess_effect(
             for pair in measurement_report.get("pairs") or []
             if isinstance(pair, dict) and pair.get("verdict") not in {None, "not_comparable", "insufficient"}
         ]
-        comparable_retest = bool(comparable_pairs) and not inherit_blocked
+        comparable_retest = bool(comparable_pairs) and len(comparable_pairs) == len(measurement_report.get("pairs") or []) and not inherit_blocked
+        if measurement_report.get("pairs") and not comparable_retest:
+            retest_gaps.append("部分前后样本仍不可比或不足，效果复盘尚未完整。")
         if not measurement_report.get("pairs"):
             retest_gaps.append("还没有可核对的前后对比。")
     else:

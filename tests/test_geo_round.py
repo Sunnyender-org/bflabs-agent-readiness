@@ -820,7 +820,7 @@ class GeoRoundTests(unittest.TestCase):
                             "url": "https://example.com/",
                             "evidence_ref": "https://example.com/",
                             "disposition": "update_existing",
-                            "status": "planned",
+                            "status": "verified_public",
                             "action_ids": ["act_home_name"],
                             "note": "三题共用首页。",
                         },
@@ -832,7 +832,7 @@ class GeoRoundTests(unittest.TestCase):
                             "url": "https://example.com/pricing",
                             "evidence_ref": "https://example.com/pricing",
                             "disposition": "update_existing",
-                            "status": "planned",
+                            "status": "verified_public",
                             "action_ids": ["act_price_copy"],
                             "note": "三题共用价格页。",
                         },
@@ -945,3 +945,17 @@ class GeoRoundTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ConstructionReleaseBoundaryTests(unittest.TestCase):
+    def test_url_alone_does_not_prove_construction(self):
+        from bflabs_readiness.geo_round import assess_construction
+        row = dict(question_cluster="pricing", priority="P0", question_ids=["q_price"], fact_ids=[], url="https://example.com/pricing", evidence_ref="capture.html", disposition="update_existing", status="planned", action_ids=[], note="")
+        records = {"coverage": {"rows": [row]}, "questions": {"questions": [{"question_id": "q_price"}]}}
+        for status in ["planned", "blueprint_ready", "changed_local", "released", "deferred"]:
+            row["status"] = status
+            self.assertFalse(assess_construction(records)["complete"], status)
+        row["status"] = "verified_public"
+        self.assertTrue(assess_construction(records)["complete"])
+        row["evidence_ref"] = None
+        self.assertFalse(assess_construction(records)["complete"])

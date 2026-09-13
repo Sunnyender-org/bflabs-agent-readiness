@@ -57,7 +57,7 @@ bflabs-readiness round report --project DIR
 
 **Record.** Create or update `experiment.json` with `site_domain`, `site_url`, `target_market`, `brand`, version stamps, `current_phase=setup`, and `baseline=null`. Write `facts.json`. Freeze `questions.json`. Start optional `coverage.json` rows for important clusters. Leave `actions.json` empty or unchanged. Do not write observations yet.
 
-**Exit evidence.** One site identity. Each fact has a source and `evidence_status`. Each question has `question_id`, `observation_line`, `intent_tag`, `text`, `frozen_at`, and its fact links. `questions_version` is set. Whole-site construction is not complete until P0 coverage rows have pages; a later verified homepage action is only that batch.
+**Exit evidence.** One site identity. Each fact has a source and `evidence_status`. Each question has `question_id`, `observation_line`, `intent_tag`, `text`, `frozen_at`, and its fact links. `questions_version` is set. Whole-site construction is not complete until P0 coverage rows have publicly verified content and evidence; a later verified homepage action is only that batch.
 
 **Report.** Facts and questions are ready. AI answers are `not measured`. Business is `not measured`.
 
