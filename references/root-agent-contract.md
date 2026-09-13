@@ -2,9 +2,13 @@
 
 This file is Agent-only. Do not project its status names, routing mechanics, file paths, validation receipts, or rollback language into rendered product copy.
 
+## Read the actual instructions
+
+For an online Skill, obtain the raw response body through a direct HTTP GET or a browser raw-text view. A search result or model-generated WebFetch summary is not the Skill instructions. Record the version from the actual body and compare it with manifest.json; if they disagree, re-fetch directly once and state any remaining mismatch. Never infer that a deployment occurred from a model-reported version. Local packages continue to use their own files.
+
 ## Required reading
 
-Read `references/routing.md` before selecting a child Skill. Read `references/product-boundary.md` before making product claims or proposing paid delivery. For a local read-only domain scan, follow `app/readiness-web/README.md`. Before a full round or a continuation, read `references/round-contract.md` and `references/round-record.md`. Use `skills/geo-measure/references/sampling-guide.md` when capturing or pairing observations, `skills/geo-optimize/references/page-fact-checklist.md` when binding issues to pages, and `skills/geo-discover/references/round-questions-method.md` when freezing the question set.
+Read `references/routing.md` before selecting a child Skill. Read `references/product-boundary.md` before making product claims or proposing paid delivery. For every website readiness diagnosis, including URL-only read-only checks, read the existing [readiness rules](https://readiness.bflabs.cn/skills/geo-optimize/references/readiness-rules.md) before assessing findings (local package: `skills/geo-optimize/references/readiness-rules.md`). This does not require a repository, enable edits, or start a full round. For a local read-only domain scan, follow `app/readiness-web/README.md`. Before a full round or a continuation, read `references/round-contract.md` and `references/round-record.md`. Use `skills/geo-measure/references/sampling-guide.md` when capturing or pairing observations, `skills/geo-optimize/references/page-fact-checklist.md` when binding issues to pages, and `skills/geo-discover/references/round-questions-method.md` when freezing the question set.
 
 ## Request classification
 
