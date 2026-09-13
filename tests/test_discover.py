@@ -27,7 +27,14 @@ class DiscoverTests(unittest.TestCase):
         handoff = result["coverage_handoff"]
         self.assertTrue(handoff)
         self.assertTrue(any(row["status"] == "unmapped" and row["url"] is None for row in handoff))
-        self.assertTrue(all("topic" in row and "evidence_ids" in row for row in handoff))
+        validate_instance(
+            {
+                "schema_version": "1.0.0",
+                "questions_version": "1",
+                "rows": handoff,
+            },
+            "round-coverage.schema.json",
+        )
 
     def test_priority_scores_use_only_declared_formula(self) -> None:
         result = run_geo_discover(load_brief())

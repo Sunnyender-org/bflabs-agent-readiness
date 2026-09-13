@@ -757,12 +757,39 @@ def assess_scopes(
     }
 
 
+def _coverage_row(
+    *,
+    question_cluster: str,
+    priority: str,
+    question_ids: List[str],
+    fact_ids: List[str],
+    url: Optional[str],
+    evidence_ref: Optional[str],
+    disposition: str,
+    status: str,
+    action_ids: List[str],
+    note: str,
+) -> Dict[str, Any]:
+    return {
+        "question_cluster": question_cluster,
+        "priority": priority,
+        "question_ids": question_ids,
+        "fact_ids": fact_ids,
+        "url": url,
+        "evidence_ref": evidence_ref,
+        "disposition": disposition,
+        "status": status,
+        "action_ids": action_ids,
+        "note": note,
+    }
+
+
 def coverage_handoff_from_content(
     brief: Dict[str, Any],
     *,
     live_url: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Record topic → evidence → keep/update/new → host implementation → live readback."""
+    """Emit one schema-legal coverage row: topic, evidence, keep/update/new, and live-page state."""
     discovery = brief.get("discovery_context") if isinstance(brief.get("discovery_context"), dict) else {}
     evidence_ids = []
     for fact in brief.get("facts") or []:
@@ -774,26 +801,26 @@ def coverage_handoff_from_content(
     if brief.get("source_markdown") and brief.get("mode") != "page-blueprint":
         disposition = "update_existing"
     status = "blueprint_ready" if not _nonempty(live_url) else "changed_local"
-    note = "内容蓝图已通过，公开页还没有。等宿主实现后再做线上读回。" if status == "blueprint_ready" else "宿主已改本地页，等待公开读回。"
-    return {
-        "question_cluster": brief.get("subject") or brief.get("intent") or "content-handoff",
-        "priority": "P0",
-        "question_ids": [
+    if status == "blueprint_ready":
+        note = "内容蓝图已通过，公开页还没有。等宿主实现后再做线上读回。"
+    else:
+        note = "宿主已改本地页，等待公开读回。"
+    if unique_evidence:
+        note = "{} 证据：{}。".format(note, "、".join(unique_evidence))
+    return _coverage_row(
+        question_cluster=brief.get("subject") or brief.get("intent") or "content-handoff",
+        priority="P0",
+        question_ids=[
             item for item in discovery.get("query_ids") or [] if str(item).startswith("q_")
         ],
-        "fact_ids": [fact.get("id") for fact in brief.get("facts") or [] if fact.get("id")],
-        "url": live_url if _nonempty(live_url) else None,
-        "evidence_ref": unique_evidence[0] if unique_evidence else None,
-        "disposition": disposition,
-        "status": status,
-        "action_ids": [],
-        "note": note,
-        "topic": brief.get("subject"),
-        "evidence_ids": unique_evidence,
-        "host_implementation": "pending" if status == "blueprint_ready" else "local",
-        "live_readback": None,
-        "pending_implementation": status == "blueprint_ready",
-    }
+        fact_ids=[fact.get("id") for fact in brief.get("facts") or [] if fact.get("id")],
+        url=live_url if _nonempty(live_url) else None,
+        evidence_ref=unique_evidence[0] if unique_evidence else None,
+        disposition=disposition,
+        status=status,
+        action_ids=[],
+        note=note,
+    )
 
 
 def coverage_rows_from_discovery(
@@ -806,26 +833,23 @@ def coverage_rows_from_discovery(
         query_ids = item.get("query_ids") or []
         texts = [queries.get(query_id, {}).get("text") or query_id for query_id in query_ids]
         missing = item.get("coverage_state") != "covered"
+        source_ids = list((item.get("trace") or {}).get("source_query_ids") or [])
+        note_parts = [str(part) for part in ((item.get("trace") or {}).get("basis") or texts) if part]
+        if source_ids:
+            note_parts.append("证据：" + "、".join(str(item) for item in source_ids))
         rows.append(
-            {
-                "question_cluster": item.get("dimension") or (texts[0] if texts else item.get("id") or "opportunity"),
-                "priority": "P0" if missing and item.get("priority_score", 0) >= 4 else ("P1" if missing else "P2"),
-                "question_ids": [],
-                "fact_ids": [],
-                "url": None,
-                "evidence_ref": (item.get("trace") or {}).get("source_query_ids", [None])[0]
-                if (item.get("trace") or {}).get("source_query_ids")
-                else None,
-                "disposition": "new_page" if missing else "keep_existing",
-                "status": "unmapped" if missing else "planned",
-                "action_ids": [],
-                "note": "；".join(str(part) for part in ((item.get("trace") or {}).get("basis") or texts) if part),
-                "topic": texts[0] if texts else item.get("dimension"),
-                "evidence_ids": list((item.get("trace") or {}).get("source_query_ids") or []),
-                "host_implementation": "pending",
-                "live_readback": None,
-                "pending_implementation": False,
-            }
+            _coverage_row(
+                question_cluster=item.get("dimension") or (texts[0] if texts else item.get("id") or "opportunity"),
+                priority="P0" if missing and item.get("priority_score", 0) >= 4 else ("P1" if missing else "P2"),
+                question_ids=[],
+                fact_ids=[],
+                url=None,
+                evidence_ref=source_ids[0] if source_ids else None,
+                disposition="new_page" if missing else "keep_existing",
+                status="unmapped" if missing else "planned",
+                action_ids=[],
+                note="；".join(note_parts),
+            )
         )
     return rows
 

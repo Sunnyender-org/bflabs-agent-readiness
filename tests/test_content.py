@@ -53,8 +53,16 @@ class ContentTests(unittest.TestCase):
                 handoff = result["coverage_handoff"]
                 self.assertEqual(handoff["status"], "blueprint_ready")
                 self.assertIsNone(handoff["url"])
-                self.assertTrue(handoff["pending_implementation"])
                 self.assertIn(handoff["disposition"], {"new_page", "update_existing"})
+                self.assertIn("公开页还没有", handoff["note"])
+                validate_instance(
+                    {
+                        "schema_version": "1.0.0",
+                        "questions_version": "1",
+                        "rows": [handoff],
+                    },
+                    "round-coverage.schema.json",
+                )
 
     def test_changed_canonical_snapshot_marks_old_fact_bindings_stale(self) -> None:
         brief = load_brief()
